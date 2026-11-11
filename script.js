@@ -91,14 +91,17 @@ chatFilterWords.addEventListener('input',applyChatWordFilter);
 document.getElementById('system-toggle').addEventListener('click',()=>{const chat=document.getElementById('chat');const hidden=chat.classList.toggle('hide-system');const btn=document.getElementById('system-toggle');btn.setAttribute('aria-pressed',String(hidden));btn.textContent=hidden?'Show System':'Hide System';});
 const chatChannel=document.getElementById('chat-channel');
 const chatLog=document.getElementById('chat');
-const channelColors={All:'#e6e3de',Lobby:'#d5b968',Clan:'#70ce78',Trading:'#edb35e',PvP:'#f07171',Farming:'#70c7dd',Quest:'#bb99ee','NeonRaven#119404':'#e69ccc','PearlImp#12912':'#e69ccc'};
+const channelColors={All:'#e6e3de',Lobby:'#d5b968',Clan:'#70ce78',Trading:'#d4a3f5',PvP:'#ed7777',Farming:'#e6e3de',Quest:'#69b8ff',Private:'#e69ccc'};
 const channelIcons={Lobby:'\u25c6',Clan:'\u2663',Trading:'\u2696',PvP:'\u2694',Farming:'\u2660',Quest:'\u2726'};
-function chatChannelLabel(channel){return channel.includes('#')?channel.split('#')[0]:channel;}
+let privateRecipient=null;
+function chatChannelLabel(channel){return channel==='Private'?'Private':channel;}
+function beginWhisper(battletag){privateRecipient=battletag;document.querySelector('[data-chat-view="lobby"]').click();chatChannel.value='Private';applyChatChannel();const input=document.getElementById('message');input.value='/w '+battletag+' ';input.focus();}
 function decorateChatMessage(message,channel){
+ if(channel.includes('#')){message.dataset.recipient=channel;channel='Private';}
  message.dataset.channel=channel;
  message.style.setProperty('--channel-color',channelColors[channel]);
  const tag=document.createElement('span');tag.className='channel-tag';
- const label=channel.includes('#')?'Private message':channel;
+ const label=channel==='Private'?'Private message':channel;
  tag.textContent=channelIcons[channel]||'\u2709';tag.title=label;tag.setAttribute('aria-label',label);tag.tabIndex=0;message.prepend(tag);
  const timestamp=document.createElement('time');timestamp.className='chat-timestamp';
  const sentAt=new Date();
@@ -119,17 +122,21 @@ const channelSamples=[
  ['Quest','LarzukPls','SocketQuest#1954','Need help with Ancients on Hell.'],
  ['Quest','BoneSpirit','NecroMain#1229','Act II quest walk, starting at the sewers.'],
  ['NeonRaven#119404','NeonRaven','NeonRaven#119404','Ready for another run?'],
- ['PearlImp#12912','PearlImp','PearlImp#12912','I saved that shield for you.']
+ ['PearlImp#12912','PearlImp','PearlImp#12912','I saved that shield for you.'],
+ ['Private','You','NeonRaven#119404','Yes, ready! Send me the game name.',true],
+ ['Private','You','PearlImp#12912','Thanks! I will pick it up after this run.',true]
 ];
 const lobbyMessages=Array.from(chatLog.children);
 const sampleMessages=[];
-channelSamples.forEach(([channel,character,battletag,text])=>{
+channelSamples.forEach(([channel,character,battletag,text,outgoing])=>{
  const message=document.createElement('p'),sender=document.createElement('span');
  sender.className='player-name';sender.dataset.character=character;sender.dataset.battletag=battletag;sender.textContent=character+':';
- message.append(sender,document.createTextNode(' '+text));decorateChatMessage(message,channel);sampleMessages.push(message);
+ const body=document.createElement('span');body.className='message-body';body.textContent=' '+text;
+ if(outgoing){sender.className='chat-self';sender.textContent='To '+battletag.split('#')[0]+':';message.classList.add('private-outgoing');message.dataset.recipient=battletag;}
+ message.append(sender,body);decorateChatMessage(message,channel);sampleMessages.push(message);
 });
 // Interleave the mock conversation in a stable chronological sequence.
-const sampleOrder=[0,4,2,8,6,10,1,3,7,11,5,9];
+const sampleOrder=[0,4,2,8,6,10,12,1,3,7,11,13,5,9];
 lobbyMessages.forEach((message,index)=>{
  if(index%2===0&&sampleOrder.length)chatLog.insertBefore(sampleMessages[sampleOrder.shift()],message);
 });
@@ -153,9 +160,18 @@ function applyChatChannel(){
 }
 chatChannel.addEventListener('change',applyChatChannel);applyChatChannel();
 document.getElementById('chat-form').onsubmit=e=>{
- e.preventDefault();const input=document.getElementById('message');if(!input.value.trim())return;
- const message=document.createElement('p'),sender=document.createElement('span');sender.className='chat-self';sender.textContent='You:';
- message.append(sender,document.createTextNode(' '+input.value));decorateChatMessage(message,chatChannel.value==='All'?'Lobby':chatChannel.value);chatLog.append(message);
+ e.preventDefault();const input=document.getElementById('message');let text=input.value.trim();if(!text)return;
+ const whisper=text.match(/^\/w\s+(\S+)\s+([\s\S]+)$/i);
+ let channel=chatChannel.value==='All'?'Lobby':chatChannel.value;
+ if(whisper){privateRecipient=whisper[1];text=whisper[2];channel='Private';}
+ if(channel==='Private'&&!privateRecipient){
+  input.value='/w ';input.placeholder='/w player#1234 message';input.focus();return;
+ }
+ const message=document.createElement('p'),sender=document.createElement('span'),body=document.createElement('span');
+ sender.className='chat-self';sender.textContent=channel==='Private'?'To '+privateRecipient.split('#')[0]+':':'You:';
+ body.className='message-body';body.textContent=' '+text;
+ if(channel==='Private'){message.classList.add('private-outgoing');message.dataset.recipient=privateRecipient;}
+ message.append(sender,body);decorateChatMessage(message,channel);chatLog.append(message);
  applyChatWordFilter();applyChatChannel();input.value='';message.scrollIntoView({block:'nearest'});
 };
 // Right-click a player chat message (including its text) to show account identity and actions.
@@ -178,7 +194,7 @@ playerMenu.addEventListener('click',event=>{
  const button=event.target.closest('[data-player-action]');if(!button||!contextPlayer)return;
  const action=button.dataset.playerAction;
  if(action==='Whisper'){
-  const input=document.getElementById('message');input.value='/w '+contextPlayer.battletag+' ';input.focus();
+  beginWhisper(contextPlayer.battletag);
  }else{
   // UI mock only: no Battle.net actions are performed.
   alert(action+' — '+contextPlayer.character+' ('+contextPlayer.battletag+')\nPrototype action only.');
@@ -308,7 +324,7 @@ document.getElementById('friends-panel').addEventListener('contextmenu',e=>{
 friendMenu.addEventListener('click',e=>{
  const btn=e.target.closest('[data-friend-action]');if(!btn||!activeFriend)return;
  const action=btn.dataset.friendAction;const name=friendName(activeFriend);const row=activeFriend;
- if(action==='Whisper'){document.querySelector('[data-chat-view="lobby"]').click();const input=document.getElementById('message');input.value='/w '+(row.querySelector('.friend-name')?.dataset.battletag||name)+' ';input.focus();}
+ if(action==='Whisper'){beginWhisper(row.querySelector('.friend-name')?.dataset.battletag||name);}
  else if(action==='Add to Favorites'){
   const groups=document.querySelectorAll('.friend-group');const isFav=row.closest('.friend-group')===groups[0];const target=groups[isFav?1:0].querySelector('.friend-items');target.appendChild(row);
   const star=row.querySelector('.favorite-star');if(isFav){star?.remove();}else if(!star){const span=document.createElement('span');span.className='favorite-star';span.textContent=' ★';row.querySelector('.friend-name').appendChild(span);}
