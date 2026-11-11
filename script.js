@@ -1,9 +1,6 @@
-// Cancel the browser menu before the custom chat/friend menu handlers run.
-// Include the menus themselves so repeated right-clicks cannot cover their actions.
+// Reserve right-click for the lobby UI, including its custom action menus.
 document.addEventListener('contextmenu', event => {
- if(event.target instanceof Element && event.target.closest('#chat, #friends-panel, #player-context, #friend-context')){
-  event.preventDefault();
- }
+ event.preventDefault();
 }, {capture:true, passive:false});
 
 let openTradingShop = null;
