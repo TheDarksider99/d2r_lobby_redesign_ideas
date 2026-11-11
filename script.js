@@ -230,7 +230,7 @@ function renderRecentDeleted(){
 function renderCharacters(){const root=document.getElementById('character-roster');root.replaceChildren();for(const [index,[name,level,cls]] of getSortedCharacters().entries()){
  const button=document.createElement('button');button.type='button';button.className='character-entry'+(chosenCharacter===name?' selected':'');button.dataset.character=name;
  const handle=document.createElement('span');handle.className='character-drag';handle.textContent='⠿';handle.title='Drag to reorder';handle.setAttribute('aria-label','Drag '+name+' to reorder');handle.draggable=true;
- const label=document.createElement('span');label.textContent=`${index+1}. ${name}`;const sub=document.createElement('small');sub.textContent=`Level ${level} ${cls}`;button.append(handle,label,sub);
+ const label=document.createElement('span');label.textContent=`${index+1}. ${name}`;const sub=document.createElement('small');sub.textContent=`Level ${level} ${cls}`;const portrait=document.createElement('img');portrait.className='character-portrait';portrait.src='img/'+cls.toLowerCase()+'.png';portrait.alt='';portrait.width=44;portrait.height=44;const info=document.createElement('span');info.className='character-info';info.append(label,sub);button.append(handle,portrait,info);
  button.addEventListener('click',()=>{chosenCharacter=name;renderCharacters();updateCenterCharacter()});
  handle.addEventListener('dragstart',e=>{draggedCharacter=name;button.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',name);});
  handle.addEventListener('dragend',()=>{draggedCharacter=null;root.querySelectorAll('.character-entry').forEach(el=>el.classList.remove('dragging','drag-over'));});
