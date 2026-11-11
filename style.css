@@ -326,3 +326,33 @@ body.offline-character .right .game-settings-group label:has(#terrorized) {point
 }
 .screen .game-header { border-bottom-color: #514c343d; }
 .screen .game { border-bottom-color: #514e452e; }
+
+/* Shared channel colors for sender names and All-chat tags. */
+#chat .channel-filtered{display:none}
+#chat .channel-tag{display:none;color:var(--channel-color)}
+#chat.all-channels .channel-tag{display:inline}
+#chat .player-name,#chat .chat-self{color:var(--channel-color)}
+
+#chat.all-channels .channel-tag{display:inline-block;min-width:1.2em;margin-right:.3em;text-align:center;cursor:help;font-family:Arial,sans-serif}
+#chat .channel-tag:focus-visible{outline:1px solid currentColor;outline-offset:2px}
+
+#chat .chat-timestamp{display:inline-block;color:#929292;font-size:.8em;font-variant-numeric:tabular-nums;margin-right:.55em;white-space:nowrap}
+
+/* Opening cinematic and hold-to-connect interaction. */
+body.intro-active{overflow:hidden;background:#000}
+body.intro-active>.screen{visibility:hidden}
+.intro-screen{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:#000;user-select:none;touch-action:none}
+.intro-screen[hidden],.intro-screen video[hidden]{display:none!important}
+.intro-screen video{position:absolute;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.intro-enter{position:absolute;bottom:7%;max-width:90%;padding:12px 24px;border:1px solid #8f784c;background:linear-gradient(to right,var(--hold-fill,#a58c563d) var(--hold-progress,0%),#080808b3 var(--hold-progress,0%));color:#e7d6ac;font:small-caps 18px Georgia;letter-spacing:2px;cursor:pointer;touch-action:none}
+.intro-enter:focus-visible{outline:2px solid #e7d6ac;outline-offset:4px}
+.intro-status{position:absolute;bottom:2%;color:#d2bc86;font:14px Georgia;text-align:center}
+
+/* Keep the cinematic clear; the hold delay runs without a visible prompt. */
+.intro-enter{opacity:0;bottom:0;left:0;width:100%;max-width:none;height:100%;padding:0;border:0;background:none}
+
+.market-item-copy .market-server{color:#b8a16b;white-space:nowrap}
+
+#join-loading{position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#000;overflow:hidden}
+#join-loading::backdrop{background:#000}
+#join-loading video{display:block;width:100%;height:100%;object-fit:contain}
