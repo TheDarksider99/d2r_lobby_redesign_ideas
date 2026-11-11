@@ -485,6 +485,18 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   }
  });
 
+ function previewMarketItem(item) {
+  let preview=document.getElementById('market-item-preview');
+  if(!preview){
+   preview=document.createElement('dialog');preview.id='market-item-preview';
+   preview.innerHTML='<img alt=""><button type="button" class="mini-control">Close</button>';
+   preview.querySelector('button').addEventListener('click',()=>preview.close());
+   preview.addEventListener('click',event=>{if(event.target===preview)preview.close();});
+   document.body.append(preview);
+  }
+  const picture=preview.querySelector('img');picture.src='img/'+item.tooltip;picture.alt=item.name+' statistics';
+  preview.setAttribute('aria-label',item.name+' tooltip');preview.showModal();
+ }
  function renderMarket() {
   const list = document.getElementById('market-list');
   list.replaceChildren();
@@ -493,6 +505,12 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
    const row = document.createElement('article');
    row.className = 'market-item';
    row.innerHTML = `<div class="market-item-icon" aria-hidden="true">${item.symbol}</div><div class="market-item-copy"><h3>${escapeHtml(item.name)}</h3><small>${escapeHtml(item.stats)}</small><p>${item.mine ? 'Your listing' : 'Seller: ' + escapeHtml(item.seller)} <span class="market-server">&#183; ${escapeHtml(item.server)}</span></p><strong>${item.price} ${item.rune}</strong></div>`;
+   if(item.tooltip){
+    const heading=row.querySelector('h3'),nameButton=document.createElement('button');
+    nameButton.type='button';nameButton.className='market-name-button';nameButton.textContent=item.name;
+    nameButton.setAttribute('aria-label','View '+item.name+' tooltip');
+    nameButton.addEventListener('click',()=>previewMarketItem(item));heading.replaceChildren(nameButton);
+   }
    const action = document.createElement('button');
    action.type = 'button'; action.className = 'mini-control';
    action.textContent = item.mine ? 'Unlist' : 'Visit Shop';
