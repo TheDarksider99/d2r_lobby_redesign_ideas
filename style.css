@@ -1,0 +1,328 @@
+:root{--gold:#b8a16b;--line:#61533c;--blue:#75c5f7;--panel:#111214;--text:#e6e3de}*{box-sizing:border-box}body{margin:0;background:#050506;color:var(--text);font:14px Georgia,'Times New Roman',serif}.screen{width:min(100vw,177.37vh);aspect-ratio:1646/928;margin:auto;position:relative;background:radial-gradient(ellipse at 50% 105%,#1d2117 0%,#090909 35%,#090a0b 75%);border:6px ridge #353637;overflow:hidden}.upper{position:absolute;inset:1.2% 5.9% 1.2% 5.9%;display:grid;grid-template-columns:38% 20% 38%;gap:2%;}.panel{min-width:0;background:linear-gradient(135deg,#222326,#0b0b0d 10%,#121316 55%,#070708);border:5px ridge #3c3c3b;box-shadow:inset 0 0 0 3px #080809,inset 0 0 0 5px #5b5140,0 0 12px #000;padding:15px;display:flex;flex-direction:column;gap:9px}.bevel{border:3px ridge #5c513b;background:#101113;box-shadow:inset 0 0 12px #000}.chat-toolbar{display:flex;gap:5px;height:37px;min-width:0}.chat-toolbar select{min-width:0;flex:1;background:#111214;color:#e1d7bd;border:3px ridge #5c513b;font:14px Georgia;padding:2px}.chat-toolbar select:first-child{flex:1.1}.chat-toolbar select:nth-child(2){flex:.95}.chat-toolbar #system-toggle{flex:0 0 auto;white-space:nowrap;font:11px Georgia;padding:0 5px}.chat-log.hide-system .system-notice{display:none}.chat-log .word-filtered{display:none}.chat-toolbar #chat-filter-toggle{flex:0 0 auto;font:11px Georgia;padding:0 5px;white-space:nowrap}.chat-filter-panel{display:none;border:2px ridge #5c513b;background:#101113;padding:7px;flex-direction:column;gap:5px}.chat-filter-panel.open{display:flex}.chat-filter-panel[hidden]{display:none!important}.chat-filter-panel label{font:12px Georgia;color:#c3ad70}.chat-filter-panel textarea{resize:vertical;min-height:52px;max-height:130px;width:100%;background:#080808;border:2px ridge #574b35;color:#ddd;padding:6px;font:12px Arial}.chat-filter-panel small{font:11px Arial;color:#aaa}.lobby-title{height:37px;text-align:center;font:20px Arial;padding:5px}.chat-log{flex:1;overflow:auto;padding:12px 9px;font:clamp(10px,1.2vw,19px)/1.68 Arial;background:#060607}.chat-log p{margin:0 0 4px}.purple{color:#a54cff}.blue{color:var(--blue)}.yellow{color:#c6aa54}.chat-input{height:44px;display:flex;gap:5px}.chat-input input{flex:1;min-width:0;background:#080808;color:#ddd;border:3px ridge #574b35;padding:8px;font:16px Arial}.btn{background:linear-gradient(#303031,#111113 60%,#252525);color:#ddd;border:3px ridge #6b5a3a;letter-spacing:2px;font:small-caps 15px Georgia;cursor:pointer;padding:7px 12px}.btn:hover,.tab:hover{filter:brightness(1.4)}.middle{position:relative;min-width:0;display:flex;flex-direction:column;align-items:center}.logo{font-size:clamp(17px,3.2vw,49px);font-weight:bold;letter-spacing:3px;color:#ff8c2a;text-shadow:0 0 6px #f20,0 0 18px #b20;margin-top:6%;text-align:center}.logo small{display:block;font:clamp(6px,.65vw,12px) Georgia;letter-spacing:4px;color:#a58a68}.character-stage{position:absolute;top:21%;bottom:21%;left:1%;right:1%;border:4px ridge #49453f;background:radial-gradient(ellipse at 50% 70%,#2b2b29,#09090b 65%);display:flex;justify-content:center;align-items:center}.silhouette{font-size:clamp(60px,13vw,200px);filter:grayscale(1) brightness(.65);opacity:.8}.char-name{position:absolute;bottom:13%;width:100%;text-align:center;background:#090909;border:3px ridge #6c5934;padding:6px 0;color:#d5b768;letter-spacing:2px;font-size:clamp(10px,1vw,16px)}.char-name small{display:block;color:#fff;font-size:11px}.ornament{position:absolute;bottom:0;border:5px ridge #504631;border-radius:50%;height:12%;aspect-ratio:1;display:grid;place-items:center;background:radial-gradient(circle,#15539e 10%,#171719 15%,#4d4635 20%,#070707 70%);font-size:24px}.right{gap:7px}.tabs{display:flex;height:37px}.tab{flex:1;color:#bfb7a4;background:linear-gradient(#252629,#09090a);border:2px ridge #4b4538;font:small-caps 14px Georgia;letter-spacing:1px;cursor:pointer}.tab.active{color:white;background:#171719;border-bottom:2px solid #a68d58}.fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1.45fr);gap:7px}.description-field{min-width:0}.description-field input{width:100%;height:25px;background:#09090a;border:2px ridge #554a38;color:#ddd;padding:3px 5px}.difficulty-buttons{display:flex;gap:3px;height:25px}.difficulty-button{flex:1;min-width:0;padding:0 2px;font:small-caps 11px Georgia;letter-spacing:0;background:#18191a;color:#bba879;border:2px ridge #665639;cursor:pointer}.difficulty-button.active{background:#5a4727;color:#fff;border-color:#d0ad5f}.actions{display:flex;justify-content:center;gap:9px}.actions .btn{width:43%;min-height:43px}.field label,.filterline label{display:block;font-variant:small-caps;color:#c3ad70;letter-spacing:1.6px;font-size:13px;margin-bottom:3px}.field input,.filterline input,.filterline select{height:25px;width:100%;background:#09090a;border:2px ridge #554a38;color:#ddd;padding:3px 5px}.filterline{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:7px}.difficulty-controls{display:flex;align-items:end;gap:5px;min-width:0}.difficulty-controls .difficulty-select{display:none}.difficulty-controls .activity-select{flex:1;min-width:0}.difficulty-controls .activity-select select{width:100%}.difficulty-controls .difficulty-select select{width:100%}.mini-control{height:25px;min-width:25px;padding:0 5px;border:2px ridge #69583b;background:#18191a;color:#cbb782;cursor:pointer;font-size:14px}.mini-control[aria-pressed="true"]{background:#53452b;color:#fff;border-color:#d0ad5f}.mini-control[data-mode="non-tz"]{background:#343d48;color:#fff;border-color:#83a5c6}.mini-control:hover{filter:brightness(1.35)}.games-area{display:grid;grid-template-columns:60% 40%;gap:8px;min-height:0;flex:1}.games{overflow:auto;border:2px ridge #6a5a3e;background:#101113}.game-header,.game{display:grid;grid-template-columns:minmax(0,1fr) 59px 46px 42px 22px 19px;align-items:center;gap:3px;padding:3px 5px}.game-header span{cursor:pointer;user-select:none;white-space:nowrap;overflow:hidden;text-overflow:clip}.game-header span:hover{color:#fff}.game-header span.sorted{color:#f1d58c}.game-header{font-variant:small-caps;letter-spacing:1px;color:#c3bdad;font-size:12px}.game{border-bottom:1px solid #323235;font:12px monospace;cursor:pointer;white-space:nowrap}.game:hover,.game.selected{background:#3a3327}.game span:first-child{overflow:hidden;text-overflow:ellipsis}.gold{color:#bca466}.green{color:#55a936}.settings{border:2px ridge #69583b;background:#0b0b0d;text-align:center;padding:7px 4px;overflow:auto}.detail-tabs{display:flex;gap:3px;margin-bottom:12px}.detail-tab{flex:1;background:#171719;color:#b7a67d;border:2px ridge #5c503a;padding:5px 1px;cursor:pointer;font:small-caps 12px Georgia}.detail-tab.active{background:#3a3327;color:#fff}.settings h4{margin:0 0 16px;font:small-caps 14px Georgia;letter-spacing:2px}.settings p{font:small-caps 13px Georgia;letter-spacing:2px;color:#aaa;margin:12px 0}.settings strong{display:block;font-weight:normal;font-size:14px;color:#fff}.join{align-self:center;width:43%;min-height:43px}.exit{min-height:41px;margin-top:4px}.bottom{position:absolute;left:11%;right:11%;bottom:1%;height:20%;display:flex;align-items:end;justify-content:space-around;gap:1%;border-top:2px solid #4d412f}.hero{text-align:center;width:12%;height:94%;display:flex;flex-direction:column;justify-content:end;align-items:center}.hero .figure{font-size:clamp(30px,6vw,95px);line-height:1.3;filter:grayscale(.5);opacity:.85}.hero small{color:#b7aeb0;white-space:nowrap;font:small-caps clamp(6px,.65vw,11px) Georgia;letter-spacing:1px}.arrow{position:absolute;bottom:7%;font-size:30px;color:#c5ad74}.arrow.left{left:8%}.arrow.right{right:8%}@media(max-width:850px){.panel{padding:6px;gap:4px;border-width:3px}.chat-input{height:30px}.chat-input input{font-size:11px}.btn{padding:3px;font-size:10px;letter-spacing:0}.chat-toolbar{height:25px;gap:2px}.chat-toolbar select{font-size:9px;padding:0}.chat-toolbar #system-toggle,.chat-toolbar #chat-filter-toggle{font-size:8px;padding:0 2px}.lobby-title{height:25px;font-size:13px}.tabs{height:25px}.tab{font-size:9px}.field label,.filterline label{font-size:8px}.field input,.filterline input,.filterline select{height:18px;font-size:9px}.game{font-size:8px;padding:1px}.game-header{font-size:8px}.mini-control{height:18px;min-width:18px;padding:0 2px;font-size:10px}.game-header,.game{grid-template-columns:minmax(0,1fr) 42px 29px 29px 12px 10px}.settings p{font-size:8px;margin:5px 0}.settings strong{font-size:9px}.settings h4{font-size:9px;margin-bottom:6px}.actions .btn{min-height:22px}.difficulty-button{font-size:7px}.difficulty-buttons,.description-field input{height:18px}.exit{min-height:20px}.char-name{padding:3px}.char-name small{font-size:7px}}
+ .full-players{color:#858585}
+
+/* Player context menu: anchored near right-click position, with a visible Battle.net ID. */
+#player-context{position:fixed;z-index:1000;display:none;width:215px;background:#111113;border:3px ridge #6b5a3a;box-shadow:0 8px 22px #000;color:#d5bb7c;font:small-caps 13px Georgia;letter-spacing:1.2px}
+#player-context.open{display:block}#player-context .player-account{padding:9px 8px;text-align:center;color:#e3dfd5;background:#252527;border-bottom:1px solid #67563b;letter-spacing:1px;font:12px Georgia;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#player-context button{display:block;width:100%;border:0;border-bottom:1px solid #393839;background:#19191b;color:#c9a96b;padding:7px 5px;font:small-caps 13px Georgia;letter-spacing:2px;cursor:pointer}#player-context button:hover{background:#3b3328;color:#fff}
+#chat .player-name{cursor:context-menu}#chat .player-name:hover{text-decoration:underline}
+
+[hidden]{display:none!important}
+/* v1.19: Server above the Lobby/Friends tabs; channel and chat actions below tabs. */
+.server-row{display:flex;justify-content:flex-end;align-items:center;gap:7px;min-height:27px;color:#c3ad70;font:small-caps 12px Georgia}.server-row select{width:105px;height:25px;background:#111214;color:#e1d7bd;border:2px ridge #5c513b;font:12px Georgia;padding:1px}.chat-section-tabs{display:flex;height:34px;gap:3px}.chat-section-tab{flex:1;background:linear-gradient(#252629,#09090a);border:2px ridge #4b4538;color:#bfb7a4;font:small-caps 15px Georgia;letter-spacing:1px;cursor:pointer}.chat-section-tab.active{background:#29251e;color:white;border-bottom-color:#a68d58}.chat-actions{display:flex;gap:5px;min-height:31px}.chat-actions select{min-width:0;flex:1;background:#111214;color:#e1d7bd;border:2px ridge #5c513b;font:13px Georgia}.chat-actions .mini-control{font:11px Georgia;white-space:nowrap;padding:0 6px}.friends-panel{flex:1;min-height:0;overflow:auto;padding:10px;background:#101116;font:14px Arial}.friends-panel[hidden]{display:none!important}.friend-group{margin-bottom:15px}.friend-group-title{background:none;border:0;color:#d5d4dd;font:15px Arial;cursor:pointer;text-align:left;padding:6px 2px;width:100%}.triangle{margin-right:6px}.friend-items{display:flex;flex-direction:column;gap:6px}.friend{display:flex;align-items:center;gap:10px;min-height:55px;padding:4px 2px}.avatar{display:grid;place-items:center;width:43px;height:43px;flex:none;border-radius:50%;background:#292d33;font-size:23px}.friend>div{min-width:0;flex:1}.friend-name{color:#85c2ff;font-size:15px;white-space:nowrap}.friend small{display:block;color:#c7c5cc;margin-top:4px;font-size:12px}.favorite-star{color:#ffc02f}.online{width:12px;height:12px;border-radius:50%;background:#6edb00;flex:none}.away{color:#ffc02f;font-size:20px;flex:none}@media(max-width:850px){.server-row{min-height:18px;font-size:9px}.server-row select{height:18px;width:75px;font-size:9px}.chat-section-tabs{height:23px}.chat-section-tab{font-size:10px}.chat-actions{min-height:21px;gap:2px}.chat-actions select,.chat-actions .mini-control{font-size:8px}.friends-panel{padding:4px}.friend-group-title{font-size:10px}.friend{min-height:35px;gap:4px}.avatar{width:25px;height:25px;font-size:13px}.friend-name{font-size:10px}.friend small{font-size:8px}}
+#friend-context{position:fixed;z-index:1100;display:none;width:205px;background:#141416;border:2px ridge #756345;box-shadow:0 8px 24px #000b;color:#d8c29b;font:12px Georgia}#friend-context.open{display:block}#friend-context .friend-account{text-align:center;padding:9px;background:#272729;color:#eee0c1;border-bottom:1px solid #554936}#friend-context button{display:block;width:100%;padding:8px 7px;background:linear-gradient(#28282a,#111113);border:0;border-bottom:1px solid #3e3930;color:#c6a56b;cursor:pointer;font:small-caps 12px Georgia;letter-spacing:.5px}#friend-context button:hover{background:#453b2b;color:#fff}#friend-context button[hidden]{display:none}.friend{cursor:context-menu}.friend-note{color:#c9a667!important;font-style:italic}
+
+/* v1.21: compact original-style create-game settings */
+.create-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 14px;padding:7px 9px;background:#101012;border:2px ridge #584c38;color:#c9b681;font-variant:small-caps;letter-spacing:.8px;font-size:11px}.create-option{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}.create-option label{white-space:nowrap}.create-option input[type=number]{width:43px;min-width:0;height:22px;background:#09090a;border:2px ridge #62523b;color:#ddd;text-align:center}.create-option input[type=checkbox]{accent-color:#a98b4f;width:15px;height:15px;vertical-align:middle}.create-option input:disabled{opacity:.35}.create-option .check-label{cursor:pointer}.create-option:nth-child(5){grid-column:1/-1}@media(max-width:850px){.create-options{font-size:8px;gap:2px 6px;padding:4px}.create-option input[type=number]{width:32px;height:18px}.create-option input[type=checkbox]{width:12px;height:12px}}
+/* v1.22: creation settings in left column, free-form description on right */
+.creation-layout{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:stretch;margin:6px 0 8px;min-height:150px}
+.creation-layout .create-options{display:flex;flex-direction:column;gap:5px;margin:0;padding:9px}
+.creation-layout .create-option{min-height:22px}
+.creation-layout .description-field{display:flex;flex-direction:column;min-width:0;margin:0}
+.creation-layout .description-field input{width:100%;flex:1;min-height:80px;align-self:stretch}
+@media(max-width:800px){.creation-layout{gap:5px}.creation-layout .create-options{padding:5px}.creation-layout .create-option{font-size:10px}}
+
+/* v1.24: One collapsible Game Settings boundary encloses both settings and description. */
+.game-settings-group{border:2px ridge #685c49;background:#101012;padding:0 9px 8px;min-width:0;margin:5px 0 8px}
+.game-settings-group>summary{cursor:pointer;color:#d3b77a;font:small-caps 13px Georgia;letter-spacing:1.4px;padding:7px 2px;user-select:none}
+.game-settings-group>summary:hover{color:#f4d998}
+.game-settings-group .creation-layout{margin:0;min-height:150px}
+.game-settings-group .create-options{border:0;background:transparent;padding:4px 5px}
+.game-settings-group .description-field input{border:2px solid #858585;background:#09090a;color:#ddd}
+@media(max-width:850px){.game-settings-group{padding:0 4px 4px}.game-settings-group>summary{font-size:9px;padding:3px}.game-settings-group .creation-layout{min-height:95px}}
+.creation-layout .create-options select{width:100px;max-width:55%;background:#111;color:#d8c9a2;border:1px solid #665a46;font-size:11px;padding:3px}.creation-layout .create-options .create-option{display:flex;align-items:center;justify-content:space-between;gap:6px}.creation-layout .create-options .create-option .check-label{flex:1}/* Activity colors apply to both Game Name and Activity cells. Farming retains the original white. */
+.game .activity-farming{color:#e6e3de}
+.game .activity-quest{color:#69b8ff}
+.game .activity-pvp{color:#ed7777}
+.game .activity-trading{color:#d4a3f5}
+
+/* v1.29 Character selection tab inspired by original D2R roster. */
+.characters-panel{flex:1;min-height:0;display:flex;flex-direction:column;background:#111113;padding:8px;overflow:hidden}
+.character-tabs{display:flex;flex:none;gap:3px}.character-mode{flex:1;background:#19191b;color:#bca46d;border:2px ridge #665537;padding:8px 3px;font:small-caps 12px Georgia;cursor:pointer}.character-mode.active{color:#f0d9a0;border-color:#c59a45;background:#2a261d}
+.character-roster{flex:1;min-height:0;overflow-y:auto;border:2px ridge #63563e;background:#1b1b1d;padding:4px}
+.character-entry{display:flex;flex-direction:column;align-items:flex-start;width:100%;min-height:64px;background:linear-gradient(110deg,#29292b,#171719);border:1px solid #494540;border-bottom:2px solid #514d46;color:#e1d7c4;padding:10px 9px;text-align:left;cursor:pointer;font:small-caps 15px Georgia;letter-spacing:1px}
+.character-entry.selected{border:1px solid #c7a35c;background:#35322e}.character-entry small{font-size:11px;color:#bda56c;margin-top:5px}.character-footer{flex:none;display:flex;flex-direction:column;align-items:center;gap:9px;padding:10px 0 2px}.character-footer #new-character{width:75%;min-height:35px}.character-tools{display:flex;gap:14px}.character-tools .btn{min-width:43px}
+@media(max-width:850px){.characters-panel{padding:3px}.character-mode{font-size:9px;padding:4px}.character-entry{min-height:42px;font-size:10px;padding:5px}.character-entry small{font-size:8px}.character-footer{padding:4px;gap:3px}}
+/* v1.30 roster sorting and drag handle */
+.character-sortbar{display:flex;align-items:center;gap:6px;padding:5px 2px;color:#bca46d;font:small-caps 12px Georgia}.character-sortbar select{flex:1;min-width:0;background:#141416;color:#e1d7c4;border:2px ridge #665537;padding:4px}.character-sortbar button{background:#232326;color:#d6ba7c;border:2px ridge #665537;cursor:pointer;padding:3px 9px}.character-entry{position:relative;padding-left:35px}.character-drag{position:absolute;left:5px;top:50%;transform:translateY(-50%);cursor:grab;touch-action:none;color:#b9a57c;font:18px Arial;letter-spacing:0;padding:6px 4px}.character-drag:active{cursor:grabbing}.character-entry.dragging{opacity:.4}.character-entry.drag-over{outline:2px solid #c7a35c;outline-offset:-2px}
+
+/* Offline mode: dim the right-side controls while retaining Create Game. */
+body.offline-character .right .tabs,
+body.offline-character .right .fields,
+body.offline-character .right .game-settings-group,
+body.offline-character .right .filterline,
+body.offline-character .right .games-area,
+body.offline-character .right #join-game,
+body.offline-character .right .exit { opacity:.36; pointer-events:none; }
+body.offline-character .right .games-area #game-list { display:none; }
+body.offline-character .right #create-game { opacity:1; pointer-events:auto; }
+
+/* v1.32: Offline play still permits choosing difficulty and Terrorized when creating a game. */
+body.offline-character .right .fields,
+body.offline-character .right .game-settings-group {opacity:1;pointer-events:auto}
+body.offline-character .right .fields input {opacity:.36;pointer-events:none}
+body.offline-character .right .game-settings-group .creation-layout {pointer-events:none}
+body.offline-character .right .game-settings-group .creation-layout input,
+body.offline-character .right .game-settings-group .creation-layout select {opacity:.36;pointer-events:none}
+body.offline-character .right .game-settings-group #terrorized {opacity:1;pointer-events:auto}
+body.offline-character .right .game-settings-group label:has(#terrorized) {pointer-events:auto;opacity:1}
+
+
+/* v1.33: typed DELETE confirmation before native browser confirmation. */
+.delete-dialog {border:1px solid #85704d;background:#171719;color:#e4d5b5;padding:22px;width:min(390px,calc(100vw - 40px));box-shadow:0 16px 60px #000b;}
+.delete-dialog::backdrop {background:rgba(0,0,0,.75)}
+.delete-dialog h3{margin:0 0 12px;color:#d7b779;font-variant:small-caps;letter-spacing:2px}
+.delete-dialog p{line-height:1.5;margin:0 0 12px}
+.delete-dialog input{width:100%;box-sizing:border-box;background:#09090a;border:1px solid #777;color:white;padding:9px;margin:6px 0 16px}
+.delete-dialog .delete-buttons{display:flex;justify-content:flex-end;gap:10px}
+.delete-dialog button{padding:8px 14px;background:#2c2a28;border:1px solid #766747;color:#e5d5b3;cursor:pointer}
+.delete-dialog button:disabled{opacity:.35;cursor:not-allowed}
+/* v1.38: Compact main-menu actions on the server toolbar. */
+.server-row{justify-content:space-between;flex-wrap:wrap}
+.server-menu-actions{display:flex;align-items:center;gap:4px;min-width:0}
+.server-menu-actions .mini-control{font:small-caps 10px Georgia;padding:3px 6px;white-space:nowrap;cursor:pointer}
+.server-location{display:flex;align-items:center;gap:6px;margin-left:auto}
+@media(max-width:1100px){.server-menu-actions{gap:2px}.server-menu-actions .mini-control{font-size:8px;padding:2px 3px}}
+.recent-deleted{border-top:1px solid #716345;margin:5px 4px 0;padding:7px 5px;max-height:150px;overflow-y:auto;background:rgba(12,12,13,.65)}
+.recent-deleted-title{color:#c8a875;font-variant:small-caps;letter-spacing:1.2px;font-size:13px;margin-bottom:5px}
+.deleted-character-entry{display:flex;flex-direction:column;padding:5px 8px;margin-bottom:3px;border:1px solid #4b4741;color:#858585;background:#1a1a1b;font-size:13px}
+.deleted-character-entry small{font-size:11px;color:#777}
+.recent-deleted-title .delete-warning{display:inline-flex;align-items:center;justify-content:center;margin-left:6px;width:16px;height:16px;border:1px solid #a98950;border-radius:50%;color:#d6b677;font-size:11px;cursor:help;vertical-align:middle}
+.deleted-character-entry{flex-direction:row;align-items:center;justify-content:space-between;gap:8px}
+.deleted-character-entry .deleted-info{display:flex;flex-direction:column;min-width:0}
+.restore-character{border:1px solid #8a744d;background:#28251e;color:#e1c38a;padding:5px 8px;cursor:pointer;font:small-caps 12px Georgia;white-space:nowrap}
+.restore-character:hover{background:#453824;border-color:#d5af6c}
+/* v1.43 game age filter */
+.age-filter-wrap{position:relative;display:inline-flex;align-items:center;min-width:0}
+.age-filter-panel{position:absolute;z-index:80;right:0;top:calc(100% + 6px);width:235px;padding:12px;background:#171719;border:2px ridge #8c7447;box-shadow:0 8px 22px #000c;color:#d9c89e;font:12px Georgia}
+.age-filter-panel[hidden]{display:none!important}
+.age-filter-panel label{display:block;margin-bottom:7px}
+.age-filter-inputs{display:flex;gap:6px;margin-bottom:10px}
+.age-filter-inputs input{width:70px;min-width:0}
+.age-filter-inputs select{flex:1;min-width:0}
+.age-filter-inputs input,.age-filter-inputs select{background:#0c0c0e;color:#e4ddcb;border:1px solid #706044;padding:6px;font-size:12px}
+.age-filter-panel .age-filter-check{display:flex;align-items:center;gap:6px;cursor:pointer}
+.age-filter-panel small{display:block;color:#a69a83;line-height:1.4}
+#age-filter-toggle.age-active{border-color:#c7a35c;color:#f1d08a}
+
+/* v1.44: Item market and seller shop concept. */
+.market-panel{flex:1;min-height:0;overflow:auto;padding:12px;background:#0c0d10;font:12px Georgia}
+.market-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#bca466}
+.market-heading h2{font:small-caps 20px Georgia;margin:0;color:#e2c783}
+.market-intro{color:#aaa;line-height:1.5;margin:8px 0}
+.market-wallet{border:1px solid #61533c;padding:9px;color:#e0c47e;background:#242016;margin-bottom:12px}
+.market-search-label{display:block;color:#bca466;margin-bottom:4px}
+.market-panel input,.market-panel select{width:100%;background:#09090a;color:#ddd;border:1px solid #61533c;padding:6px;min-width:0}
+.market-list{margin:10px 0;display:flex;flex-direction:column;gap:7px}
+.market-item{display:flex;align-items:center;gap:9px;padding:10px 7px;background:linear-gradient(110deg,#252321,#111214);border:1px solid #514735}
+.market-item-icon{font-size:28px;color:#c6ad70;flex:none;width:35px;text-align:center}
+.market-item-copy{flex:1;min-width:0}.market-item h3{margin:0 0 5px;color:#cfb36c;font-size:14px}.market-item small{color:#91a9cd;line-height:1.4}.market-item p{margin:5px 0;color:#aaa;font-size:11px}.market-item strong{color:#d6bf84}
+.market-item .mini-control{font:11px Georgia;height:auto;padding:7px;max-width:80px}
+.market-listing,.market-inventory{border-top:1px solid #514735;padding-top:10px;margin-top:12px;color:#cdb477}
+.market-listing summary,.market-inventory summary{cursor:pointer}.market-listing form{display:grid;gap:7px;margin-top:10px}.market-price-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}.market-price-fields label{display:grid;gap:4px}.market-listing .btn{font-size:12px;letter-spacing:1px}.market-status{color:#a7b99b;line-height:1.5}
+.market-shop{width:min(480px,calc(100vw - 32px))}.market-location{color:#9e8b64;font-size:10px;letter-spacing:3px;margin-bottom:10px}.market-scene{display:flex;justify-content:space-around;align-items:center;height:120px;border:2px ridge #6b5a3a;background:radial-gradient(ellipse at bottom,#3c3222,#090a0d 75%);color:#cbb271;font-size:28px}.market-scene span:nth-child(2){font-size:65px;text-shadow:0 0 20px #987743}.market-stash-title{text-align:center;color:#aa956b;font-variant:small-caps;margin-top:8px!important}#market-offer{border:1px solid #534835;padding:14px;background:#0c0c0e}#market-offer h4{margin:0 0 8px;color:#d9bd75;font-size:19px}#market-offer p{color:#91a9cd}#market-purchase-status{margin-top:14px;color:#b9c7a9;min-height:44px;font-size:13px}.market-shop button:disabled{opacity:.45}
+@media(max-width:850px){.market-panel{padding:6px;font-size:10px}.market-heading h2{font-size:14px}.market-item{padding:6px;gap:5px}.market-item-icon{width:20px;font-size:20px}.market-item h3{font-size:11px}.market-item .mini-control{font-size:9px;max-width:60px}.market-intro{margin:5px 0}.market-wallet{padding:6px}}
+
+/* v1.45: Screenshot-based game scene, interactive shop, and inventory. */
+#market-shop{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;padding:0;border:0;background:#030303;color:#e4d5b5;overflow:auto}
+#market-shop[open]{display:grid;place-items:center}
+.shop-game-stage{position:relative;width:min(100vw,186.97dvh);aspect-ratio:3831/2049;isolation:isolate;overflow:hidden;background:#080909}
+.shop-area-image{display:block;width:100%;height:100%;object-fit:contain}
+.shop-game-header{position:absolute;z-index:4;top:2%;left:2%;right:2%;display:flex;align-items:start;justify-content:space-between;gap:10px;pointer-events:none}
+.shop-game-header>div{padding:10px 15px;background:#080909dd;border:1px solid #645638;text-shadow:0 2px 3px #000}
+.shop-game-header h3{margin:5px 0 0;font-size:clamp(12px,1.5vw,24px)}
+.shop-game-header button{pointer-events:auto}
+.shop-stash-hotspot{position:absolute;left:30.5%;top:21%;width:9%;height:9%;border:1px solid #d7bc7299!important;background:#32271466!important;box-shadow:0 0 20px #d7a85055;color:#f4dfaa!important;cursor:pointer;text-shadow:0 2px 3px #000}
+.shop-stash-hotspot span,.shop-stash-hotspot small{display:block;font:small-caps clamp(10px,1.4vw,23px) Georgia}.shop-stash-hotspot small{font-size:clamp(9px,.9vw,15px);margin-top:5px;color:#eee}
+.shop-stash-hotspot:hover,.shop-stash-hotspot:focus-visible{background:#745923aa!important;outline:2px solid #e4c580}
+.shop-arrival{position:absolute;bottom:19%;left:25%;right:25%;padding:12px;background:#080909dd;border:1px solid #645638;text-align:center;font-size:clamp(10px,1vw,17px)}
+.shop-trade-view{position:absolute;z-index:3;inset:12% 1.5% 5%;display:flex;justify-content:space-between;align-items:center;gap:1%;background:transparent}
+.shop-image-panel{position:relative;flex:none;width:33%;max-height:100%;aspect-ratio:1108/1430;align-self:center}
+.shop-image-panel>img{display:block;width:100%;height:auto;pointer-events:none}
+.shop-inventory-panel{aspect-ratio:1096/1468}
+.shop-image-close{position:absolute;right:1%;top:.7%;width:5%;height:3.5%;padding:0!important;background:transparent!important;border:0!important;color:transparent!important;cursor:pointer}
+.shop-image-close:hover,.shop-image-close:focus-visible{outline:2px solid #e4c580;background:#f3c87133!important}
+.shop-inspection{display:flex;flex-direction:column;align-items:stretch;gap:7px;width:29%;max-height:100%;overflow:auto;padding:10px;background:#090909ed;border:2px ridge #6b5a3a;box-shadow:0 5px 25px #000;text-align:center}
+.shop-inspection .market-stash-title{margin:0!important;font-size:12px;letter-spacing:2px}
+.shop-inspection #market-offer{padding:8px}.shop-inspection #market-offer h4{font-size:clamp(12px,1.1vw,19px)}
+#shop-item-tooltip{display:block;width:100%;max-height:40vh;object-fit:contain;background:#060606}
+.shop-tooltip{margin:0;background:#060606;border:1px solid #645638}.shop-tooltip figcaption{padding:9px;color:#dfc57b;font-size:clamp(11px,1vw,16px)}
+.shop-inventory-rune{position:absolute;object-fit:contain;padding:2px;filter:drop-shadow(0 2px 2px #000)}
+.shop-inspection #market-purchase-status{min-height:0;margin:0;font-size:clamp(10px,.85vw,14px);line-height:1.4}
+.shop-inspection .btn{font-size:clamp(10px,1vw,16px);letter-spacing:1px}
+.shop-item-hotspot{position:absolute;background:transparent!important;border:1px solid transparent!important;display:flex;align-items:end;justify-content:center;padding:2px!important;font:clamp(8px,.8vw,13px) Georgia;color:#f5df9a!important;text-shadow:0 1px 3px #000,1px 0 3px #000;cursor:pointer}
+.shop-item-hotspot:hover,.shop-item-hotspot.selected,.shop-item-hotspot:focus-visible{border-color:#dfc57b!important;background:#d7b94d22!important;box-shadow:inset 0 0 12px #e5c97144}
+.shop-item-hotspot.sold{background:#090909eb!important;color:#888!important}
+.shop-owned-item{position:absolute;background-repeat:no-repeat;border:1px solid #bfa463!important;padding:0!important;cursor:pointer}
+.shop-owned-item:hover,.shop-owned-item:focus-visible,.shop-owned-item.selected{outline:2px solid #f0d37e}
+.shop-game-wallet{position:absolute;left:9%;right:9%;bottom:8%;background:#090909ed;border:1px solid #66573a;text-align:center;color:#e0c47e;font-size:clamp(8px,.85vw,14px);padding:4px}
+@media(max-width:850px){.shop-game-header>div{padding:5px}.shop-game-header .market-location{font-size:7px;letter-spacing:1px}.shop-game-header button{font-size:9px;padding:5px}.shop-inspection{padding:5px;gap:4px}.shop-inspection #market-offer{padding:4px}.shop-inspection #market-offer strong{font-size:10px}.shop-inspection .market-stash-title{font-size:9px}.shop-inspection .mini-control{font-size:9px}.shop-arrival{padding:6px}.shop-game-wallet{padding:1px}}
+
+/* v1.52: Original screenshot textures, scoped to the lobby. Frame image
+   centers are deliberately omitted so original screenshot text never appears. */
+.screen {
+  --lobby-stone: url('assets/ui/stone-tile.png');
+  --lobby-frame: url('assets/ui/panel-frame.png');
+  --lobby-button: url('assets/ui/button-face.png');
+  --lobby-button-frame: url('assets/ui/button-frame.png');
+  background-color: #080909;
+  background-image: linear-gradient(#0005, #0009), var(--lobby-stone);
+  border: 6px ridge #42423c;
+  box-shadow: inset 0 0 0 2px #080808, inset 0 0 40px #000;
+}
+.screen::before, .screen::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 5.6%;
+  background: url('assets/ui/side-carving.png') center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+.screen::before { left: 0; }
+.screen::after { right: 0; transform: scaleX(-1); }
+.screen .panel {
+  background-color: #101010;
+  background-image: linear-gradient(90deg, #0005, transparent 40%, #0004), var(--lobby-stone);
+  border-image: var(--lobby-frame) 44 / 18px / 0 stretch;
+  box-shadow: inset 0 0 18px #000, 0 0 12px #000;
+}
+.screen .upper { grid-template-rows: minmax(0, 1fr); }
+.screen .upper > .panel { min-height: 0; }
+.screen :is(.bevel, .games, .settings, .character-roster, .game-settings-group) {
+  background-color: #0b0b0b;
+  background-image: linear-gradient(#0005, #0008), var(--lobby-stone);
+  border-color: #6a6046;
+  box-shadow: inset 0 0 12px #000, 0 1px 0 #aaa18b22;
+}
+.screen .chat-log {
+  background-image: linear-gradient(#0008, #0009), var(--lobby-stone);
+}
+.screen :is(.btn, .tab, .chat-section-tab, .character-mode, .detail-tab, .mini-control) {
+  background-color: #24231f;
+  background-image: linear-gradient(#ffffff0a, #0003 45%, #0009), var(--lobby-button);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  border-style: solid;
+  border-color: #6d6046;
+  text-shadow: 0 2px 2px #000;
+  box-shadow: inset 0 1px 0 #b6afa14a, inset 0 -1px 2px #000, 0 1px 3px #0008;
+}
+.screen .btn {
+  border-image: var(--lobby-button-frame) 12 / 5px / 0 stretch;
+}
+.screen :is(.tab, .chat-section-tab, .character-mode, .detail-tab).active,
+.screen .mini-control[aria-pressed='true'] {
+  background-image: linear-gradient(#aa8a403d, #0002 45%, #0007), var(--lobby-button);
+  border-color: #b0985e;
+  color: #f1dfb1;
+  box-shadow: inset 0 -2px 0 #a78d55, inset 0 1px 0 #d3bc7959, 0 1px 3px #000;
+}
+.screen .mini-control[data-mode='non-tz'] {
+  background-image: linear-gradient(#6085a94d, #0005), var(--lobby-button);
+  border-color: #83a5c6;
+}
+.screen .panel :is(input, select, textarea) {
+  background-image: linear-gradient(#000a, #000b), var(--lobby-stone);
+  background-color: #090909;
+  box-shadow: inset 0 2px 5px #000, 0 1px 0 #aaa18b22;
+}
+.screen select option { background: #151412; color: #e1d7bd; }
+.screen .game-settings-group .description-field input {
+  background-image: linear-gradient(#000a, #000b), var(--lobby-stone);
+}
+.screen .character-entry {
+  background-image: linear-gradient(100deg, #ffffff08, #0006), var(--lobby-stone);
+  border-color: #47453d;
+  box-shadow: inset 0 1px 0 #aaa18b14;
+}
+.screen .character-entry.selected {
+  background-image: linear-gradient(100deg, #a68c4945, #4c42292b), var(--lobby-stone);
+  border-color: #c7a35c;
+  box-shadow: inset 0 0 12px #b8a16b22;
+}
+.screen .game-header {
+  background: linear-gradient(#ffffff08, #0005);
+  border-bottom: 1px solid #7a6b454d;
+}
+.screen .game { border-bottom-color: #6c665b40; }
+.screen .game:hover, .screen .game.selected {
+  background: linear-gradient(90deg, #b4a87b38, #6b624a24);
+  box-shadow: inset 0 1px 0 #c7b98938, inset 0 -1px 0 #c7b98925;
+}
+.screen .character-stage {
+  background-image: radial-gradient(ellipse at 50% 85%, #3d372b33, #000b 80%), var(--lobby-stone);
+  border-image: var(--lobby-frame) 44 / 10px / 0 stretch;
+  box-shadow: inset 0 0 35px #000;
+}
+.screen .char-name {
+  background-image: linear-gradient(#000a, #000a), var(--lobby-stone);
+  border-image: var(--lobby-button-frame) 12 / 5px / 0 stretch;
+}
+.screen .ornament {
+  border: 0;
+  background: url('assets/ui/blue-ornament.png') center / 106% 100% no-repeat;
+  font-size: 0;
+  box-shadow: 0 2px 8px #000;
+}
+.screen :is(.panel, .games, .settings, .character-roster, .friends-panel, .market-panel, .chat-log, .recent-deleted) {
+  scrollbar-color: #75623d #11110e;
+  scrollbar-width: thin;
+}
+@media(max-width:850px) {
+  .screen .panel { border-image-width: 10px; }
+  .screen .btn, .screen .char-name { border-image-width: 3px; }
+  .screen .character-stage { border-image-width: 6px; }
+}
+
+/* v1.53: The original center display supplies the title, gothic frame,
+   character preview, nameplate trim, and complete lower ornament. */
+.screen .middle {
+  background: url('assets/ui/center-panel.png') center / 100% 100% no-repeat;
+}
+.screen .middle .logo { visibility: hidden; }
+.screen .middle .character-stage {
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+.screen .middle .silhouette { visibility: hidden; }
+.screen .middle .char-name {
+  top: 75.4%;
+  bottom: auto;
+  left: 16%;
+  width: 68%;
+  height: 5.9%;
+  padding: 2px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #030303;
+  border: 0;
+  box-shadow: none;
+  color: #d5bf77;
+  font-size: clamp(10px, 1.1vw, 18px);
+  letter-spacing: 1.5px;
+}
+.screen .middle .char-name small {
+  font-size: clamp(7px, .68vw, 12px);
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+.screen .middle .ornament { visibility: hidden; }
+
+/* v1.54: Structural boundaries recede behind the brighter controls. */
+.screen { border-color: #292b28; }
+.screen :is(.bevel, .games, .settings, .character-roster, .game-settings-group) {
+  border-color: #39382f;
+  box-shadow: inset 0 0 12px #000, 0 1px 0 #aaa18b0d;
+}
+.screen .panel :is(input, select, textarea) { border-color: #514a38; }
+.screen .game-settings-group .description-field input { border-color: #46453e; }
+.screen .character-entry { border-color: #32312c; }
+.screen .character-entry.selected { border-color: #c7a35c; }
+.screen :is(.recent-deleted, .market-listing, .market-inventory, .market-item) {
+  border-color: #39372e;
+}
+.screen .game-header { border-bottom-color: #514c343d; }
+.screen .game { border-bottom-color: #514e452e; }
