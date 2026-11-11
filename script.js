@@ -63,11 +63,16 @@ function updateAgeFilter(){const active=ageFilterEnabled.checked;const n=Math.ma
 ageFilterToggle.addEventListener('click',()=>{ageFilterPanel.hidden=!ageFilterPanel.hidden;ageFilterToggle.setAttribute('aria-expanded',String(!ageFilterPanel.hidden));});
 [ageFilterValue,ageFilterUnit,ageFilterEnabled].forEach(el=>el.addEventListener('input',updateAgeFilter));
 document.addEventListener('click',event=>{if(!event.target.closest('.age-filter-wrap')){ageFilterPanel.hidden=true;ageFilterToggle.setAttribute('aria-expanded','false');}});
-document.getElementById('refresh').addEventListener('click',()=>{const now=Date.now();const delta=Math.floor((now-lastRefresh)/1000);if(delta>0){games.forEach(g=>{if(!g.demoShortTime)g.elapsedSeconds+=delta;});lastRefresh+=delta*1000;}render();const b=document.getElementById('refresh');b.textContent='✓';setTimeout(()=>b.textContent='⟳',550)});
+document.getElementById('refresh').addEventListener('click',()=>{
+ games=realmDefaultGames[activeRealm].map(game=>({...game}));
+ realmStates[activeRealm].games=games;
+ if(!games.some(game=>game.name===selectedName&&game.difficulty===selectedDifficulty))selectedName=games.find(game=>game.difficulty===selectedDifficulty)?.name||null;
+ lastRefresh=Date.now();render();const button=document.getElementById('refresh');button.textContent='\u2713';setTimeout(()=>button.textContent='\u27f3',550);
+});
 document.getElementById('level-difference').addEventListener('change',e=>{document.getElementById('level-difference-value').disabled=!e.target.checked;});
 let selectedDifficulty='Hell';
 document.querySelectorAll('.difficulty-button').forEach(button=>button.addEventListener('click',()=>{selectedDifficulty=button.dataset.difficulty;document.querySelectorAll('.difficulty-button').forEach(b=>b.classList.toggle('active',b===button));selectedName=games.find(g=>g.difficulty===selectedDifficulty)?.name||null;render();}));
-document.getElementById('create-game').addEventListener('click',()=>{const name=document.querySelector('.fields input').value.trim();if(!name){alert('Enter a game name first.');return;}const description=document.getElementById('game-description').value.trim();const existing=games.find(g=>g.name.toLowerCase()===name.toLowerCase());if(existing){alert('That game name already exists in the mock list.');return;}games.unshift({name,description,levelDifference:document.getElementById('level-difference').checked?Number(document.getElementById('level-difference-value').value):null,friendsJoining:document.getElementById('friends-joining').checked,itemSpacing:document.getElementById('item-spacing').checked,players:1,maxPlayers:Math.max(2,Math.min(8,Number(document.getElementById('max-players').value)||8)),elapsedSeconds:0,demoShortTime:true,tz:document.getElementById('terrorized').checked,ping:'green',activity:document.getElementById('create-activity').value,difficulty:selectedDifficulty});selectedName=name;render();});
+document.getElementById('create-game').addEventListener('click',()=>{const name=document.querySelector('.fields input').value.trim();if(!name){alert('Enter a game name first.');return;}const description=document.getElementById('game-description').value.trim();const existing=games.find(g=>g.name.toLowerCase()===name.toLowerCase());if(existing){alert('That game name already exists in the mock list.');return;}const isPrivate=document.getElementById('game-password').value.length>0;playJoinGameLoading(()=>{if(isPrivate)return;games.unshift({name,description,levelDifference:document.getElementById('level-difference').checked?Number(document.getElementById('level-difference-value').value):null,friendsJoining:document.getElementById('friends-joining').checked,itemSpacing:document.getElementById('item-spacing').checked,players:1,maxPlayers:Math.max(2,Math.min(8,Number(document.getElementById('max-players').value)||8)),elapsedSeconds:0,demoShortTime:true,tz:document.getElementById('terrorized').checked,ping:'green',activity:document.getElementById('create-activity').value,difficulty:selectedDifficulty});selectedName=name;render();});});
 document.getElementById('join-game').addEventListener('click',()=>{
  const name=document.getElementById('game-name').value.trim() || selectedName;
  const game=games.find(g=>g.name.toLowerCase()===name?.toLowerCase());
@@ -593,10 +598,11 @@ const realmChatSamples={
  ['Farming','PacificRunner','Split MF spots open: pits and tunnels available.']
  ]
 };
+const realmDefaultGames={America:games.map(game=>({...game}))};
 const realmStates={America:{games, messages:Array.from(chatLog.children)}};
 function buildRealm(server){
  const realmNames=realmGameNames[server];
- const realmGames=realmStates.America.games.slice(0,32).map((game,index)=>({...game,name:realmNames[index%realmNames.length]+(index>=realmNames.length?' '+(Math.floor(index/realmNames.length)+1):''),description:server==='Europe'?'Europe community runs, all welcome':'Asia community runs, all welcome',shopItem:undefined}));
+ const realmGames=realmDefaultGames.America.slice(0,32).map((game,index)=>({...game,name:realmNames[index%realmNames.length]+(index>=realmNames.length?' '+(Math.floor(index/realmNames.length)+1):''),description:server==='Europe'?'Europe community runs, all welcome':'Asia community runs, all welcome',shopItem:undefined}));
  ['Normal','Nightmare'].forEach(difficulty=>realmGames.push(...realmGames.slice(0,6).map(game=>({...game,name:difficulty+' '+game.name,difficulty}))));
  const samples=realmChatSamples[server];
  const messages=samples.map(([channel,character,text],index)=>{
@@ -607,6 +613,7 @@ function buildRealm(server){
   timestamp.dateTime=sentAt.toISOString();timestamp.textContent=String(sentAt.getHours()).padStart(2,'0')+':'+String(sentAt.getMinutes()).padStart(2,'0');
   return message;
  });
+ realmDefaultGames[server]=realmGames.map(game=>({...game}));
  return {games:realmGames,messages};
 }
 let activeRealm='America';
