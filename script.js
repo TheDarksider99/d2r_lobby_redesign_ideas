@@ -1,3 +1,11 @@
+// Cancel the browser menu before the custom chat/friend menu handlers run.
+// Include the menus themselves so repeated right-clicks cannot cover their actions.
+document.addEventListener('contextmenu', event => {
+ if(event.target instanceof Element && event.target.closest('#chat, #friends-panel, #player-context, #friend-context')){
+  event.preventDefault();
+ }
+}, {capture:true, passive:false});
+
 let openTradingShop = null;
 const names=['BØBECOW-15','7 PC8MB 4 LØ','DEADLYBAAL-30','ALL ACTS 96TZ-5','TZ ALL ID ALL','BRG 2 JAY GLØVE','BAALOS FOR GUL','BAALZI','PØØNBAALI','DUELS','PHØENIX MØN FT','NEEDTALSET','STAT RUN Ø2','96TZ ALL-Ø1'];
 const descriptions=['Cow runs, stay together','Ist for Java skiller','Baal runs, throne open','Tomb reserved for host','96 TZ rotations, all welcome','Bring 2 Jah for gloves','Baal runs for Gul','Questing, need help with Act 2','Open Baal runs','PvP duels, no potions','Looking for Phoenix Monarch','Trade Tal set for runes','Act 5 quests, help welcome','TZ farm, split MF'];
