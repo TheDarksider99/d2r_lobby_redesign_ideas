@@ -1,4 +1,4 @@
-# D2R Lobby Design — v1.55
+# D2R Lobby Design — v1.72
 
 A standalone, browser-based Diablo II: Resurrected lobby UI/UX prototype. This project is a visual and interaction demonstration, not a Battle.net integration.
 
@@ -24,7 +24,7 @@ Open `index.html` in Chrome or Edge. No dependencies or build tools are required
 ## Development rules
 
 - Preserve all existing functionality and layout unless explicitly requested otherwise.
-- Continue project versioning from **v1.55** (next revision: **v1.56**).
+- Continue project versioning from **v1.72** (next revision: **v1.73**).
 - Keep the historical project-rule comments in `index.html` and update them for future changes.
 - Keep the three core files (`index.html`, `style.css`, `script.js`) unless a future change warrants further organization.
 - Use relative file paths so the site works on GitHub Pages and locally.
@@ -51,3 +51,19 @@ Trading games advertise the eight shop items and their rune prices. Select one a
 The lobby now uses textures cropped from the supplied original lobby screenshot. Carved frames and gold button borders use CSS border-image without their screenshot centers; live interface text remains separate. The shop scene retains its existing artwork.
 
 The center display uses the original screenshot's Diablo title, character frame, Barbarian preview, and full bottom ornament. Its selected-character name, level, and class remain live. The Barbarian artwork is a static placeholder shared by all selections.
+
+Online characters browse separate Hardcore/Softcore and Ladder/Non-Ladder game populations sampled from the existing pool per server. Characters with matching modes share the same games; difficulty and filters still apply. New public games belong to the selected character mode.
+
+Standard (Softcore) Ladder has 30 sample games per difficulty on each server, before search and filters.
+
+Level 99 characters have a gold portrait halo and laurel accents around level and class. The card border continues to indicate selection.
+
+Level 99 decoration uses the transparent img/profile.png portrait frame and img/left_dec.png and img/right_dec.png laurels around the level/class labels. Card dimensions and text sizes match the standard roster entries.
+
+Level 99 level and class text have outward-flowing gold and violet gradients. Reduced-motion preferences disable the animation.
+
+The narrower Game Details panel combines elapsed time, level restrictions, description, and players. Item Spacing is omitted from these details; the game list takes three quarters of the available width.
+
+The TZ filter uses img/tz.png: gray shows all games, full color shows TZ only, and a red slash shows no TZ. Clicking cycles through these states.
+
+The age filter uses an icon-only stopwatch: gray when off and gold when enabled. Hover shows the current threshold; clicking opens the age settings.

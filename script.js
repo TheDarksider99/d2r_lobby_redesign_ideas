@@ -49,33 +49,74 @@ lowerDifficultyGames.forEach(([name,difficulty,activity,players,maxPlayers,elaps
 games.forEach(g=>{g.difficulty ||= 'Hell';g.players=Math.min(g.players,g.maxPlayers)});
 // Show a few full games in the visual mock list.
 games[2].maxPlayers=8;games[2].players=8;games[7].maxPlayers=6;games[7].players=6;games[11].maxPlayers=4;games[11].players=4;
-const list=document.getElementById('game-list');const search=document.getElementById('search');const tzToggle=document.getElementById('tz-toggle');const activityFilter=document.getElementById('activity-filter');let selectedName=names[0];let detailTab='settings';let sortKey=null;let sortAsc=true;let playersSortMode=0;let tzMode='all';let lastRefresh=Date.now();const ageFilterToggle=document.getElementById('age-filter-toggle');const ageFilterPanel=document.getElementById('age-filter-panel');const ageFilterValue=document.getElementById('age-filter-value');const ageFilterUnit=document.getElementById('age-filter-unit');const ageFilterEnabled=document.getElementById('age-filter-enabled');
+// Sample separate mode populations from the existing demo pool, once per realm.
+let activeCharacterGameMode='hc-ld';
+function assignGameModes(pool){
+ const modes=['hc-ld','sc-ld','hc-nl','sc-nl'];
+ for(const difficulty of ['Normal','Nightmare','Hell']){
+  const entries=pool.filter(game=>game.difficulty===difficulty);
+  for(let i=entries.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[entries[i],entries[j]]=[entries[j],entries[i]];}
+  entries.forEach((game,index)=>{game.characterGameMode=modes[index%modes.length];});
+  // Standard (Softcore) Ladder is the busiest demo population.
+  const ladderCount=entries.filter(game=>game.characterGameMode==='sc-ld').length;
+  const usedNames=new Set(pool.map(game=>game.name));
+  for(let i=ladderCount;entries.length&&i<30;i++){
+   const source=entries[(i-ladderCount)%entries.length];
+   let suffix=i+1,name=`${source.name}-${suffix}`;
+   while(usedNames.has(name)){name=`${source.name}-${++suffix}`;}
+   usedNames.add(name);
+   pool.push({...source,name,characterGameMode:'sc-ld',shopItem:undefined});
+  }
+ }
+}
+function gamesForCharacter(){return games.filter(game=>game.characterGameMode===activeCharacterGameMode);}
+assignGameModes(games);
+const list=document.getElementById('game-list');const search=document.getElementById('search');const tzToggle=document.getElementById('tz-toggle');const activityFilter=document.getElementById('activity-filter');let selectedName=names[0];let sortKey=null;let sortAsc=true;let playersSortMode=0;let tzMode='all';let lastRefresh=Date.now();const ageFilterToggle=document.getElementById('age-filter-toggle');const ageFilterPanel=document.getElementById('age-filter-panel');const ageFilterValue=document.getElementById('age-filter-value');const ageFilterUnit=document.getElementById('age-filter-unit');const ageFilterEnabled=document.getElementById('age-filter-enabled');
 function formatTime(seconds){if(seconds<60)return `${seconds}s`;const h=Math.floor(seconds/3600),m=Math.floor(seconds%3600/60);return `${h}:${String(m).padStart(2,'0')}`}
 function formatDetailedTime(seconds){const h=Math.floor(seconds/3600),m=Math.floor(seconds%3600/60),sec=seconds%60;return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`}
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function renderDetails(){const g=games.find(x=>x.name===selectedName);const el=document.getElementById('game-details');if(!g){el.textContent='Select a game';return;}if(detailTab==='settings'){el.innerHTML=`<p>Elapsed Time</p><strong>${formatDetailedTime(g.elapsedSeconds)}</strong><p>Level Restrictions</p><strong>Any</strong><p>Item Spacing</p><strong>Resurrected</strong><p>Description</p><strong>${escapeHtml(g.description||'—')}</strong>`;}else{el.innerHTML=`<p>Players (${g.players}/${g.maxPlayers})</p>${Array.from({length:g.players},(_,i)=>`<strong style="margin:8px 0">${i===0?'Host':`Player ${i+1}`}</strong>`).join('')}`;}document.querySelectorAll('.detail-tab').forEach(b=>b.classList.toggle('active',b.dataset.detail===detailTab));}
-document.querySelectorAll('.detail-tab').forEach(b=>b.addEventListener('click',()=>{detailTab=b.dataset.detail;renderDetails()}));
+function renderDetails(){
+ const game=gamesForCharacter().find(entry=>entry.name===selectedName);
+ const details=document.getElementById('game-details');
+ if(!game){details.textContent='Select a game';return;}
+ details.innerHTML=`<p>Elapsed Time</p><strong>${formatDetailedTime(game.elapsedSeconds)}</strong><p>Level Restrictions</p><strong>Any</strong><p>Description</p><strong>${escapeHtml(game.description||'—')}</strong><p>Players (${game.players}/${game.maxPlayers})</p><ul class="game-detail-players">${Array.from({length:game.players},(_,index)=>`<li>${index===0?'Host':`Player ${index+1}`}</li>`).join('')}</ul>`;
+}
 document.querySelectorAll('.game-header [data-sort]').forEach(h=>h.addEventListener('click',()=>{const key=h.dataset.sort;if(key==='players'){playersSortMode=sortKey==='players'?(playersSortMode+1)%3:0;sortKey=key;sortAsc=playersSortMode!==1}else{if(sortKey===key){sortAsc=!sortAsc}else{sortKey=key;sortAsc=true}}render()}));
-function render(){const q=search.value.toLowerCase();list.innerHTML='';if(document.body.classList.contains('offline-character')){document.getElementById('game-details').innerHTML='';return;}document.querySelectorAll('.game-header [data-sort]').forEach(h=>{h.classList.toggle('sorted',h.dataset.sort===sortKey);h.title=h.dataset.sort===sortKey?(sortKey==='players'&&playersSortMode===2?'Ascending ▲ (full games last)':sortAsc?'Ascending ▲':'Descending ▼'):'Click to sort'});let visible=games.filter(g=>g.difficulty===selectedDifficulty&&g.name.toLowerCase().includes(q)&&(activityFilter.value==='all'||g.activity===activityFilter.value)&&(tzMode==='all'||(tzMode==='tz'&&g.tz)||(tzMode==='non-tz'&&!g.tz))&&(!ageFilterEnabled.checked||g.elapsedSeconds<Math.max(1,Number(ageFilterValue.value)||1)*(ageFilterUnit.value==='hours'?3600:60)));if(sortKey){visible.sort((a,b)=>{if(sortKey==='players'&&playersSortMode===2){const af=a.players>=a.maxPlayers,bf=b.players>=b.maxPlayers;if(af!==bf)return af?1:-1;}let av=a[sortKey],bv=b[sortKey];if(typeof av==='string'){return (sortAsc?1:-1)*av.localeCompare(bv)}return (sortAsc?1:-1)*(av-bv)})}visible.forEach(g=>{const row=document.createElement('div');row.className='game'+(g.name===selectedName?' selected':'');row.innerHTML=`<span class="activity-${g.activity.toLowerCase()}">${g.name}</span><span class="activity-${g.activity.toLowerCase()}">${g.activity}</span><span class="${g.players>=g.maxPlayers?'full-players':'gold'}">${g.players}/${g.maxPlayers}</span><span>${formatTime(g.elapsedSeconds)}</span><span title="${g.tz?'Terror Zone':'Normal game'}" class="${g.tz?'gold':''}">${g.tz?'✦':''}</span><span title="Ping indicator" class="${g.ping}">●</span>`;row.onclick=()=>{selectedName=g.name;document.querySelector('.fields input').value=g.name;render()};list.appendChild(row)});renderDetails()}
+function render(){const q=search.value.toLowerCase();list.innerHTML='';if(document.body.classList.contains('offline-character')){document.getElementById('game-details').innerHTML='';return;}document.querySelectorAll('.game-header [data-sort]').forEach(h=>{h.classList.toggle('sorted',h.dataset.sort===sortKey);h.title=h.dataset.sort===sortKey?(sortKey==='players'&&playersSortMode===2?'Ascending ▲ (full games last)':sortAsc?'Ascending ▲':'Descending ▼'):'Click to sort'});let visible=gamesForCharacter().filter(g=>g.difficulty===selectedDifficulty&&g.name.toLowerCase().includes(q)&&(activityFilter.value==='all'||g.activity===activityFilter.value)&&(tzMode==='all'||(tzMode==='tz'&&g.tz)||(tzMode==='non-tz'&&!g.tz))&&(!ageFilterEnabled.checked||g.elapsedSeconds<Math.max(1,Number(ageFilterValue.value)||1)*(ageFilterUnit.value==='hours'?3600:60)));if(sortKey){visible.sort((a,b)=>{if(sortKey==='players'&&playersSortMode===2){const af=a.players>=a.maxPlayers,bf=b.players>=b.maxPlayers;if(af!==bf)return af?1:-1;}let av=a[sortKey],bv=b[sortKey];if(typeof av==='string'){return (sortAsc?1:-1)*av.localeCompare(bv)}return (sortAsc?1:-1)*(av-bv)})}visible.forEach(g=>{const row=document.createElement('div');row.className='game'+(g.name===selectedName?' selected':'');row.innerHTML=`<span class="activity-${g.activity.toLowerCase()}">${g.name}</span><span class="activity-${g.activity.toLowerCase()}">${g.activity}</span><span class="${g.players>=g.maxPlayers?'full-players':'gold'}">${g.players}/${g.maxPlayers}</span><span>${formatTime(g.elapsedSeconds)}</span><span title="${g.tz?'Terror Zone':'Normal game'}" class="${g.tz?'gold':''}">${g.tz?'✦':''}</span><span title="Ping indicator" class="${g.ping}">●</span>`;row.onclick=()=>{selectedName=g.name;document.querySelector('.fields input').value=g.name;render()};list.appendChild(row)});renderDetails()}
 search.addEventListener('input',render);activityFilter.addEventListener('change',render);
-tzToggle.addEventListener('click',()=>{tzMode=tzMode==='all'?'tz':tzMode==='tz'?'non-tz':'all';tzToggle.dataset.mode=tzMode;tzToggle.setAttribute('aria-pressed',String(tzMode!=='all'));tzToggle.textContent=tzMode==='all'?'TZ: All':tzMode==='tz'?'TZ: Only':'TZ: None';tzToggle.title=tzMode==='all'?'Show all games':tzMode==='tz'?'Show Terror Zone games only':'Show non-Terror Zone games only';render()});
-function updateAgeFilter(){const active=ageFilterEnabled.checked;const n=Math.max(1,Number(ageFilterValue.value)||1);ageFilterToggle.textContent=active?`⏱ <${n}${ageFilterUnit.value==='hours'?'h':'m'}`:'⏱ Age: Off';ageFilterToggle.classList.toggle('age-active',active);ageFilterToggle.title=active?`Hide games open for ${n} ${ageFilterUnit.value} or longer`:'Hide games older than a selected age';render();}
+tzToggle.addEventListener('click',()=>{
+ tzMode=tzMode==='all'?'tz':tzMode==='tz'?'non-tz':'all';
+ tzToggle.dataset.mode=tzMode;tzToggle.setAttribute('aria-pressed',String(tzMode!=='all'));
+ const labels={all:'All games (click for TZ only)',tz:'TZ only (click for no TZ)', 'non-tz':'No TZ (click for all games)'};
+ tzToggle.title=labels[tzMode];tzToggle.setAttribute('aria-label','Terror Zone filter: '+labels[tzMode]);
+ render();
+});
+function updateAgeFilter(){
+ const active=ageFilterEnabled.checked;
+ const n=Math.max(1,Number(ageFilterValue.value)||1);
+ ageFilterToggle.classList.toggle('age-active',active);
+ ageFilterToggle.setAttribute('aria-pressed',String(active));
+ const label=active?`Age filter: Hide games open for ${n} ${ageFilterUnit.value} or longer`:'Age filter: Off';
+ ageFilterToggle.title=label+' (click for settings)';
+ ageFilterToggle.setAttribute('aria-label',label+'. Open age settings.');
+ render();
+}
 ageFilterToggle.addEventListener('click',()=>{ageFilterPanel.hidden=!ageFilterPanel.hidden;ageFilterToggle.setAttribute('aria-expanded',String(!ageFilterPanel.hidden));});
 [ageFilterValue,ageFilterUnit,ageFilterEnabled].forEach(el=>el.addEventListener('input',updateAgeFilter));
 document.addEventListener('click',event=>{if(!event.target.closest('.age-filter-wrap')){ageFilterPanel.hidden=true;ageFilterToggle.setAttribute('aria-expanded','false');}});
 document.getElementById('refresh').addEventListener('click',()=>{
  games=realmDefaultGames[activeRealm].map(game=>({...game}));
  realmStates[activeRealm].games=games;
- if(!games.some(game=>game.name===selectedName&&game.difficulty===selectedDifficulty))selectedName=games.find(game=>game.difficulty===selectedDifficulty)?.name||null;
+ if(!gamesForCharacter().some(game=>game.name===selectedName&&game.difficulty===selectedDifficulty))selectedName=gamesForCharacter().find(game=>game.difficulty===selectedDifficulty)?.name||null;
  lastRefresh=Date.now();render();const button=document.getElementById('refresh');button.textContent='\u2713';setTimeout(()=>button.textContent='\u27f3',550);
 });
 document.getElementById('level-difference').addEventListener('change',e=>{document.getElementById('level-difference-value').disabled=!e.target.checked;});
 let selectedDifficulty='Hell';
-document.querySelectorAll('.difficulty-button').forEach(button=>button.addEventListener('click',()=>{selectedDifficulty=button.dataset.difficulty;document.querySelectorAll('.difficulty-button').forEach(b=>b.classList.toggle('active',b===button));selectedName=games.find(g=>g.difficulty===selectedDifficulty)?.name||null;render();}));
-document.getElementById('create-game').addEventListener('click',()=>{const name=document.querySelector('.fields input').value.trim();if(!name){alert('Enter a game name first.');return;}const description=document.getElementById('game-description').value.trim();const existing=games.find(g=>g.name.toLowerCase()===name.toLowerCase());if(existing){alert('That game name already exists in the mock list.');return;}const isPrivate=document.getElementById('game-password').value.length>0;playJoinGameLoading(()=>{if(isPrivate)return;games.unshift({name,description,levelDifference:document.getElementById('level-difference').checked?Number(document.getElementById('level-difference-value').value):null,friendsJoining:document.getElementById('friends-joining').checked,itemSpacing:document.getElementById('item-spacing').checked,players:1,maxPlayers:Math.max(2,Math.min(8,Number(document.getElementById('max-players').value)||8)),elapsedSeconds:0,demoShortTime:true,tz:document.getElementById('terrorized').checked,ping:'green',activity:document.getElementById('create-activity').value,difficulty:selectedDifficulty});selectedName=name;render();});});
+document.querySelectorAll('.difficulty-button').forEach(button=>button.addEventListener('click',()=>{selectedDifficulty=button.dataset.difficulty;document.querySelectorAll('.difficulty-button').forEach(b=>b.classList.toggle('active',b===button));selectedName=gamesForCharacter().find(g=>g.difficulty===selectedDifficulty)?.name||null;render();}));
+document.getElementById('create-game').addEventListener('click',()=>{const name=document.querySelector('.fields input').value.trim();if(!name){alert('Enter a game name first.');return;}const description=document.getElementById('game-description').value.trim();const existing=gamesForCharacter().find(g=>g.name.toLowerCase()===name.toLowerCase());if(existing){alert('That game name already exists in the mock list.');return;}const isPrivate=document.getElementById('game-password').value.length>0;playJoinGameLoading(()=>{if(isPrivate)return;games.unshift({name,description,characterGameMode:activeCharacterGameMode,levelDifference:document.getElementById('level-difference').checked?Number(document.getElementById('level-difference-value').value):null,friendsJoining:document.getElementById('friends-joining').checked,itemSpacing:document.getElementById('item-spacing').checked,players:1,maxPlayers:Math.max(2,Math.min(8,Number(document.getElementById('max-players').value)||8)),elapsedSeconds:0,demoShortTime:true,tz:document.getElementById('terrorized').checked,ping:'green',activity:document.getElementById('create-activity').value,difficulty:selectedDifficulty});selectedName=name;render();});});
 document.getElementById('join-game').addEventListener('click',()=>{
  const name=document.getElementById('game-name').value.trim() || selectedName;
- const game=games.find(g=>g.name.toLowerCase()===name?.toLowerCase());
+ const game=gamesForCharacter().find(g=>g.name.toLowerCase()===name?.toLowerCase());
  if(game?.shopItem && openTradingShop){openTradingShop(game.shopItem);return;}
  if(name)playJoinGameLoading(()=>alert('Prototype: Join '+name));else alert('Select a game to join.');
 });
@@ -234,11 +275,24 @@ window.addEventListener('scroll',closePlayerMenu,true);
 
 
 // v1.30: Sort characters by name, level or class; drag handles allow custom order.
-const characterData={online:[['Aldric','91','Barbarian'],['Seraphine','88','Sorceress'],['Kaelen','82','Paladin'],['Nyx','76','Assassin'],['Thorn','70','Druid'],['Elowen','65','Amazon'],['Mordren','58','Necromancer'],['Briar','42','Druid'],['Valen','29','Paladin']],offline:[['Ronan','73','Barbarian'],['Mira','61','Sorceress'],['Sylas','35','Necromancer']]};
+const characterData={online:[['Malachar','99','Warlock'],['Aldric','91','Barbarian'],['Seraphine','88','Sorceress'],['Kaelen','82','Paladin'],['Nyx','76','Assassin'],['Thorn','70','Druid'],['Elowen','65','Amazon'],['Mordren','58','Necromancer'],['Briar','42','Druid'],['Valen','29','Paladin']],offline:[['Ronan','73','Barbarian'],['Mira','61','Sorceress'],['Sylas','35','Necromancer']]};
+const characterIcons={Malachar:['ld'],Aldric:['ld','hc'],Seraphine:['ld'],Kaelen:['hc'],Nyx:['ld','hc'],Elowen:['ld']};
 const recentDeleted={online:[],offline:[]};
-let characterMode='online',chosenCharacter='Aldric',characterSort='custom',characterSortAscending=true,draggedCharacter=null;
-const classSymbols={Barbarian:'⚔',Sorceress:'✧',Paladin:'🛡',Assassin:'⚒',Druid:'🐺',Amazon:'🏹',Necromancer:'☠'};
+let characterMode='online',chosenCharacter='Malachar',characterSort='custom',characterSortAscending=true,draggedCharacter=null;
+const classSymbols={Barbarian:'⚔',Sorceress:'✧',Paladin:'🛡',Assassin:'⚒',Druid:'🐺',Amazon:'🏹',Necromancer:'☠',Warlock:'✦'};
+function syncCharacterGames(){
+ if(characterMode!=='online'){render();return;}
+ const icons=characterIcons[chosenCharacter]||[];
+ const mode=(icons.includes('hc')?'hc':'sc')+'-'+(icons.includes('ld')?'ld':'nl');
+ if(mode!==activeCharacterGameMode){
+  activeCharacterGameMode=mode;
+  selectedName=gamesForCharacter().find(game=>game.difficulty===selectedDifficulty)?.name||null;
+  document.getElementById('game-name').value='';document.getElementById('game-password').value='';
+ }
+ render();
+}
 function updateCenterCharacter(){
+ syncCharacterGames();
  const character=characterData[characterMode].find(c=>c[0]===chosenCharacter);
  if(!character){document.querySelector('.middle .char-name').textContent='No Character';document.querySelector('.middle .silhouette').textContent='—';return;}
  const [name,level,cls]=character;
@@ -276,9 +330,25 @@ function renderRecentDeleted(){
  }
 }
 function renderCharacters(){const root=document.getElementById('character-roster');root.replaceChildren();for(const [index,[name,level,cls]] of getSortedCharacters().entries()){
- const button=document.createElement('button');button.type='button';button.className='character-entry'+(chosenCharacter===name?' selected':'');button.dataset.character=name;
+ const button=document.createElement('button');button.type='button';button.className='character-entry'+(chosenCharacter===name?' selected':'');button.dataset.character=name;if(Number(level)===99)button.classList.add('level-99');
  const handle=document.createElement('span');handle.className='character-drag';handle.textContent='⠿';handle.title='Drag to reorder';handle.setAttribute('aria-label','Drag '+name+' to reorder');handle.draggable=true;
- const label=document.createElement('span');label.textContent=`${index+1}. ${name}`;const sub=document.createElement('small');sub.textContent=`Level ${level} ${cls}`;const portrait=document.createElement('img');portrait.className='character-portrait';portrait.src='img/'+cls.toLowerCase()+'.png';portrait.alt='';portrait.width=44;portrait.height=44;const info=document.createElement('span');info.className='character-info';info.append(label,sub);button.append(handle,portrait,info);
+ const label=document.createElement('span');if(characterMode==='online'&&characterIcons[name]?.includes('hc'))label.className='hardcore-character-name';label.textContent=`${index+1}. ${name}`;const sub=document.createElement('small');sub.textContent=`Level ${level} ${cls}`;const portrait=document.createElement('img');portrait.className='character-portrait';portrait.src='img/'+cls.toLowerCase()+'.png';portrait.alt='';portrait.width=44;portrait.height=44;const info=document.createElement('span');info.className='character-info';info.append(label,sub);
+ if(Number(level)===99){
+  label.classList.add('level-99-name');
+  sub.className='level-99-honors';sub.replaceChildren();
+  for(const [text,kind] of [[`Level ${level}`,'level'],[cls,'class']]){
+   const badge=document.createElement('span');badge.className='level-99-honor level-99-honor-'+kind;badge.textContent=text;
+   sub.append(badge);
+  }
+  const portraitFrame=document.createElement('span');portraitFrame.className='level-99-portrait';portraitFrame.append(portrait);button.append(handle,portraitFrame,info);
+ }else{button.append(handle,portrait,info);}
+ if(characterMode==='online'&&characterIcons[name]){
+  const icons=document.createElement('span');icons.className='character-icons';
+  for(const kind of characterIcons[name]){
+   const icon=document.createElement('img');icon.src=`img/${kind}128.png`;icon.alt=kind==='hc'?'Hardcore':'Ladder';icon.title=icon.alt;icon.width=24;icon.height=24;icons.append(icon);
+  }
+  button.classList.add('has-character-icons');button.append(icons);
+ }
  button.addEventListener('click',()=>{chosenCharacter=name;renderCharacters();updateCenterCharacter()});
  handle.addEventListener('dragstart',e=>{draggedCharacter=name;button.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',name);});
  handle.addEventListener('dragend',()=>{draggedCharacter=null;root.querySelectorAll('.character-entry').forEach(el=>el.classList.remove('dragging','drag-over'));});
@@ -316,7 +386,11 @@ deleteSubmit.addEventListener('click',()=>{
  renderCharacters();updateCenterCharacter();
  window.alert('UI/UX prototype: Character moved to Recent Delete. Reopen or refresh this page to reset the demo.');
 });
-document.getElementById('refresh-characters').addEventListener('click',renderCharacters);
+document.getElementById('convert-character').addEventListener('click',()=>{
+ const selected=characterData[characterMode].find(c=>c[0]===chosenCharacter);
+ if(!selected)return;
+ alert(`Convert Character — ${selected[0]}\nClassic / Expansion conversion — visual prototype only.`);
+});
 renderCharacters();
 updateCenterCharacter();
 
@@ -656,6 +730,7 @@ function buildRealm(server){
   timestamp.dateTime=sentAt.toISOString();timestamp.textContent=String(sentAt.getHours()).padStart(2,'0')+':'+String(sentAt.getMinutes()).padStart(2,'0');
   return message;
  });
+ assignGameModes(realmGames);
  realmDefaultGames[server]=realmGames.map(game=>({...game}));
  return {games:realmGames,messages};
 }
@@ -666,7 +741,7 @@ function switchRealm(server){
  activeRealm=server;
  const state=realmStates[activeRealm]||(realmStates[activeRealm]=buildRealm(activeRealm));
  games=state.games;chatLog.replaceChildren(...state.messages);
- selectedName=games.find(game=>game.difficulty===selectedDifficulty)?.name||null;
+ selectedName=gamesForCharacter().find(game=>game.difficulty===selectedDifficulty)?.name||null;
  document.getElementById('game-name').value='';document.getElementById('game-password').value='';
  lastRefresh=Date.now();closePlayerMenu();applyChatChannel();applyChatWordFilter();render();chatLog.scrollTop=0;
 }
