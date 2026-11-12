@@ -42,13 +42,11 @@ Listings show the item, its properties, the seller, server, and asking price in 
 
 Players list items from their trade stash and set a price in runes. Sellers can withdraw listings when they no longer want to sell an item. The trade stash gives buyers a dedicated place to browse the seller's available items.
 
-Visit Shop takes the buyer into the seller's game. From camp, the buyer opens the seller's shop and browses their trade stash alongside their own inventory. Trading games can also advertise items and rune prices in the game list, giving players another way to discover and join a seller's game.
+Visit Shop takes the buyer into the seller's dedicated shop camp. From camp, the buyer opens the seller's shop and browses their trade stash alongside their own inventory. Trading games can also advertise items and rune prices in the game list, giving players another way to discover and join a seller's game.
 
 Hovering over an item shows its statistics and rune price. Clicking selects the item and keeps its details visible while the buyer reviews the purchase. Buying transfers the item into the buyer's inventory and pays the seller with the required runes from the buyer's inventory.
 
 Purchases complete automatically at the seller's listed rune price, without requiring the seller's attention or a manual trade-window exchange. Buyers can shop while the seller continues playing.
-
-Prices appear with item statistics, keeping the item grid clear. Runes remain physical items in inventory rather than a separate numeric wallet.
 
 ## Lobby UI concept
 
