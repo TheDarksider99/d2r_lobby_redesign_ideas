@@ -88,14 +88,15 @@ const chatFilterWords=document.getElementById('chat-filter-words');
 chatFilterButton.addEventListener('click',()=>{const open=chatFilterPanel.classList.toggle('open');chatFilterPanel.hidden=!open;chatFilterButton.setAttribute('aria-expanded',String(open));chatFilterButton.setAttribute('aria-pressed',String(open));if(open)chatFilterWords.focus();});
 function applyChatWordFilter(){const terms=chatFilterWords.value.split(',').map(word=>word.trim().toLocaleLowerCase()).filter(Boolean);document.querySelectorAll('#chat > p').forEach(p=>{p.classList.toggle('word-filtered',terms.some(term=>p.textContent.toLocaleLowerCase().includes(term)));});}
 chatFilterWords.addEventListener('input',applyChatWordFilter);
-document.getElementById('system-toggle').addEventListener('click',()=>{const chat=document.getElementById('chat');const hidden=chat.classList.toggle('hide-system');const btn=document.getElementById('system-toggle');btn.setAttribute('aria-pressed',String(hidden));btn.textContent=hidden?'Show System':'Hide System';});
+document.getElementById('system-toggle').addEventListener('click',()=>{const chat=document.getElementById('chat');const hidden=chat.classList.toggle('hide-system');const btn=document.getElementById('system-toggle');btn.setAttribute('aria-pressed',String(hidden));btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'+(hidden?'<path d="M3 3l18 18"/>':'')+'</svg>';btn.title=hidden?'Show system notifications':'Hide system notifications';btn.setAttribute('aria-label',btn.title);});
 const chatChannel=document.getElementById('chat-channel');
+let selectedChatChannel='All';
 const chatLog=document.getElementById('chat');
 const channelColors={All:'#e6e3de',Lobby:'#d5b968',Clan:'#70ce78',Trading:'#d4a3f5',PvP:'#ed7777',Farming:'#e6e3de',Quest:'#69b8ff',Private:'#e69ccc'};
 const channelIcons={Lobby:'\u25c6',Clan:'\u2663',Trading:'\u2696',PvP:'\u2694',Farming:'\u2660',Quest:'\u2726'};
 let privateRecipient=null;
 function chatChannelLabel(channel){return channel==='Private'?'Private':channel;}
-function beginWhisper(battletag){privateRecipient=battletag;document.querySelector('[data-chat-view="lobby"]').click();chatChannel.value='Private';applyChatChannel();const input=document.getElementById('message');input.value='/w '+battletag+' ';input.focus();}
+function beginWhisper(battletag){privateRecipient=battletag;document.querySelector('[data-chat-view="lobby"]').click();selectedChatChannel='Private';applyChatChannel();const input=document.getElementById('message');input.value='/w '+battletag+' ';input.focus();}
 function decorateChatMessage(message,channel){
  if(channel.includes('#')){message.dataset.recipient=channel;channel='Private';}
  message.dataset.channel=channel;
@@ -151,18 +152,44 @@ initialMessages.forEach((message,index)=>{
  const sentAt=new Date(sampleMessageTime),timestamp=message.querySelector('.chat-timestamp');
  timestamp.dateTime=sentAt.toISOString();timestamp.textContent=String(sentAt.getHours()).padStart(2,'0')+':'+String(sentAt.getMinutes()).padStart(2,'0');
 });
-Array.from(chatChannel.options).forEach(option=>{const channel=option.value;option.value=channel;option.textContent=chatChannelLabel(channel);option.style.color=channelColors[channel];option.style.backgroundColor='#111214';});
+chatChannel.querySelectorAll('[data-channel]').forEach(tab=>tab.style.setProperty('--channel-color',channelColors[tab.dataset.channel]));
+function updateChannelBadges(){
+ const counts={};
+ chatLog.querySelectorAll('p[data-unread="true"]').forEach(message=>{const channel=message.dataset.channel;counts[channel]=(counts[channel]||0)+1;});
+ const chatTab=document.querySelector('[data-chat-view="lobby"]');
+ let privateBadge=chatTab.querySelector('.chat-private-unread');
+ if(!privateBadge){privateBadge=document.createElement('span');privateBadge.className='chat-private-unread';privateBadge.setAttribute('aria-hidden','true');chatTab.append(privateBadge);}
+ const privateCount=counts.Private||0;privateBadge.textContent=privateCount>99?'99+':String(privateCount);privateBadge.hidden=privateCount===0;
+ chatTab.setAttribute('aria-label','Chat'+(privateCount?', '+privateCount+' unread private messages':''));
+
+ chatChannel.querySelectorAll('[data-channel]').forEach(tab=>{
+  if(tab.dataset.channel==='All'){tab.querySelector('.channel-unread')?.remove();tab.setAttribute('aria-label','All');return;}
+  let badge=tab.querySelector('.channel-unread');
+  if(!badge){badge=document.createElement('span');badge.className='channel-unread';badge.setAttribute('aria-hidden','true');tab.append(badge);}
+  const count=counts[tab.dataset.channel]||0;badge.textContent=count>99?'99+':String(count);badge.hidden=count===0;
+  tab.setAttribute('aria-label',tab.dataset.channel+(count?', '+count+' unread messages':''));
+ });
+}
+function chatIsVisible(){return !chatLog.hidden&&!document.body.classList.contains('intro-active')&&!document.hidden&&!document.querySelector('dialog[open]');}
 function applyChatChannel(){
- const channel=chatChannel.value;
- chatLog.classList.toggle('all-channels',channel==='All');chatChannel.style.color=channelColors[channel];
+ const channel=selectedChatChannel;
+ chatLog.classList.toggle('all-channels',channel==='All');
+ chatChannel.querySelectorAll('[data-channel]').forEach(tab=>{const selected=tab.dataset.channel===channel;tab.classList.toggle('active',selected);tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;});
  document.getElementById('message').placeholder='['+chatChannelLabel(channel)+']';
  chatLog.querySelectorAll(':scope > p').forEach(message=>message.classList.toggle('channel-filtered',channel!=='All'&&message.dataset.channel!==channel));
+ if(chatIsVisible())chatLog.querySelectorAll('p[data-unread="true"]').forEach(message=>{if(channel!=='All'&&message.dataset.channel===channel)delete message.dataset.unread;});
+ updateChannelBadges();
 }
-chatChannel.addEventListener('change',applyChatChannel);applyChatChannel();
+chatChannel.addEventListener('click',event=>{const tab=event.target.closest('[data-channel]');if(!tab)return;selectedChatChannel=tab.dataset.channel;applyChatChannel();});
+chatChannel.addEventListener('keydown',event=>{
+ const tabs=Array.from(chatChannel.querySelectorAll('[data-channel]'));const index=tabs.indexOf(document.activeElement);if(index<0)return;
+ let next;if(event.key==='ArrowRight')next=(index+1)%tabs.length;else if(event.key==='ArrowLeft')next=(index+tabs.length-1)%tabs.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;else return;
+ event.preventDefault();tabs[next].focus();tabs[next].click();
+});applyChatChannel();
 document.getElementById('chat-form').onsubmit=e=>{
  e.preventDefault();const input=document.getElementById('message');let text=input.value.trim();if(!text)return;
  const whisper=text.match(/^\/w\s+(\S+)\s+([\s\S]+)$/i);
- let channel=chatChannel.value==='All'?'Lobby':chatChannel.value;
+ let channel=selectedChatChannel==='All'?'Lobby':selectedChatChannel;
  if(whisper){privateRecipient=whisper[1];text=whisper[2];channel='Private';}
  if(channel==='Private'&&!privateRecipient){
   input.value='/w ';input.placeholder='/w player#1234 message';input.focus();return;
@@ -747,3 +774,56 @@ function playJoinGameLoading(onReady){
  video.currentTime=0;video.addEventListener('ended',finish);video.addEventListener('error',finish);overlay.showModal();
  video.play().catch(finish);
 }
+
+// Every ten seconds, deliver one realm-appropriate demo message.
+(()=>{
+ const privateMessageSound=new Audio('img/message.mp3');privateMessageSound.preload='auto';privateMessageSound.volume=1;
+ const channels=['Lobby','Clan','Trading','PvP','Farming','Quest','Private'];
+ const extraMessages={
+  Lobby:['Anyone starting a fresh character today?','Nice runs everyone, thanks for the party!','What is the current Terror Zone?','Back after a break. Good to see the lobby busy.','Looking for a relaxed group for a few runs.'],
+  Clan:['Clan stash has spare leveling gear.','We still have two spots for tonight.','Meet in Act V when you are ready.','Great teamwork on that last run!','Who needs help gearing an alternate character?'],
+  Trading:['FT 4os Monarch, looking for runes.','ISO lightning skiller, whisper your price.','Selling a keyset, open to offers.','Looking for a Raven Frost with good dexterity.','FT spare Spirit sword for a new player.'],
+  PvP:['Duel arena is open, come warm up.','Anyone interested in low-level duels?','Looking for another team for 2v2.','Good duel! Want a rematch?','Meet outside town when both players are ready.'],
+  Farming:['Next Chaos run starts in a minute.','Pits are taken, Ancient Tunnels still open.','Need a teleporter for Baal runs.','Found a rune! Staying for five more runs.','Cow portal is open. Please wait for the party.'],
+  Quest:['Need help rescuing Anya on Hell.','Act II staff assembled. Ready for Duriel.','Anyone need the Diablo quest?','Starting a fresh Act I walk, all welcome.','Thanks for the waypoint! Moving to Act IV.'],
+  Private:['Are you still looking for that item?','I have a spot open if you want to join.','Thanks for the trade!','Give me a minute, finishing this run.','Send me the game name when you are ready.','Found something that might help your build.']
+ };
+ const messagePools={},messageQueues={},lastMessages={};
+ function nextDemoMessage(channel){
+  const key=activeRealm+':'+channel;
+  if(!messagePools[key]){
+   const existing=Array.from(chatLog.querySelectorAll('p')).filter(message=>message.dataset.channel===channel&&!message.classList.contains('private-outgoing'));
+   const pool=existing.map(message=>{
+    const sender=message.querySelector('.player-name');if(!sender)return null;
+    const copy=message.cloneNode(true);copy.querySelectorAll('.player-name,.channel-tag,time').forEach(node=>node.remove());
+    return {character:sender.dataset.character,battletag:sender.dataset.battletag,text:copy.textContent.trim()};
+   }).filter(Boolean);
+   const people=pool.length?[...pool]:[{character:activeRealm==='Europe'?'OakKnight':activeRealm==='Asia'?'PacificRunner':'NeonRaven',battletag:'DemoPlayer#2400'}];
+   extraMessages[channel].forEach((text,index)=>pool.push({...people[index%people.length],text}));
+   messagePools[key]=pool;
+  }
+  if(!messageQueues[key]?.length){
+   const queue=[...messagePools[key]];
+   for(let index=queue.length-1;index>0;index--){const other=Math.floor(Math.random()*(index+1));[queue[index],queue[other]]=[queue[other],queue[index]];}
+   if(queue.length>1&&queue[queue.length-1].text===lastMessages[key]){[queue[0],queue[queue.length-1]]=[queue[queue.length-1],queue[0]];}
+   messageQueues[key]=queue;
+  }
+  const sample=messageQueues[key].pop();lastMessages[key]=sample.text;return sample;
+ }
+
+ function markVisibleRead(){if(chatIsVisible())applyChatChannel();}
+ document.querySelector('[data-chat-view="lobby"]').addEventListener('click',markVisibleRead);
+ document.addEventListener('visibilitychange',markVisibleRead);
+ setInterval(()=>{
+  if(document.hidden||document.body.classList.contains('intro-active')||document.body.classList.contains('offline-character')||joinLoadingActive||document.querySelector('dialog[open]'))return;
+  const channel=channels[Math.floor(Math.random()*channels.length)];
+  const {character,battletag,text}=nextDemoMessage(channel);
+  const message=document.createElement('p'),sender=document.createElement('span'),body=document.createElement('span');
+  sender.className='player-name';sender.dataset.character=character;sender.dataset.battletag=battletag;sender.textContent=character+':';
+  body.className='message-body';body.textContent=' '+text;message.append(sender,body);
+  decorateChatMessage(message,channel);if(channel==='Private'){message.dataset.recipient=battletag;privateMessageSound.currentTime=0;privateMessageSound.play().catch(()=>{});}
+  if(!chatIsVisible()||selectedChatChannel!==channel)message.dataset.unread='true';
+  chatLog.append(message);applyChatWordFilter();applyChatChannel();
+  if(chatIsVisible()&&!message.classList.contains('channel-filtered'))chatLog.scrollTop=chatLog.scrollHeight;
+ },10000);
+})();
