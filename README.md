@@ -1,4 +1,4 @@
-# D2R Lobby Design — v1.74
+# D2R Lobby Design — v1.88
 
 A standalone, browser-based Diablo II: Resurrected lobby UI/UX prototype. This project is a visual and interaction demonstration, not a Battle.net integration.
 
@@ -24,7 +24,7 @@ Open `index.html` in Chrome or Edge. No dependencies or build tools are required
 ## Development rules
 
 - Preserve all existing functionality and layout unless explicitly requested otherwise.
-- Continue project versioning from **v1.74** (next revision: **v1.75**).
+- Continue project versioning from **v1.88** (next revision: **v1.89**).
 - Keep the historical project-rule comments in `index.html` and update them for future changes.
 - Keep the three core files (`index.html`, `style.css`, `script.js`) unless a future change warrants further organization.
 - Use relative file paths so the site works on GitHub Pages and locally.
@@ -85,3 +85,21 @@ Unread badges appear even on the active channel. Manually scrolling to the botto
 Incoming private messages have a sound notification as well as unread counts, so players can notice a reply while browsing games or using another lobby tab.
 
 The chat word filter accepts multiple comma-separated terms. Players can suppress recurring advertisements or unwanted phrases. A separate system-notification toggle hides announcements, including Terror Zone starting, fading.
+
+Players can post an open game invitation to a chat channel. Each invitation includes the game name, difficulty, activity, and a Join Me button, letting readers enter directly without copying a name or requesting a separate invitation. Full games and incompatible character modes cannot be joined through an open invite.
+
+Regular games and open invitations enter the camp, while trading visits provide access to the seller?s shop. Pressing Esc opens the game menu. Save and Exit returns to game browsing and chat; Return to Game closes the menu.
+
+In a game, Esc closes open shop and inventory panels to return to camp. From camp it opens the game menu; pressing Esc again resumes the game without leaving it.
+
+Opening Chat or selecting a channel lands on its latest messages and clears the unread count for that view. Incoming messages still preserve the reading position.
+
+In-game chat shares the lobby channels, message history, filters, and unread counts. Its Game tab combines current-game messages, in-game whispers, and game notices while excluding public-channel chatter. Invite to Game posts the current public game to a chosen channel.
+
+In-game tabs begin with All, then Game. Game includes current-game player connection notices and Terror Zone announcements.
+
+Invite to Game attaches Join Me and the current game name to the chat draft without sending it or opening a dialog. Players can continue editing, remove the attachment, and send with Send or Enter. Invitations use the composer destination; sending is disabled while its destination is All.
+
+The viewed channel and composer destination are independent. All is a read-only destination: Send is disabled when the composer shows [All]. While viewing All, Ctrl-clicking a message targets its channel without switching the viewed tab, preserving any drafted text or game invitation.
+
+Private is also a read-only composer destination until a player is selected. Ctrl-click a private message in All or Private, or choose Whisper from a player menu, to show that player?s name as the composer tag. The tag routes the message directly; no /w command is needed.

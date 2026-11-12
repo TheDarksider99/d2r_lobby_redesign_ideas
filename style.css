@@ -480,3 +480,88 @@ body.intro-active>.screen{visibility:hidden}
 .activity-filter-tab:hover{filter:brightness(1.3)}
 .activity-filter-tab:focus-visible{outline:1px solid var(--activity-color);outline-offset:1px}
 @media(max-width:850px){.game-search-filters{gap:3px}.activity-filter-tab{font-size:7px;padding:4px 0}}
+
+/* Open invitations read as normal messages with an inline join action. */
+
+.chat-invite-game{display:inline;color:#d9c28a;font:inherit;margin-right:6px;overflow-wrap:anywhere}
+#chat .chat-join-invite{display:inline-block;height:auto;padding:0 5px;font:inherit;line-height:1;vertical-align:baseline;white-space:nowrap}
+#chat .chat-join-invite:disabled{opacity:.4;cursor:not-allowed}
+.chat-input .chat-invite-action{font-size:12px;letter-spacing:0;padding:4px 7px}
+.shop-game-header>.camp-actions{display:flex;gap:8px;padding:0;border:0;background:none;text-shadow:none}
+.open-invite-dialog form{display:grid;gap:7px}
+.open-invite-dialog label{color:#cbb782;font:small-caps 13px Georgia}
+.open-invite-dialog select{width:100%;min-width:0;padding:8px;background:#09090a;color:#e4d5b5;border:1px solid #766747}
+.open-invite-dialog input{margin:0 0 4px}
+.open-invite-dialog #invite-status{min-height:1em;margin:0;color:#dec48a;font-size:12px}
+.open-invite-dialog select:disabled{opacity:.65}
+@media(max-width:850px){.chat-input .chat-invite-action{font-size:9px;padding:3px}.shop-game-header>.camp-actions{gap:4px}}
+
+/* Regular games show the camp without shop labels or arrival overlays. */
+#market-shop.regular-game .shop-game-header>div:not(.camp-actions),
+#market-shop.regular-game #shop-arrival,
+#market-shop.regular-game #camp-open-invite{display:none}
+#market-shop.regular-game .shop-game-header{justify-content:flex-end}
+
+/* The supplied Esc artwork is the menu; transparent controls align to its buttons. */
+#game-escape-menu{width:min(440px,86vw,62dvh);max-width:none;max-height:none;aspect-ratio:1063/1479;padding:0;border:0;background:transparent;overflow:visible;color:#fff}
+#game-escape-menu::backdrop{background:#0009}
+#game-escape-menu>img{display:block;width:100%;height:auto;pointer-events:none}
+#game-escape-menu .escape-menu-hotspot{position:absolute;left:8.84%;width:82.22%;height:10.3%;padding:0;border:0;background:transparent;cursor:pointer;border-radius:5px}
+#game-save-exit{top:46.65%}
+#game-resume{top:58.25%}
+#game-escape-menu .escape-menu-hotspot:hover{background:#e2bc6820;box-shadow:0 0 14px #d5ab4740}
+#game-escape-menu .escape-menu-hotspot:focus-visible{outline:2px solid #e2c57b;outline-offset:2px}
+
+#game-escape-menu:focus{outline:none}
+
+.chat-invite-line{display:block;white-space:nowrap;max-width:100%}.chat-invite-line .chat-invite-game{display:inline-block;max-width:calc(100% - 5.5em);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+
+.chat-invite-line .chat-invite-game{margin-left:6px;margin-right:0}
+
+/* In-game chat shares the lobby's actual tabs, messages, filters, and composer. */
+
+#in-game-chat{position:absolute;z-index:6;left:1.5%;bottom:18%;width: min(610px,55%);height:48%;min-height:180px;display:flex;flex-direction:column;padding:7px;border:1px solid #726343;background:#07080899;box-shadow:0 5px 18px #0005;font:13px Arial;color:#e6e3de}
+.in-game-chat-heading{display:flex;align-items:center;gap:8px;flex:none;color:#cdb781;font:small-caps 12px Georgia;margin-bottom:7px}
+.in-game-chat-heading #in-game-chat-status{flex:1;font:11px Arial;color:#b9cda0}
+#in-game-chat-close{width:22px;height:22px;padding:0;line-height:18px}
+#in-game-chat-content{display:flex;flex-direction:column;gap:5px;flex:1;min-height:0}
+#in-game-chat .chat-actions{display:grid;grid-template-columns:minmax(0,1fr) 26px 26px;gap:3px;flex:none;min-height:27px}
+#in-game-chat .chat-channel-tabs{grid-template-columns:repeat(9,minmax(0,1fr));gap:2px}
+#in-game-chat .chat-channel-tab{font-size:10px;padding:5px 1px}
+#in-game-chat #chat{flex:1;min-height:0;margin:0;padding:6px;border:0;background:#0002;box-shadow:none;font:13px/1.65 Arial;overflow:auto}
+#in-game-chat #chat p{margin:0 0 4px}
+#in-game-chat .chat-input{display:flex;height:32px;gap:4px;flex:none}
+#in-game-chat .chat-input input{flex:1;min-width:0;width:auto;height:100%;margin:0;padding:4px 6px;font:13px Arial;border:1px solid #69583b;background:#080808;color:#ddd}
+#in-game-chat .chat-input .btn{padding:3px 6px;font:11px Georgia;letter-spacing:0;border-width:1px;white-space:nowrap}
+#in-game-chat .chat-filter-panel{padding:6px;flex:none}
+#in-game-chat .chat-filter-panel textarea{min-height:38px;max-height:65px}
+#in-game-chat #chat .chat-invite-line{font:inherit}
+#in-game-chat .chat-channel-tab[data-channel="Game"]{--channel-color:#e9d09c}
+@media(max-width:850px){#in-game-chat{width:70%;height:52%;min-height:145px;padding:4px}#in-game-chat .chat-actions{grid-template-columns:minmax(0,1fr) 20px 20px;min-height:22px}#in-game-chat .chat-channel-tab{font-size:8px;padding:4px 0}#in-game-chat #chat{font-size:10px}#in-game-chat .chat-input{height:26px}#in-game-chat .chat-input input{font-size:10px}#in-game-chat .chat-input .btn{font-size:9px;padding:2px 4px}.in-game-chat-heading{margin-bottom:4px}}
+
+#chat .player-connection-notice{color:var(--gold)}
+
+/* Incoming messages can be read without opening chat controls or interrupting play. */
+#in-game-chat-preview{position:absolute;z-index:5;left:1.5%;bottom:18%;width:min(610px,55%);max-height:28%;padding:6px 8px;overflow:hidden;background:#0003;color:#e6e3de;font:13px/1.65 Arial;text-shadow:0 1px 3px #000,0 0 3px #000;pointer-events:none}
+#in-game-chat-preview p{margin:0 0 4px}
+#in-game-chat-preview .player-name,#in-game-chat-preview .chat-self{color:var(--channel-color)}
+#in-game-chat-preview .player-connection-notice{color:var(--gold)}
+#in-game-chat-preview .channel-tag{display:inline-block;min-width:1.2em;margin-right:.3em;color:var(--channel-color);font-family:Arial,sans-serif}
+#in-game-chat-preview .chat-timestamp{color:#aaa;font-size:.8em;margin-right:.55em;font-variant-numeric:tabular-nums}
+@media(max-width:850px){#in-game-chat-preview{width:70%;font-size:10px;padding:4px 6px}}
+
+#chat-invite-draft{display:inline-flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;max-width:40%;padding:2px 5px;border:1px solid #806b3b;background:#211c13;color:#dbc489;font:11px Georgia}
+#chat-invite-draft .draft-join-label{white-space:nowrap}
+#chat-invite-draft-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#in-game-chat #chat-invite-draft-remove{padding:0 3px;border:0;background:none;color:#d7c39b;font:15px Arial;cursor:pointer}
+#in-game-invite[aria-pressed="true"]{border-color:#c7a35c;color:#f1d08a}
+@media(max-width:850px){#chat-invite-draft{font-size:9px;gap:3px;padding:2px}}
+
+#chat-send:disabled{color:#777;opacity:.45;cursor:not-allowed;filter:grayscale(1)}
+
+/* Keep the routing tag visible while the message itself is being edited. */
+.chat-composer-field{display:flex;align-items:center;flex:1;min-width:0;height:100%;border:1px solid #69583b;background:#080808;font:16px Arial}
+#chat-composer-tag{flex:none;padding-left:6px;color:#c5ae77;white-space:nowrap;font:inherit}
+#chat-form .chat-composer-field input{flex:1;min-width:0;width:auto;height:100%;margin:0;border:0;background:none;padding:4px 6px;font:inherit;color:#ddd;outline-offset:-2px}
+#in-game-chat .chat-composer-field{font-size:13px}
+@media(max-width:850px){.chat-composer-field{font-size:11px}#in-game-chat .chat-composer-field{font-size:10px}#chat-composer-tag{padding-left:4px}}

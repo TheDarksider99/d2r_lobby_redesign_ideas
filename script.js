@@ -4,6 +4,14 @@ document.addEventListener('contextmenu', event => {
 }, {capture:true, passive:false});
 
 let openTradingShop = null;
+let currentCampGame = null;
+let pendingGameInvite=null;
+let gameChatMount=null;
+let lobbyChatChannel='All';
+const gameChatSeen=new Set();
+const gameSystemStates=new Map();
+const chatInvites=new Map();
+let nextInviteId=0;
 const names=['BØBECOW-15','7 PC8MB 4 LØ','DEADLYBAAL-30','ALL ACTS 96TZ-5','TZ ALL ID ALL','BRG 2 JAY GLØVE','BAALOS FOR GUL','BAALZI','PØØNBAALI','DUELS','PHØENIX MØN FT','NEEDTALSET','STAT RUN Ø2','96TZ ALL-Ø1'];
 const descriptions=['Cow runs, stay together','Ist for Java skiller','Baal runs, throne open','Tomb reserved for host','96 TZ rotations, all welcome','Bring 2 Jah for gloves','Baal runs for Gul','Questing, need help with Act 2','Open Baal runs','PvP duels, no potions','Looking for Phoenix Monarch','Trade Tal set for runes','Act 5 quests, help welcome','TZ farm, split MF'];
 let games=names.map((name,i)=>({name,description:descriptions[i],players:i%3+1,maxPlayers:2+(i*3)%7,elapsedSeconds:[3900,45,7320,540,4500,28,8460,120,2700,10200,420,5940,360,7860][i],demoShortTime:[1,5].includes(i),tz:/TZ/i.test(name)||[2,7,11].includes(i),ping:i%5===0?'green':'gold',activity:['Farming','Trading','Farming','Quest','Farming','Trading','Farming','Quest','Farming','PvP','Trading','Trading','Quest','Farming'][i]}));
@@ -122,17 +130,27 @@ document.getElementById('refresh').addEventListener('click',()=>{
  games=realmDefaultGames[activeRealm].map(game=>({...game}));
  realmStates[activeRealm].games=games;
  if(!gamesForCharacter().some(game=>game.name===selectedName&&game.difficulty===selectedDifficulty))selectedName=gamesForCharacter().find(game=>game.difficulty===selectedDifficulty)?.name||null;
- lastRefresh=Date.now();render();const button=document.getElementById('refresh');button.textContent='\u2713';setTimeout(()=>button.textContent='\u27f3',550);
+ lastRefresh=Date.now();render();updateInviteButtons();const button=document.getElementById('refresh');button.textContent='\u2713';setTimeout(()=>button.textContent='\u27f3',550);
 });
 document.getElementById('level-difference').addEventListener('change',e=>{document.getElementById('level-difference-value').disabled=!e.target.checked;});
 let selectedDifficulty='Hell';
 document.querySelectorAll('.difficulty-button').forEach(button=>button.addEventListener('click',()=>{selectedDifficulty=button.dataset.difficulty;document.querySelectorAll('.difficulty-button').forEach(b=>b.classList.toggle('active',b===button));selectedName=gamesForCharacter().find(g=>g.difficulty===selectedDifficulty)?.name||null;render();}));
-document.getElementById('create-game').addEventListener('click',()=>{const name=document.querySelector('.fields input').value.trim();if(!name){alert('Enter a game name first.');return;}const description=document.getElementById('game-description').value.trim();const existing=gamesForCharacter().find(g=>g.name.toLowerCase()===name.toLowerCase());if(existing){alert('That game name already exists in the mock list.');return;}const isPrivate=document.getElementById('game-password').value.length>0;playJoinGameLoading(()=>{if(isPrivate)return;games.unshift({name,description,characterGameMode:activeCharacterGameMode,levelDifference:document.getElementById('level-difference').checked?Number(document.getElementById('level-difference-value').value):null,friendsJoining:document.getElementById('friends-joining').checked,itemSpacing:document.getElementById('item-spacing').checked,players:1,maxPlayers:Math.max(2,Math.min(8,Number(document.getElementById('max-players').value)||8)),elapsedSeconds:0,demoShortTime:true,tz:document.getElementById('terrorized').checked,ping:'green',activity:document.getElementById('create-activity').value,difficulty:selectedDifficulty});selectedName=name;render();});});
+document.getElementById('create-game').addEventListener('click',()=>{
+ const name=document.getElementById('game-name').value.trim();if(!name){alert('Enter a game name first.');return;}
+ if(gamesForCharacter().some(game=>game.name.toLowerCase()===name.toLowerCase())){alert('That game name already exists in the mock list.');return;}
+ const game={name,description:document.getElementById('game-description').value.trim(),characterGameMode:activeCharacterGameMode,realm:activeRealm,isPrivate:document.getElementById('game-password').value.length>0,levelDifference:document.getElementById('level-difference').checked?Number(document.getElementById('level-difference-value').value):null,friendsJoining:document.getElementById('friends-joining').checked,itemSpacing:document.getElementById('item-spacing').checked,players:1,maxPlayers:Math.max(2,Math.min(8,Number(document.getElementById('max-players').value)||8)),elapsedSeconds:0,demoShortTime:true,tz:document.getElementById('terrorized').checked,ping:'green',activity:document.getElementById('create-activity').value,difficulty:selectedDifficulty};
+ playJoinGameLoading(()=>{
+  if(characterMode==='online'&&!game.isPrivate)games.unshift(game);
+  selectedName=name;render();showRegularCamp(game);
+ });
+});
 document.getElementById('join-game').addEventListener('click',()=>{
- const name=document.getElementById('game-name').value.trim() || selectedName;
- const game=gamesForCharacter().find(g=>g.name.toLowerCase()===name?.toLowerCase());
- if(game?.shopItem && openTradingShop){openTradingShop(game.shopItem);return;}
- if(name)playJoinGameLoading(()=>alert('Prototype: Join '+name));else alert('Select a game to join.');
+ const name=document.getElementById('game-name').value.trim()||selectedName;
+ const game=gamesForCharacter().find(entry=>entry.name.toLowerCase()===name?.toLowerCase());
+ if(game){joinLobbyGame(game);return;}
+ if(!name){alert('Select a game to join.');return;}
+ // Named/password games can still enter the shared camp scene.
+ playJoinGameLoading(()=>showRegularCamp({name,realm:activeRealm,characterGameMode:activeCharacterGameMode,difficulty:selectedDifficulty,activity:'Quest',isPrivate:document.getElementById('game-password').value.length>0}));
 });
 render();
 
@@ -146,15 +164,28 @@ chatFilterWords.addEventListener('input',applyChatWordFilter);
 document.getElementById('system-toggle').addEventListener('click',()=>{const chat=document.getElementById('chat');const hidden=chat.classList.toggle('hide-system');const btn=document.getElementById('system-toggle');btn.setAttribute('aria-pressed',String(hidden));btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'+(hidden?'<path d="M3 3l18 18"/>':'')+'</svg>';btn.title=hidden?'Show system notifications':'Hide system notifications';btn.setAttribute('aria-label',btn.title);});
 const chatChannel=document.getElementById('chat-channel');
 let selectedChatChannel='All';
+let composerChannel='All';
+let lobbyComposerChannel='All';
 const chatLog=document.getElementById('chat');
-const channelColors={All:'#e6e3de',Lobby:'#d5b968',Clan:'#70ce78',Trading:'#d4a3f5',PvP:'#ed7777',Farming:'#e6e3de',Quest:'#69b8ff',Private:'#e69ccc'};
-const channelIcons={Lobby:'\u25c6',Clan:'\u2663',Trading:'\u2696',PvP:'\u2694',Farming:'\u2660',Quest:'\u2726'};
+const channelColors={Game:'#e9d09c',All:'#e6e3de',Lobby:'#d5b968',Clan:'#70ce78',Trading:'#d4a3f5',PvP:'#ed7777',Farming:'#e6e3de',Quest:'#69b8ff',Private:'#e69ccc'};
+const channelIcons={Game:'G',Lobby:'\u25c6',Clan:'\u2663',Trading:'\u2696',PvP:'\u2694',Farming:'\u2660',Quest:'\u2726'};
 let privateRecipient=null;
+let privateRecipientName=null;
+function selectPrivateRecipient(account,name){privateRecipient=account||null;privateRecipientName=privateRecipient?(name||privateRecipient.split('#')[0]):null;}
 function chatChannelLabel(channel){return channel==='Private'?'Private':channel;}
-function beginWhisper(battletag){privateRecipient=battletag;document.querySelector('[data-chat-view="lobby"]').click();selectedChatChannel='Private';applyChatChannel();const input=document.getElementById('message');input.value='/w '+battletag+' ';input.focus();}
+function beginWhisper(battletag,name){
+ selectPrivateRecipient(battletag,name);
+ if(document.getElementById('market-shop').open){openInGameChat();}else{document.querySelector('[data-chat-view="lobby"]').click();}
+ selectedChatChannel='Private';composerChannel='Private';applyChatChannel();jumpToLatestChat();document.getElementById('message').focus();
+}
 function decorateChatMessage(message,channel){
  if(channel.includes('#')){message.dataset.recipient=channel;channel='Private';}
  message.dataset.channel=channel;
+ if(document.getElementById('market-shop').open&&currentCampGame){
+  const participant=message.querySelector('.player-name')?.dataset.battletag||message.dataset.recipient;
+  const relatedWhisper=channel==='Private'&&participant&&Array.from(chatLog.querySelectorAll('p[data-channel="Game"] .player-name')).some(sender=>sender.dataset.battletag===participant&&sender.closest('p').dataset.game===currentGameChatKey());
+  if(channel==='Game'||relatedWhisper)message.dataset.game=currentGameChatKey();
+ }
  message.style.setProperty('--channel-color',channelColors[channel]);
  const tag=document.createElement('span');tag.className='channel-tag';
  const label=channel==='Private'?'Private message':channel;
@@ -208,9 +239,20 @@ initialMessages.forEach((message,index)=>{
  timestamp.dateTime=sentAt.toISOString();timestamp.textContent=String(sentAt.getHours()).padStart(2,'0')+':'+String(sentAt.getMinutes()).padStart(2,'0');
 });
 chatChannel.querySelectorAll('[data-channel]').forEach(tab=>tab.style.setProperty('--channel-color',channelColors[tab.dataset.channel]));
+function currentGameChatKey(){
+ return currentCampGame?(currentCampGame.realm||activeRealm)+'|'+currentCampGame.characterGameMode+'|'+currentCampGame.name:'';
+}
+function chatMessageInCurrentGameScope(message){
+ return message.dataset.channel!=='Game'||(document.getElementById('market-shop').open&&message.dataset.game===currentGameChatKey());
+}
+function chatMessageVisibleInChannel(message,channel){
+ if(!chatMessageInCurrentGameScope(message))return false;
+ if(channel==='Game')return document.getElementById('market-shop').open&&message.dataset.game===currentGameChatKey();
+ return channel==='All'||message.dataset.channel===channel;
+}
 function updateChannelBadges(){
  const counts={};
- chatLog.querySelectorAll('p[data-unread="true"]').forEach(message=>{const channel=message.dataset.channel;counts[channel]=(counts[channel]||0)+1;});
+ chatLog.querySelectorAll('p[data-unread="true"]').forEach(message=>{if(!chatMessageInCurrentGameScope(message))return;const channel=message.dataset.channel;counts[channel]=(counts[channel]||0)+1;counts.GameView=(counts.GameView||0)+(message.dataset.game===currentGameChatKey()?1:0);});
  const chatTab=document.querySelector('[data-chat-view="lobby"]');
  let privateBadge=chatTab.querySelector('.chat-private-unread');
  if(!privateBadge){privateBadge=document.createElement('span');privateBadge.className='chat-private-unread';privateBadge.setAttribute('aria-hidden','true');chatTab.append(privateBadge);}
@@ -220,16 +262,20 @@ function updateChannelBadges(){
  chatChannel.querySelectorAll('[data-channel]').forEach(tab=>{
   let badge=tab.querySelector('.channel-unread');
   if(!badge){badge=document.createElement('span');badge.className='channel-unread';badge.setAttribute('aria-hidden','true');tab.append(badge);}
-  const count=tab.dataset.channel==='All'?Object.values(counts).reduce((total,value)=>total+value,0):(counts[tab.dataset.channel]||0);badge.textContent=count>99?'99+':String(count);badge.hidden=count===0;
+  const count=tab.dataset.channel==='All'?Object.entries(counts).reduce((total,[channel,value])=>channel==='GameView'?total:total+value,0):tab.dataset.channel==='Game'?(counts.GameView||0):(counts[tab.dataset.channel]||0);badge.textContent=count>99?'99+':String(count);badge.hidden=count===0;
   tab.setAttribute('aria-label',tab.dataset.channel+(count?', '+count+' unread messages':''));
  });
 }
-function chatIsVisible(){return !chatLog.hidden&&!document.body.classList.contains('intro-active')&&!document.hidden&&!document.querySelector('dialog[open]');}
+function chatIsVisible(){
+ const inGame=document.getElementById('market-shop').open;
+ const blocked=Array.from(document.querySelectorAll('dialog[open]')).some(dialog=>!inGame||dialog.id!=='market-shop');
+ return !chatLog.hidden&&(!inGame||!document.getElementById('in-game-chat').hidden)&&!document.body.classList.contains('intro-active')&&!document.hidden&&!blocked;
+}
 let chatScrollPosition=chatLog.scrollTop;
 function markChatReadAtBottom(){
  if(!chatIsVisible()||chatLog.scrollHeight-chatLog.clientHeight-chatLog.scrollTop>2)return;
  chatLog.querySelectorAll('p[data-unread="true"]').forEach(message=>{
-  if(selectedChatChannel==='All'||message.dataset.channel===selectedChatChannel)delete message.dataset.unread;
+  if(chatMessageVisibleInChannel(message,selectedChatChannel))delete message.dataset.unread;
  });
  updateChannelBadges();
 }
@@ -243,33 +289,58 @@ chatLog.addEventListener('wheel',event=>{if(event.deltaY>0)requestAnimationFrame
 chatLog.addEventListener('keydown',event=>{
  if(['End','PageDown','ArrowDown',' '].includes(event.key)&&!event.shiftKey)requestAnimationFrame(markChatReadAtBottom);
 });
+function jumpToLatestChat(){
+ if(chatLog.hidden)return;
+ chatLog.scrollTop=chatLog.scrollHeight;
+ chatScrollPosition=chatLog.scrollTop;
+ markChatReadAtBottom();
+}
+function updateComposerChannel(){
+ const input=document.getElementById('message');
+ const destination=composerChannel==='Private'&&privateRecipient?privateRecipientName:chatChannelLabel(composerChannel);
+ document.getElementById('chat-composer-tag').textContent='['+destination+']';
+ input.placeholder='';
+ input.setAttribute('aria-label','Chat message to '+destination);
+ const send=document.getElementById('chat-send');send.disabled=composerChannel==='All'||(composerChannel==='Private'&&!privateRecipient);
+ send.title=send.disabled?(composerChannel==='Private'?'Ctrl-click a private message or choose Whisper to select a player.':'Choose a channel or Ctrl-click a message to reply.'):'Send to '+destination;
+}
 function applyChatChannel(){
  const channel=selectedChatChannel;
- chatLog.classList.toggle('all-channels',channel==='All');
+ chatLog.classList.toggle('all-channels',channel==='All'||channel==='Game');
  chatChannel.querySelectorAll('[data-channel]').forEach(tab=>{const selected=tab.dataset.channel===channel;tab.classList.toggle('active',selected);tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;});
- document.getElementById('message').placeholder='['+chatChannelLabel(channel)+']';
- chatLog.querySelectorAll(':scope > p').forEach(message=>message.classList.toggle('channel-filtered',channel!=='All'&&message.dataset.channel!==channel));
+ updateComposerChannel();
+ chatLog.querySelectorAll(':scope > p').forEach(message=>message.classList.toggle('channel-filtered',!chatMessageVisibleInChannel(message,channel)));
  chatScrollPosition=chatLog.scrollTop;
- updateChannelBadges();
+ updateInviteButtons();updateChannelBadges();
 }
-chatChannel.addEventListener('click',event=>{const tab=event.target.closest('[data-channel]');if(!tab)return;selectedChatChannel=tab.dataset.channel;applyChatChannel();});
+chatChannel.addEventListener('click',event=>{const tab=event.target.closest('[data-channel]');if(!tab)return;selectedChatChannel=tab.dataset.channel;composerChannel=tab.dataset.channel;if(composerChannel==='Private')selectPrivateRecipient(null);applyChatChannel();jumpToLatestChat();});
+chatLog.addEventListener('click',event=>{
+ if(!event.ctrlKey||!['All','Private'].includes(selectedChatChannel))return;
+ const message=event.target.closest('p[data-channel]');if(!message||(selectedChatChannel==='Private'&&message.dataset.channel!=='Private'))return;
+ event.preventDefault();event.stopImmediatePropagation();
+ composerChannel=message.dataset.channel;
+ if(composerChannel==='Private'){const sender=message.querySelector('.player-name');selectPrivateRecipient(message.dataset.recipient||sender?.dataset.battletag,message.dataset.recipientName||sender?.dataset.character);}
+ updateComposerChannel();document.getElementById('message').focus();
+},true);
 chatChannel.addEventListener('keydown',event=>{
- const tabs=Array.from(chatChannel.querySelectorAll('[data-channel]'));const index=tabs.indexOf(document.activeElement);if(index<0)return;
+ const tabs=Array.from(chatChannel.querySelectorAll('[data-channel]')).filter(tab=>!tab.hidden);const index=tabs.indexOf(document.activeElement);if(index<0)return;
  let next;if(event.key==='ArrowRight')next=(index+1)%tabs.length;else if(event.key==='ArrowLeft')next=(index+tabs.length-1)%tabs.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;else return;
  event.preventDefault();tabs[next].focus();tabs[next].click();
 });applyChatChannel();
 document.getElementById('chat-form').onsubmit=e=>{
- e.preventDefault();const input=document.getElementById('message');let text=input.value.trim();if(!text)return;
- const whisper=text.match(/^\/w\s+(\S+)\s+([\s\S]+)$/i);
- let channel=selectedChatChannel==='All'?'Lobby':selectedChatChannel;
- if(whisper){privateRecipient=whisper[1];text=whisper[2];channel='Private';}
- if(channel==='Private'&&!privateRecipient){
-  input.value='/w ';input.placeholder='/w player#1234 message';input.focus();return;
+ e.preventDefault();if(composerChannel==='All'||(composerChannel==='Private'&&!privateRecipient))return;const input=document.getElementById('message');let text=input.value.trim();if(!text&&!pendingGameInvite)return;
+ let channel=composerChannel;
+ if(pendingGameInvite){
+  const game=currentCampGame;
+  const problem=game&&currentGameChatKey()===pendingGameInvite.key?gameEntryProblem(game):'This invitation no longer matches your game.';
+  if(problem){document.getElementById('in-game-chat-status').textContent=problem;return;}
+  postGameInvite(game,channel,{self:true,text,recipient:channel==='Private'?privateRecipient:null});
+  input.value='';clearGameInviteDraft();document.getElementById('in-game-chat-status').textContent='';return;
  }
  const message=document.createElement('p'),sender=document.createElement('span'),body=document.createElement('span');
- sender.className='chat-self';sender.textContent=channel==='Private'?'To '+privateRecipient.split('#')[0]+':':'You:';
+ sender.className='chat-self';sender.textContent=channel==='Private'?'To '+privateRecipientName+':':'You:';
  body.className='message-body';body.textContent=' '+text;
- if(channel==='Private'){message.classList.add('private-outgoing');message.dataset.recipient=privateRecipient;}
+ if(channel==='Private'){message.classList.add('private-outgoing');message.dataset.recipient=privateRecipient;message.dataset.recipientName=privateRecipientName;}
  message.append(sender,body);decorateChatMessage(message,channel);chatLog.append(message);
  applyChatWordFilter();applyChatChannel();input.value='';
 };
@@ -293,7 +364,7 @@ playerMenu.addEventListener('click',event=>{
  const button=event.target.closest('[data-player-action]');if(!button||!contextPlayer)return;
  const action=button.dataset.playerAction;
  if(action==='Whisper'){
-  beginWhisper(contextPlayer.battletag);
+  beginWhisper(contextPlayer.battletag,contextPlayer.character);
  }else{
   // UI mock only: no Battle.net actions are performed.
   alert(action+' — '+contextPlayer.character+' ('+contextPlayer.battletag+')\nPrototype action only.');
@@ -312,11 +383,13 @@ const recentDeleted={online:[],offline:[]};
 let characterMode='online',chosenCharacter='Malachar',characterSort='custom',characterSortAscending=true,draggedCharacter=null;
 const classSymbols={Barbarian:'⚔',Sorceress:'✧',Paladin:'🛡',Assassin:'⚒',Druid:'🐺',Amazon:'🏹',Necromancer:'☠',Warlock:'✦'};
 function syncCharacterGames(){
+ updateInviteButtons();
  if(characterMode!=='online'){render();return;}
  const icons=characterIcons[chosenCharacter]||[];
  const mode=(icons.includes('hc')?'hc':'sc')+'-'+(icons.includes('ld')?'ld':'nl');
  if(mode!==activeCharacterGameMode){
   activeCharacterGameMode=mode;
+  updateInviteButtons();
   selectedName=gamesForCharacter().find(game=>game.difficulty===selectedDifficulty)?.name||null;
   document.getElementById('game-name').value='';document.getElementById('game-password').value='';
  }
@@ -435,6 +508,7 @@ document.querySelectorAll('[data-chat-view]').forEach(button=>button.addEventLis
  document.querySelector('.chat-actions').hidden=!lobby;
  document.getElementById('chat-filter-panel').hidden=!lobby || document.getElementById('chat-filter-toggle').getAttribute('aria-expanded')!=='true';
  document.getElementById('chat-form').hidden=!lobby;
+ if(lobby){applyChatChannel();jumpToLatestChat();}
 }));
 document.querySelectorAll('.friend-group-title').forEach(button=>button.addEventListener('click',()=>{
  const open=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(open));
@@ -456,7 +530,7 @@ document.getElementById('friends-panel').addEventListener('contextmenu',e=>{
 friendMenu.addEventListener('click',e=>{
  const btn=e.target.closest('[data-friend-action]');if(!btn||!activeFriend)return;
  const action=btn.dataset.friendAction;const name=friendName(activeFriend);const row=activeFriend;
- if(action==='Whisper'){beginWhisper(row.querySelector('.friend-name')?.dataset.battletag||name);}
+ if(action==='Whisper'){beginWhisper(row.querySelector('.friend-name')?.dataset.battletag||name,name);}
  else if(action==='Add to Favorites'){
   const groups=document.querySelectorAll('.friend-group');const isFav=row.closest('.friend-group')===groups[0];const target=groups[isFav?1:0].querySelector('.friend-items');target.appendChild(row);
   const star=row.querySelector('.favorite-star');if(isFav){star?.remove();}else if(!star){const span=document.createElement('span');span.className='favorite-star';span.textContent=' ★';row.querySelector('.friend-name').appendChild(span);}
@@ -521,13 +595,21 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   playJoinGameLoading(()=>showShop(item));
  }
  function showShop(item) {
+  dialog.classList.remove('regular-game');
+  currentCampGame=null;
+  document.getElementById('shop-open-stash').hidden=false;
+  document.getElementById('shop-arrival').textContent='You have arrived. Click the seller\'s shop to browse their items.';
   lockedShopItem = null;
   visiting = item;
   document.getElementById('market-shop-title').textContent = `${item.seller}’s Shop`;
   document.getElementById('shop-trade-view').hidden = true;
   document.getElementById('shop-arrival').hidden = false;
   renderGameShop(); selectShopItem(item);
-  dialog.showModal();
+  if(!dialog.open)dialog.showModal();
+  const existing=gamesForCharacter().find(game=>game.shopItem===item.name);
+  const shopGame=existing||{name:item.seller+' Shop',characterGameMode:activeCharacterGameMode,realm:activeRealm,players:1,maxPlayers:8,difficulty:selectedDifficulty,activity:'Trading',shopItem:item.name};
+  if(!existing)games.push(shopGame);
+  mountInGameChat(shopGame);
   document.getElementById('shop-open-stash').focus();
  }
  openTradingShop = itemName => {
@@ -622,6 +704,7 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
  }
  document.getElementById('shop-open-stash').addEventListener('click', () => {
   lockedShopItem = null;
+  closeInGameChat();
   document.getElementById('shop-trade-view').hidden = false;
   document.getElementById('shop-arrival').hidden = true;
   renderGameShop(); selectShopItem(visiting);
@@ -633,9 +716,10 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   document.getElementById('shop-open-stash').focus();
  }));
  dialog.addEventListener('cancel', event => {
+  event.preventDefault();
   if (!document.getElementById('shop-trade-view').hidden) {
-   event.preventDefault(); document.querySelector('[data-close-trade]').click();
-  }
+   document.querySelector('[data-close-trade]').click();
+  }else{openGameMenu();}
  });
 
  function previewMarketItem(item) {
@@ -686,7 +770,7 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
  }
  document.querySelectorAll('[data-chat-view]').forEach(tab => tab.addEventListener('click', () => {panel.hidden = tab.dataset.chatView !== 'market';}));
  search.addEventListener('input', renderMarket);
- document.getElementById('market-leave').addEventListener('click', () => dialog.close());
+
  buy.addEventListener('click', () => {
   if (!visiting || lockedShopItem !== visiting || visiting.sold || wallet[visiting.rune] < visiting.price) return;
   wallet[visiting.rune] -= visiting.price; visiting.sold = true; owned.push(visiting);
@@ -854,11 +938,237 @@ document.getElementById('chat-server').addEventListener('change',event=>{
  document.addEventListener('click',event=>{
   const control=event.target.closest('button,[role="button"],summary,.game,.game-header [data-sort],input[type="checkbox"]');
   if(!control||control.disabled||control.closest('[inert]')||control.id==='intro-enter')return;
-  const sound=control.matches('#create-game,#market-buy,#join-game')?1:control.matches(tabSelector)?3:2;
+  const sound=control.matches('#create-game,#market-buy,#join-game,.escape-menu-hotspot')?1:control.matches(tabSelector)?3:2;
   playButtonSound(sound);
  },true);
  document.addEventListener('change',event=>{if(event.target.matches('select'))playButtonSound(2);},true);
 })();
+
+function postGameSystemNotice(kind,{character='',zone='Tal Rasha’s Tombs',unread=true}={}){
+ if(!currentCampGame||!document.getElementById('market-shop').open)return;
+ const message=document.createElement('p');message.className='system-notice';message.dataset.notice=kind;
+ if(kind==='joined'||kind==='left'){
+  message.classList.add('player-connection-notice');
+  message.textContent=character+(kind==='joined'?" joined our world. Diablo's minions grow stronger.":" left our world. Diablo's minions weaken.");
+ }else if(kind==='tz-start'||kind==='tz-end'){
+  const location=document.createElement('span');location.className='purple';location.textContent=zone;
+  message.append(document.createTextNode(kind==='tz-start'?'Corrupted tremors strike ':'The corrupted tremors fade from '),location,document.createTextNode(kind==='tz-start'?'!':'.'));
+ }else{message.textContent='The tremors show signs of slowing.';}
+ decorateChatMessage(message,'Game');if(unread)message.dataset.unread='true';
+ const position=chatLog.scrollTop;chatLog.append(message);applyChatWordFilter();applyChatChannel();chatLog.scrollTop=position;chatScrollPosition=position;
+ return message;
+}
+function nextGameSystemNotice(){
+ const key=currentGameChatKey();if(!key)return;
+ let state=gameSystemStates.get(key);
+ if(!state){state={step:0,playerIndex:0,joined:false,tzPhase:1};gameSystemStates.set(key,state);}
+ if(currentCampGame.tz&&++state.step%3===0){
+  const kinds=['tz-start','tz-fading','tz-end'];postGameSystemNotice(kinds[state.tzPhase]);state.tzPhase=(state.tzPhase+1)%kinds.length;return;
+ }
+ const names=['AshenBlade','MoonWarden','RuneHunter','IronWolf'];const character=names[state.playerIndex%names.length];
+ postGameSystemNotice(state.joined?'left':'joined',{character});
+ state.joined=!state.joined;if(!state.joined)state.playerIndex++;
+}
+
+// Reparent the same chat controls so both surfaces use one message history and unread state.
+function mountInGameChat(game){
+ clearGameInviteDraft();
+ const nodes=[document.querySelector('.chat-actions'),document.getElementById('chat-filter-panel'),chatLog,document.getElementById('chat-form'),playerMenu];
+ if(!gameChatMount){
+  lobbyChatChannel=selectedChatChannel;lobbyComposerChannel=composerChannel;
+  gameChatMount=nodes.map(node=>{const anchor=document.createComment('lobby-chat-position');node.before(anchor);return {node,anchor,hidden:node.hidden};});
+ }
+ currentCampGame={players:1,maxPlayers:8,...game,realm:game.realm||activeRealm};
+ if(characterMode==='online'&&!currentCampGame.isPrivate&&!games.some(entry=>entry.name===game.name&&entry.characterGameMode===game.characterGameMode))games.push(currentCampGame);
+ const host=document.getElementById('in-game-chat-content');nodes.forEach(node=>{host.append(node);node.hidden=false;});
+ chatFilterPanel.hidden=!chatFilterPanel.classList.contains('open');
+ document.getElementById('game-chat-channel').hidden=false;
+ document.getElementById('in-game-invite').hidden=false;
+ document.getElementById('in-game-invite').disabled=!!gameEntryProblem(currentCampGame);
+ document.getElementById('in-game-invite').title=gameEntryProblem(currentCampGame)||'Post this game to a chat channel';
+ document.getElementById('in-game-chat-status').textContent='';
+ const preview=document.getElementById('in-game-chat-preview');preview.replaceChildren();preview.dataset.game=currentGameChatKey();preview.hidden=true;
+ document.getElementById('in-game-chat').hidden=true;
+ selectedChatChannel='Game';composerChannel='Game';
+ const key=currentGameChatKey();
+ if(!gameChatSeen.has(key)){
+  gameChatSeen.add(key);
+  postGameSystemNotice('joined',{character:chosenCharacter,unread:false});
+  if(game.tz)postGameSystemNotice('tz-start',{unread:false});
+ }
+ applyChatChannel();
+}
+function unmountInGameChat(){
+ if(!gameChatMount)return;
+ clearGameInviteDraft();
+ closeInGameChat(false);
+ gameChatMount.forEach(({node,anchor,hidden})=>{anchor.replaceWith(node);node.hidden=hidden;});
+ gameChatMount=null;
+ document.getElementById('game-chat-channel').hidden=true;
+ document.getElementById('in-game-invite').hidden=true;
+ if(selectedChatChannel==='Game')selectedChatChannel=lobbyChatChannel;
+ if(composerChannel==='Game')composerChannel=lobbyComposerChannel;
+ applyChatChannel();
+ if(!chatLog.hidden)jumpToLatestChat();
+}
+function hideInGameMessagePreview(){
+ document.getElementById('in-game-chat-preview').hidden=true;
+}
+function showInGameMessagePreview(message){
+ if(!document.getElementById('market-shop').open||!document.getElementById('in-game-chat').hidden)return;
+ if(message.dataset.channel!=='Private'&&(message.dataset.channel!=='Game'||message.dataset.game!==currentGameChatKey()))return;
+ if(message.classList.contains('word-filtered')||(message.classList.contains('system-notice')&&chatLog.classList.contains('hide-system')))return;
+ const preview=document.getElementById('in-game-chat-preview');
+ const key=currentGameChatKey();if(preview.dataset.game!==key){preview.replaceChildren();preview.dataset.game=key;}
+ const copy=message.cloneNode(true);copy.classList.remove('channel-filtered');copy.removeAttribute('data-unread');
+ copy.querySelectorAll('[tabindex]').forEach(node=>node.removeAttribute('tabindex'));
+ preview.append(copy);while(preview.children.length>6)preview.firstElementChild.remove();
+ preview.hidden=false;preview.scrollTop=preview.scrollHeight;
+}
+// Watch the shared history so every incoming message path uses the same compact view.
+new MutationObserver(records=>{
+ for(const record of records)for(const node of record.addedNodes){
+  if(node.nodeType===1&&node.matches('p[data-unread="true"]'))showInGameMessagePreview(node);
+ }
+}).observe(chatLog,{childList:true});
+function openInGameChat(){
+ if(!document.getElementById('market-shop').open||!gameChatMount)return;
+ hideInGameMessagePreview();
+ document.getElementById('in-game-chat').hidden=false;
+ applyChatChannel();jumpToLatestChat();document.getElementById('message').focus();
+}
+function closeInGameChat(focusGame=true){
+ hideInGameMessagePreview();
+ document.getElementById('in-game-chat').hidden=true;
+ if(focusGame&&document.getElementById('market-shop').open)document.getElementById('market-shop').focus();
+}
+document.getElementById('in-game-chat-close').addEventListener('click',()=>closeInGameChat());
+document.getElementById('market-shop').addEventListener('click',event=>{
+ const panel=document.getElementById('in-game-chat');
+ const insideChat=event.composedPath().some(node=>node===panel||node===playerMenu);
+ if(insideChat||(panel.hidden&&document.getElementById('in-game-chat-preview').hidden))return;
+ closeInGameChat(false);
+});
+function handleInGameChatEnter(event){
+ if(event.key!=='Enter'||event.repeat||!document.getElementById('market-shop').open)return;
+ if(document.querySelector('dialog[open]:not(#market-shop)'))return;
+ if(event.target.closest?.('button,input,textarea,select,[contenteditable="true"]'))return;
+ event.preventDefault();openInGameChat();
+}
+document.addEventListener('keydown',handleInGameChatEnter,true);
+
+// Escape opens the same in-game menu in regular and trading games.
+let gameMenuReturnFocus=null;
+function openGameMenu(){
+ const game=document.getElementById('market-shop'),menu=document.getElementById('game-escape-menu');
+ if(!game.open||menu.open)return;
+ gameMenuReturnFocus=document.activeElement;
+ menu.showModal();menu.focus();
+}
+function closeGameMenu(){
+ document.getElementById('game-escape-menu').close();
+ const game=document.getElementById('market-shop');
+ if(gameMenuReturnFocus&&game.contains(gameMenuReturnFocus)&&!gameMenuReturnFocus.hidden)gameMenuReturnFocus.focus();else if(game.open)game.focus();
+ gameMenuReturnFocus=null;
+}
+// Handle Escape directly so it never closes the camp dialog itself.
+function handleGameEscape(event){
+ if(event.key!=='Escape'||!document.getElementById('market-shop').open||document.getElementById('join-loading')?.open)return;
+ event.preventDefault();event.stopPropagation();if(event.repeat)return;
+ if(document.getElementById('game-escape-menu').open){closeGameMenu();return;}
+ if(!document.getElementById('in-game-chat').hidden||!document.getElementById('in-game-chat-preview').hidden){closeInGameChat();return;}
+ if(!document.getElementById('shop-trade-view').hidden){document.querySelector('[data-close-trade]').click();return;}
+ openGameMenu();
+}
+document.addEventListener('keydown',handleGameEscape,true);
+document.getElementById('game-resume').addEventListener('click',closeGameMenu);
+document.getElementById('game-escape-menu').addEventListener('cancel',event=>{event.preventDefault();event.stopPropagation();closeGameMenu();});
+document.getElementById('game-save-exit').addEventListener('click',()=>{
+ closeGameMenu();document.getElementById('market-shop').close();currentCampGame=null;
+});
+document.getElementById('market-shop').addEventListener('close',()=>{
+ const menu=document.getElementById('game-escape-menu');if(menu.open)menu.close();gameMenuReturnFocus=null;
+ unmountInGameChat();currentCampGame=null;
+});
+
+// Regular games and chat invitations share the existing camp scene.
+function showRegularCamp(game){
+ currentCampGame={...game,realm:game.realm||activeRealm};
+ const dialog=document.getElementById('market-shop');
+ dialog.classList.add('regular-game');
+ document.getElementById('market-shop-title').textContent=game.name;
+ document.getElementById('shop-trade-view').hidden=true;
+ document.getElementById('shop-open-stash').hidden=true;
+ const arrival=document.getElementById('shop-arrival');arrival.hidden=true;
+ arrival.textContent=game.difficulty+' - '+game.activity+' - Welcome to the Rogue Encampment.';
+ if(!dialog.open)dialog.showModal();
+ mountInGameChat(game);
+ dialog.focus();
+}
+function gameEntryProblem(game,realm=activeRealm){
+ if(realm!==activeRealm)return 'This invitation is for a different server.';
+ if(characterMode!=='online')return 'Select an Online character to join.';
+ if(game.characterGameMode!==activeCharacterGameMode)return 'Select a character with matching Hardcore and Ladder settings.';
+ if(game.isPrivate)return 'Open invitations are available for public games only.';
+ if(game.players>=game.maxPlayers)return 'This game is full.';
+ return '';
+}
+function joinLobbyGame(game){
+ const problem=gameEntryProblem(game);if(problem){alert(problem);return;}
+ if(game.shopItem&&openTradingShop){openTradingShop(game.shopItem);return;}
+ playJoinGameLoading(()=>showRegularCamp(game));
+}
+function resolveChatInvite(invite){
+ if(invite.realm!==activeRealm)return null;
+ return games.find(game=>game.name===invite.name&&game.characterGameMode===invite.characterGameMode);
+}
+function updateInviteButtons(){
+ chatLog.querySelectorAll('[data-join-invite]').forEach(button=>{
+  const invite=chatInvites.get(button.dataset.joinInvite);
+  const game=invite&&resolveChatInvite(invite);
+  const problem=game?gameEntryProblem(game,invite.realm):'This game is no longer available.';
+  button.disabled=!!problem;button.title=problem||'Join '+game.name;
+ });
+}
+function postGameInvite(game,channel,{self=false,character='PartyLeader',battletag='PartyLeader#2400',text='Come join us!',recipient=null}={}){
+ const id=String(++nextInviteId);
+ chatInvites.set(id,{name:game.name,realm:activeRealm,characterGameMode:game.characterGameMode});
+ const message=document.createElement('p');message.className='chat-game-invite';
+ const sender=document.createElement('span');sender.textContent=(self?chosenCharacter:character)+':';
+ sender.className=self?'chat-self':'yellow player-name';
+ if(self&&channel==='Private'&&recipient){message.classList.add('private-outgoing');message.dataset.recipient=recipient;message.dataset.recipientName=privateRecipientName;sender.textContent='To '+(privateRecipientName||recipient.split('#')[0])+':';}
+ if(!self){sender.dataset.character=character;sender.dataset.battletag=battletag;}
+ const body=document.createElement('span');body.className='message-body';body.textContent=' '+text+' ';
+ const details=document.createElement('span');details.className='chat-invite-game';details.textContent=game.name;
+ const join=document.createElement('button');join.type='button';join.className='mini-control chat-join-invite';join.dataset.joinInvite=id;join.textContent='Join Me';join.setAttribute('aria-label','Join '+game.name);
+ const gameLine=document.createElement('span');gameLine.className='chat-invite-line';gameLine.append(join,details);
+ message.append(sender,body,gameLine);decorateChatMessage(message,channel);
+ if(!self)message.dataset.unread='true';
+ const position=chatLog.scrollTop;chatLog.append(message);applyChatWordFilter();applyChatChannel();chatLog.scrollTop=position;chatScrollPosition=position;
+ return message;
+}
+chatLog.addEventListener('click',event=>{
+ const button=event.target.closest('[data-join-invite]');if(!button||button.disabled)return;
+ const invite=chatInvites.get(button.dataset.joinInvite);const game=invite&&resolveChatInvite(invite);
+ if(!game){updateInviteButtons();return;}
+ joinLobbyGame(game);
+});
+function clearGameInviteDraft(){
+ pendingGameInvite=null;document.getElementById('chat-invite-draft').hidden=true;
+ document.getElementById('in-game-invite').setAttribute('aria-pressed','false');
+}
+function attachCurrentGameInvite(){
+ const game=currentCampGame,status=document.getElementById('in-game-chat-status');
+ const problem=game?gameEntryProblem(game):'Join a game first.';
+ if(problem){status.textContent=problem;return;}
+ pendingGameInvite={key:currentGameChatKey()};
+ document.getElementById('chat-invite-draft-name').textContent=game.name;
+ document.getElementById('chat-invite-draft').hidden=false;
+ document.getElementById('in-game-invite').setAttribute('aria-pressed','true');
+ status.textContent='';document.getElementById('message').focus();
+}
+document.getElementById('in-game-invite').addEventListener('click',attachCurrentGameInvite);
+document.getElementById('chat-invite-draft-remove').addEventListener('click',clearGameInviteDraft);
 
 // One loading cinematic is shared by Join Game and Visit Shop.
 let joinLoadingActive=false;
@@ -886,6 +1196,7 @@ function playJoinGameLoading(onReady){
  const privateMessageSound=new Audio('img/message.mp3');privateMessageSound.preload='auto';privateMessageSound.volume=1;
  const channels=['Lobby','Clan','Trading','PvP','Farming','Quest','Private'];
  const extraMessages={
+  Game:['Anyone need a waypoint before we head out?','Ready when you are.','I will open a portal when I get there.'],
   Lobby:['Anyone starting a fresh character today?','Nice runs everyone, thanks for the party!','What is the current Terror Zone?','Back after a break. Good to see the lobby busy.','Looking for a relaxed group for a few runs.'],
   Clan:['Clan stash has spare leveling gear.','We still have two spots for tonight.','Meet in Act V when you are ready.','Great teamwork on that last run!','Who needs help gearing an alternate character?'],
   Trading:['FT 4os Monarch, looking for runes.','ISO lightning skiller, whisper your price.','Selling a keyset, open to offers.','Looking for a Raven Frost with good dexterity.','FT spare Spirit sword for a new player.'],
@@ -896,9 +1207,9 @@ function playJoinGameLoading(onReady){
  };
  const messagePools={},messageQueues={},lastMessages={};
  function nextDemoMessage(channel){
-  const key=activeRealm+':'+channel;
+  const key=activeRealm+':'+channel+(channel==='Game'?':'+currentGameChatKey():'');
   if(!messagePools[key]){
-   const existing=Array.from(chatLog.querySelectorAll('p')).filter(message=>message.dataset.channel===channel&&!message.classList.contains('private-outgoing'));
+   const existing=Array.from(chatLog.querySelectorAll('p')).filter(message=>message.dataset.channel===channel&&!message.classList.contains('private-outgoing')&&!message.classList.contains('chat-game-invite'));
    const pool=existing.map(message=>{
     const sender=message.querySelector('.player-name');if(!sender)return null;
     const copy=message.cloneNode(true);copy.querySelectorAll('.player-name,.channel-tag,time').forEach(node=>node.remove());
@@ -920,9 +1231,21 @@ function playJoinGameLoading(onReady){
  function markVisibleRead(){if(chatIsVisible())applyChatChannel();}
  document.querySelector('[data-chat-view="lobby"]').addEventListener('click',markVisibleRead);
  document.addEventListener('visibilitychange',markVisibleRead);
+ let demoMessageCount=0;
+ let gameNoticeTicks=0;
  setInterval(()=>{
-  if(document.hidden||document.body.classList.contains('intro-active')||document.body.classList.contains('offline-character')||joinLoadingActive||document.querySelector('dialog[open]'))return;
-  const channel=channels[Math.floor(Math.random()*channels.length)];
+  if(document.hidden||document.body.classList.contains('intro-active')||document.body.classList.contains('offline-character')||joinLoadingActive||document.querySelector('dialog[open]:not(#market-shop)'))return;
+  if(document.getElementById('market-shop').open&&++gameNoticeTicks%3===0){nextGameSystemNotice();return;}
+  if(++demoMessageCount%4===0){
+   const openGames=gamesForCharacter().filter(game=>!game.shopItem&&!gameEntryProblem(game));
+   if(openGames.length){
+    const game=openGames[Math.floor(Math.random()*openGames.length)];
+    const inviteTexts={Farming:'Running a few more, got room if anyone wants in.',Quest:'Could use a hand with quests. Anyone up for it?',PvP:'Anyone up for some friendly duels?',Trading:'Trading in town if anyone wants to stop by.'};
+    postGameInvite(game,game.activity,{character:'PartyLeader',text:inviteTexts[game.activity]});return;
+   }
+  }
+  const availableChannels=document.getElementById('market-shop').open?[...channels,'Game']:channels;
+  const channel=availableChannels[Math.floor(Math.random()*availableChannels.length)];
   const {character,battletag,text}=nextDemoMessage(channel);
   const message=document.createElement('p'),sender=document.createElement('span'),body=document.createElement('span');
   sender.className='player-name';sender.dataset.character=character;sender.dataset.battletag=battletag;sender.textContent=character+':';
@@ -934,3 +1257,9 @@ function playJoinGameLoading(onReady){
   chatLog.scrollTop=scrollPosition;chatScrollPosition=scrollPosition;
  },10000);
 })();
+
+// Open invitations from other players appear in the activity channels and All.
+for(const activity of ['Farming','Quest','PvP']){
+ const game=gamesForCharacter().find(entry=>entry.activity===activity&&!entry.shopItem&&!gameEntryProblem(entry));
+ if(game)postGameInvite(game,activity,{character:activity==='Quest'?'ActWalker':activity==='PvP'?'DuelWarden':'ChaosRunner',text:activity==='Quest'?'Working through the acts. Anyone need the quests?':activity==='PvP'?'Got room for a few friendly duels.':'Doing a few runs, still got room.'});
+}
