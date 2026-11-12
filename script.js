@@ -7,6 +7,7 @@ let openTradingShop = null;
 let currentCampGame = null;
 let pendingGameInvite=null;
 let gameChatMount=null;
+let gameMessagePreviewTimer=null;
 let lobbyChatChannel='All';
 const gameChatSeen=new Set();
 const gameSystemStates=new Map();
@@ -289,6 +290,14 @@ chatLog.addEventListener('wheel',event=>{if(event.deltaY>0)requestAnimationFrame
 chatLog.addEventListener('keydown',event=>{
  if(['End','PageDown','ArrowDown',' '].includes(event.key)&&!event.shiftKey)requestAnimationFrame(markChatReadAtBottom);
 });
+function appendChatMessage(message){
+ const position=chatLog.scrollTop;
+ const followLatest=chatIsVisible()&&chatLog.scrollHeight-chatLog.clientHeight-position<=2;
+ chatLog.append(message);applyChatWordFilter();applyChatChannel();
+ chatLog.scrollTop=followLatest?chatLog.scrollHeight:position;
+ chatScrollPosition=chatLog.scrollTop;
+ if(followLatest)markChatReadAtBottom();
+}
 function jumpToLatestChat(){
  if(chatLog.hidden)return;
  chatLog.scrollTop=chatLog.scrollHeight;
@@ -341,8 +350,7 @@ document.getElementById('chat-form').onsubmit=e=>{
  sender.className='chat-self';sender.textContent=channel==='Private'?'To '+privateRecipientName+':':'You:';
  body.className='message-body';body.textContent=' '+text;
  if(channel==='Private'){message.classList.add('private-outgoing');message.dataset.recipient=privateRecipient;message.dataset.recipientName=privateRecipientName;}
- message.append(sender,body);decorateChatMessage(message,channel);chatLog.append(message);
- applyChatWordFilter();applyChatChannel();input.value='';
+ message.append(sender,body);decorateChatMessage(message,channel);appendChatMessage(message);input.value='';
 };
 // Right-click a player chat message (including its text) to show account identity and actions.
 const playerMenu=document.getElementById('player-context');
@@ -955,7 +963,7 @@ function postGameSystemNotice(kind,{character='',zone='Tal Rasha’s Tombs',unre
   message.append(document.createTextNode(kind==='tz-start'?'Corrupted tremors strike ':'The corrupted tremors fade from '),location,document.createTextNode(kind==='tz-start'?'!':'.'));
  }else{message.textContent='The tremors show signs of slowing.';}
  decorateChatMessage(message,'Game');if(unread)message.dataset.unread='true';
- const position=chatLog.scrollTop;chatLog.append(message);applyChatWordFilter();applyChatChannel();chatLog.scrollTop=position;chatScrollPosition=position;
+ appendChatMessage(message);
  return message;
 }
 function nextGameSystemNotice(){
@@ -972,7 +980,7 @@ function nextGameSystemNotice(){
 
 // Reparent the same chat controls so both surfaces use one message history and unread state.
 function mountInGameChat(game){
- clearGameInviteDraft();
+ clearGameInviteDraft();hideInGameMessagePreview();
  const nodes=[document.querySelector('.chat-actions'),document.getElementById('chat-filter-panel'),chatLog,document.getElementById('chat-form'),playerMenu];
  if(!gameChatMount){
   lobbyChatChannel=selectedChatChannel;lobbyComposerChannel=composerChannel;
@@ -1012,6 +1020,7 @@ function unmountInGameChat(){
  if(!chatLog.hidden)jumpToLatestChat();
 }
 function hideInGameMessagePreview(){
+ clearTimeout(gameMessagePreviewTimer);gameMessagePreviewTimer=null;
  document.getElementById('in-game-chat-preview').hidden=true;
 }
 function showInGameMessagePreview(message){
@@ -1024,6 +1033,8 @@ function showInGameMessagePreview(message){
  copy.querySelectorAll('[tabindex]').forEach(node=>node.removeAttribute('tabindex'));
  preview.append(copy);while(preview.children.length>6)preview.firstElementChild.remove();
  preview.hidden=false;preview.scrollTop=preview.scrollHeight;
+ clearTimeout(gameMessagePreviewTimer);
+ gameMessagePreviewTimer=setTimeout(hideInGameMessagePreview,10000);
 }
 // Watch the shared history so every incoming message path uses the same compact view.
 new MutationObserver(records=>{
@@ -1050,9 +1061,14 @@ document.getElementById('market-shop').addEventListener('click',event=>{
  closeInGameChat(false);
 });
 function handleInGameChatEnter(event){
- if(event.key!=='Enter'||event.repeat||!document.getElementById('market-shop').open)return;
+ if(event.key!=='Enter'||event.repeat||event.isComposing||!document.getElementById('market-shop').open)return;
  if(document.querySelector('dialog[open]:not(#market-shop)'))return;
- if(event.target.closest?.('button,input,textarea,select,[contenteditable="true"]'))return;
+ const panel=document.getElementById('in-game-chat'),input=document.getElementById('message');
+ const control=event.target.closest?.('button,input,textarea,select,[contenteditable="true"]');
+ if(!panel.hidden&&(!control||control===input)&&!input.value.trim()&&!pendingGameInvite){
+  event.preventDefault();event.stopPropagation();closeInGameChat();return;
+ }
+ if(control)return;
  event.preventDefault();openInGameChat();
 }
 document.addEventListener('keydown',handleInGameChatEnter,true);
@@ -1144,7 +1160,7 @@ function postGameInvite(game,channel,{self=false,character='PartyLeader',battlet
  const gameLine=document.createElement('span');gameLine.className='chat-invite-line';gameLine.append(join,details);
  message.append(sender,body,gameLine);decorateChatMessage(message,channel);
  if(!self)message.dataset.unread='true';
- const position=chatLog.scrollTop;chatLog.append(message);applyChatWordFilter();applyChatChannel();chatLog.scrollTop=position;chatScrollPosition=position;
+ appendChatMessage(message);
  return message;
 }
 chatLog.addEventListener('click',event=>{
@@ -1252,9 +1268,7 @@ function playJoinGameLoading(onReady){
   body.className='message-body';body.textContent=' '+text;message.append(sender,body);
   decorateChatMessage(message,channel);if(channel==='Private'){message.dataset.recipient=battletag;privateMessageSound.currentTime=0;privateMessageSound.play().catch(()=>{});}
   message.dataset.unread='true';
-  const scrollPosition=chatLog.scrollTop;
-  chatLog.append(message);applyChatWordFilter();applyChatChannel();
-  chatLog.scrollTop=scrollPosition;chatScrollPosition=scrollPosition;
+  appendChatMessage(message);
  },10000);
 })();
 
