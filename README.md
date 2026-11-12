@@ -1,4 +1,4 @@
-# D2R Lobby Design — v1.88
+# D2R Lobby Design — v1.93
 
 A standalone, browser-based Diablo II: Resurrected lobby UI/UX prototype. This project is a visual and interaction demonstration, not a Battle.net integration.
 
@@ -24,7 +24,7 @@ Open `index.html` in Chrome or Edge. No dependencies or build tools are required
 ## Development rules
 
 - Preserve all existing functionality and layout unless explicitly requested otherwise.
-- Continue project versioning from **v1.88** (next revision: **v1.89**).
+- Continue project versioning from **v1.93** (next revision: **v1.94**).
 - Keep the historical project-rule comments in `index.html` and update them for future changes.
 - Keep the three core files (`index.html`, `style.css`, `script.js`) unless a future change warrants further organization.
 - Use relative file paths so the site works on GitHub Pages and locally.
@@ -103,3 +103,5 @@ Invite to Game attaches Join Me and the current game name to the chat draft with
 The viewed channel and composer destination are independent. All is a read-only destination: Send is disabled when the composer shows [All]. While viewing All, Ctrl-clicking a message targets its channel without switching the viewed tab, preserving any drafted text or game invitation.
 
 Private is also a read-only composer destination until a player is selected. Ctrl-click a private message in All or Private, or choose Whisper from a player menu, to show that player?s name as the composer tag. The tag routes the message directly; no /w command is needed.
+
+Chat follows new messages while the reader is at the bottom. Scrolling up pauses this behavior and preserves the reading position; returning to the bottom resumes it. This applies to lobby and in-game channels.

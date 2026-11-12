@@ -322,7 +322,7 @@ function applyChatChannel(){
  chatScrollPosition=chatLog.scrollTop;
  updateInviteButtons();updateChannelBadges();
 }
-chatChannel.addEventListener('click',event=>{const tab=event.target.closest('[data-channel]');if(!tab)return;selectedChatChannel=tab.dataset.channel;composerChannel=tab.dataset.channel;if(composerChannel==='Private')selectPrivateRecipient(null);applyChatChannel();jumpToLatestChat();});
+chatChannel.addEventListener('click',event=>{const tab=event.target.closest('[data-channel]');if(!tab)return;selectedChatChannel=tab.dataset.channel;composerChannel=tab.dataset.channel;if(composerChannel==='Private')selectPrivateRecipient(null);applyChatChannel();jumpToLatestChat();if(document.getElementById('market-shop').open)document.getElementById('message').focus({preventScroll:true});});
 chatLog.addEventListener('click',event=>{
  if(!event.ctrlKey||!['All','Private'].includes(selectedChatChannel))return;
  const message=event.target.closest('p[data-channel]');if(!message||(selectedChatChannel==='Private'&&message.dataset.channel!=='Private'))return;
