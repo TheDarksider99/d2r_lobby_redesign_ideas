@@ -71,7 +71,7 @@ function assignGameModes(pool){
 }
 function gamesForCharacter(){return games.filter(game=>game.characterGameMode===activeCharacterGameMode);}
 assignGameModes(games);
-const list=document.getElementById('game-list');const search=document.getElementById('search');const tzToggle=document.getElementById('tz-toggle');const activityFilter=document.getElementById('activity-filter');let selectedName=names[0];let sortKey=null;let sortAsc=true;let playersSortMode=0;let tzMode='all';let lastRefresh=Date.now();const ageFilterToggle=document.getElementById('age-filter-toggle');const ageFilterPanel=document.getElementById('age-filter-panel');const ageFilterValue=document.getElementById('age-filter-value');const ageFilterUnit=document.getElementById('age-filter-unit');const ageFilterEnabled=document.getElementById('age-filter-enabled');
+const list=document.getElementById('game-list');const search=document.getElementById('search');const tzToggle=document.getElementById('tz-toggle');const activityFilter=document.getElementById('activity-filter');let selectedActivity='all';let selectedName=names[0];let sortKey=null;let sortAsc=true;let playersSortMode=0;let tzMode='all';let lastRefresh=Date.now();const ageFilterToggle=document.getElementById('age-filter-toggle');const ageFilterPanel=document.getElementById('age-filter-panel');const ageFilterValue=document.getElementById('age-filter-value');const ageFilterUnit=document.getElementById('age-filter-unit');const ageFilterEnabled=document.getElementById('age-filter-enabled');
 function formatTime(seconds){if(seconds<60)return `${seconds}s`;const h=Math.floor(seconds/3600),m=Math.floor(seconds%3600/60);return `${h}:${String(m).padStart(2,'0')}`}
 function formatDetailedTime(seconds){const h=Math.floor(seconds/3600),m=Math.floor(seconds%3600/60),sec=seconds%60;return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`}
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -82,8 +82,22 @@ function renderDetails(){
  details.innerHTML=`<p>Elapsed Time</p><strong>${formatDetailedTime(game.elapsedSeconds)}</strong><p>Level Restrictions</p><strong>Any</strong><p>Description</p><strong>${escapeHtml(game.description||'—')}</strong><p>Players (${game.players}/${game.maxPlayers})</p><ul class="game-detail-players">${Array.from({length:game.players},(_,index)=>`<li>${index===0?'Host':`Player ${index+1}`}</li>`).join('')}</ul>`;
 }
 document.querySelectorAll('.game-header [data-sort]').forEach(h=>h.addEventListener('click',()=>{const key=h.dataset.sort;if(key==='players'){playersSortMode=sortKey==='players'?(playersSortMode+1)%3:0;sortKey=key;sortAsc=playersSortMode!==1}else{if(sortKey===key){sortAsc=!sortAsc}else{sortKey=key;sortAsc=true}}render()}));
-function render(){const q=search.value.toLowerCase();list.innerHTML='';if(document.body.classList.contains('offline-character')){document.getElementById('game-details').innerHTML='';return;}document.querySelectorAll('.game-header [data-sort]').forEach(h=>{h.classList.toggle('sorted',h.dataset.sort===sortKey);h.title=h.dataset.sort===sortKey?(sortKey==='players'&&playersSortMode===2?'Ascending ▲ (full games last)':sortAsc?'Ascending ▲':'Descending ▼'):'Click to sort'});let visible=gamesForCharacter().filter(g=>g.difficulty===selectedDifficulty&&g.name.toLowerCase().includes(q)&&(activityFilter.value==='all'||g.activity===activityFilter.value)&&(tzMode==='all'||(tzMode==='tz'&&g.tz)||(tzMode==='non-tz'&&!g.tz))&&(!ageFilterEnabled.checked||g.elapsedSeconds<Math.max(1,Number(ageFilterValue.value)||1)*(ageFilterUnit.value==='hours'?3600:60)));if(sortKey){visible.sort((a,b)=>{if(sortKey==='players'&&playersSortMode===2){const af=a.players>=a.maxPlayers,bf=b.players>=b.maxPlayers;if(af!==bf)return af?1:-1;}let av=a[sortKey],bv=b[sortKey];if(typeof av==='string'){return (sortAsc?1:-1)*av.localeCompare(bv)}return (sortAsc?1:-1)*(av-bv)})}visible.forEach(g=>{const row=document.createElement('div');row.className='game'+(g.name===selectedName?' selected':'');row.innerHTML=`<span class="activity-${g.activity.toLowerCase()}">${g.name}</span><span class="activity-${g.activity.toLowerCase()}">${g.activity}</span><span class="${g.players>=g.maxPlayers?'full-players':'gold'}">${g.players}/${g.maxPlayers}</span><span>${formatTime(g.elapsedSeconds)}</span><span title="${g.tz?'Terror Zone':'Normal game'}" class="${g.tz?'gold':''}">${g.tz?'✦':''}</span><span title="Ping indicator" class="${g.ping}">●</span>`;row.onclick=()=>{selectedName=g.name;document.querySelector('.fields input').value=g.name;render()};list.appendChild(row)});renderDetails()}
-search.addEventListener('input',render);activityFilter.addEventListener('change',render);
+function render(){const q=search.value.toLowerCase();list.innerHTML='';if(document.body.classList.contains('offline-character')){document.getElementById('game-details').innerHTML='';return;}document.querySelectorAll('.game-header [data-sort]').forEach(h=>{h.classList.toggle('sorted',h.dataset.sort===sortKey);h.title=h.dataset.sort===sortKey?(sortKey==='players'&&playersSortMode===2?'Ascending ▲ (full games last)':sortAsc?'Ascending ▲':'Descending ▼'):'Click to sort'});let visible=gamesForCharacter().filter(g=>g.difficulty===selectedDifficulty&&g.name.toLowerCase().includes(q)&&(selectedActivity==='all'||g.activity===selectedActivity)&&(tzMode==='all'||(tzMode==='tz'&&g.tz)||(tzMode==='non-tz'&&!g.tz))&&(!ageFilterEnabled.checked||g.elapsedSeconds<Math.max(1,Number(ageFilterValue.value)||1)*(ageFilterUnit.value==='hours'?3600:60)));if(sortKey){visible.sort((a,b)=>{if(sortKey==='players'&&playersSortMode===2){const af=a.players>=a.maxPlayers,bf=b.players>=b.maxPlayers;if(af!==bf)return af?1:-1;}let av=a[sortKey],bv=b[sortKey];if(typeof av==='string'){return (sortAsc?1:-1)*av.localeCompare(bv)}return (sortAsc?1:-1)*(av-bv)})}visible.forEach(g=>{const row=document.createElement('div');row.className='game'+(g.name===selectedName?' selected':'');row.innerHTML=`<span class="activity-${g.activity.toLowerCase()}">${g.name}</span><span class="activity-${g.activity.toLowerCase()}">${g.activity}</span><span class="${g.players>=g.maxPlayers?'full-players':'gold'}">${g.players}/${g.maxPlayers}</span><span>${formatTime(g.elapsedSeconds)}</span><span title="${g.tz?'Terror Zone':'Normal game'}" class="${g.tz?'gold':''}">${g.tz?'✦':''}</span><span title="Ping indicator" class="${g.ping}">●</span>`;row.onclick=()=>{selectedName=g.name;document.querySelector('.fields input').value=g.name;render()};list.appendChild(row)});renderDetails()}
+search.addEventListener('input',render);
+activityFilter.addEventListener('click',event=>{
+ const tab=event.target.closest('[data-activity]');if(!tab)return;
+ selectedActivity=tab.dataset.activity;
+ activityFilter.querySelectorAll('[data-activity]').forEach(button=>{
+  const active=button===tab;button.classList.toggle('active',active);button.setAttribute('aria-selected',String(active));button.tabIndex=active?0:-1;
+ });
+ render();
+});
+activityFilter.addEventListener('keydown',event=>{
+ const tabs=Array.from(activityFilter.querySelectorAll('[data-activity]'));
+ const index=tabs.indexOf(document.activeElement);if(index<0)return;
+ let next;if(event.key==='ArrowRight')next=(index+1)%tabs.length;else if(event.key==='ArrowLeft')next=(index-1+tabs.length)%tabs.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;else return;
+ event.preventDefault();tabs[next].focus();tabs[next].click();
+});
 tzToggle.addEventListener('click',()=>{
  tzMode=tzMode==='all'?'tz':tzMode==='tz'?'non-tz':'all';
  tzToggle.dataset.mode=tzMode;tzToggle.setAttribute('aria-pressed',String(tzMode!=='all'));
@@ -204,21 +218,38 @@ function updateChannelBadges(){
  chatTab.setAttribute('aria-label','Chat'+(privateCount?', '+privateCount+' unread private messages':''));
 
  chatChannel.querySelectorAll('[data-channel]').forEach(tab=>{
-  if(tab.dataset.channel==='All'){tab.querySelector('.channel-unread')?.remove();tab.setAttribute('aria-label','All');return;}
   let badge=tab.querySelector('.channel-unread');
   if(!badge){badge=document.createElement('span');badge.className='channel-unread';badge.setAttribute('aria-hidden','true');tab.append(badge);}
-  const count=counts[tab.dataset.channel]||0;badge.textContent=count>99?'99+':String(count);badge.hidden=count===0;
+  const count=tab.dataset.channel==='All'?Object.values(counts).reduce((total,value)=>total+value,0):(counts[tab.dataset.channel]||0);badge.textContent=count>99?'99+':String(count);badge.hidden=count===0;
   tab.setAttribute('aria-label',tab.dataset.channel+(count?', '+count+' unread messages':''));
  });
 }
 function chatIsVisible(){return !chatLog.hidden&&!document.body.classList.contains('intro-active')&&!document.hidden&&!document.querySelector('dialog[open]');}
+let chatScrollPosition=chatLog.scrollTop;
+function markChatReadAtBottom(){
+ if(!chatIsVisible()||chatLog.scrollHeight-chatLog.clientHeight-chatLog.scrollTop>2)return;
+ chatLog.querySelectorAll('p[data-unread="true"]').forEach(message=>{
+  if(selectedChatChannel==='All'||message.dataset.channel===selectedChatChannel)delete message.dataset.unread;
+ });
+ updateChannelBadges();
+}
+chatLog.addEventListener('scroll',()=>{
+ const movedDown=chatLog.scrollTop>chatScrollPosition;
+ chatScrollPosition=chatLog.scrollTop;
+ if(movedDown)markChatReadAtBottom();
+});
+// A deliberate downward gesture also acknowledges messages when already at the bottom.
+chatLog.addEventListener('wheel',event=>{if(event.deltaY>0)requestAnimationFrame(markChatReadAtBottom);},{passive:true});
+chatLog.addEventListener('keydown',event=>{
+ if(['End','PageDown','ArrowDown',' '].includes(event.key)&&!event.shiftKey)requestAnimationFrame(markChatReadAtBottom);
+});
 function applyChatChannel(){
  const channel=selectedChatChannel;
  chatLog.classList.toggle('all-channels',channel==='All');
  chatChannel.querySelectorAll('[data-channel]').forEach(tab=>{const selected=tab.dataset.channel===channel;tab.classList.toggle('active',selected);tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;});
  document.getElementById('message').placeholder='['+chatChannelLabel(channel)+']';
  chatLog.querySelectorAll(':scope > p').forEach(message=>message.classList.toggle('channel-filtered',channel!=='All'&&message.dataset.channel!==channel));
- if(chatIsVisible())chatLog.querySelectorAll('p[data-unread="true"]').forEach(message=>{if(channel!=='All'&&message.dataset.channel===channel)delete message.dataset.unread;});
+ chatScrollPosition=chatLog.scrollTop;
  updateChannelBadges();
 }
 chatChannel.addEventListener('click',event=>{const tab=event.target.closest('[data-channel]');if(!tab)return;selectedChatChannel=tab.dataset.channel;applyChatChannel();});
@@ -240,7 +271,7 @@ document.getElementById('chat-form').onsubmit=e=>{
  body.className='message-body';body.textContent=' '+text;
  if(channel==='Private'){message.classList.add('private-outgoing');message.dataset.recipient=privateRecipient;}
  message.append(sender,body);decorateChatMessage(message,channel);chatLog.append(message);
- applyChatWordFilter();applyChatChannel();input.value='';message.scrollIntoView({block:'nearest'});
+ applyChatWordFilter();applyChatChannel();input.value='';
 };
 // Right-click a player chat message (including its text) to show account identity and actions.
 const playerMenu=document.getElementById('player-context');
@@ -897,8 +928,9 @@ function playJoinGameLoading(onReady){
   sender.className='player-name';sender.dataset.character=character;sender.dataset.battletag=battletag;sender.textContent=character+':';
   body.className='message-body';body.textContent=' '+text;message.append(sender,body);
   decorateChatMessage(message,channel);if(channel==='Private'){message.dataset.recipient=battletag;privateMessageSound.currentTime=0;privateMessageSound.play().catch(()=>{});}
-  if(!chatIsVisible()||selectedChatChannel!==channel)message.dataset.unread='true';
+  message.dataset.unread='true';
+  const scrollPosition=chatLog.scrollTop;
   chatLog.append(message);applyChatWordFilter();applyChatChannel();
-  if(chatIsVisible()&&!message.classList.contains('channel-filtered'))chatLog.scrollTop=chatLog.scrollHeight;
+  chatLog.scrollTop=scrollPosition;chatScrollPosition=scrollPosition;
  },10000);
 })();

@@ -469,3 +469,14 @@ body.intro-active>.screen{visibility:hidden}
 .game-search-filters > div{min-width:0}
 .filterline .difficulty-controls{justify-content:flex-end;gap:3px}
 @media(max-width:850px){.filterline .difficulty-controls{gap:2px}}
+/* Incoming chat must not move the reader's position. */
+#chat{overflow-anchor:none}
+
+/* Activity tabs use the full game-list width beneath Search. */
+.game-search-filters{grid-template-columns:minmax(0,1fr);gap:5px}
+.activity-filter-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;min-width:0}
+.activity-filter-tab{min-width:0;padding:5px 1px;border:1px solid #4b4538;background:linear-gradient(#202124,#09090a);color:var(--activity-color);font:10px Georgia;letter-spacing:0;cursor:pointer;white-space:nowrap}
+.activity-filter-tab.active{background:#353025;border-color:var(--activity-color);box-shadow:inset 0 -2px var(--activity-color)}
+.activity-filter-tab:hover{filter:brightness(1.3)}
+.activity-filter-tab:focus-visible{outline:1px solid var(--activity-color);outline-offset:1px}
+@media(max-width:850px){.game-search-filters{gap:3px}.activity-filter-tab{font-size:7px;padding:4px 0}}

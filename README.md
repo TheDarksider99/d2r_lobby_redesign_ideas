@@ -1,4 +1,4 @@
-# D2R Lobby Design — v1.72
+# D2R Lobby Design — v1.74
 
 A standalone, browser-based Diablo II: Resurrected lobby UI/UX prototype. This project is a visual and interaction demonstration, not a Battle.net integration.
 
@@ -24,7 +24,7 @@ Open `index.html` in Chrome or Edge. No dependencies or build tools are required
 ## Development rules
 
 - Preserve all existing functionality and layout unless explicitly requested otherwise.
-- Continue project versioning from **v1.72** (next revision: **v1.73**).
+- Continue project versioning from **v1.74** (next revision: **v1.75**).
 - Keep the historical project-rule comments in `index.html` and update them for future changes.
 - Keep the three core files (`index.html`, `style.css`, `script.js`) unless a future change warrants further organization.
 - Use relative file paths so the site works on GitHub Pages and locally.
@@ -36,34 +36,54 @@ Unofficial fan-made UI/UX concept for Diablo II: Resurrected. Not affiliated wit
 
 ## Market concept
 
-Open the Market tab to browse items, visit a seller's shop, and buy from their trade stash using sample runes. Your purchased items and rune balance update for this session. Expand List an item from your stash to list or withdraw a sample item. Reload resets the demo.
+The Market is an in-game trading hub where players can browse items, find sellers, and visit their shops directly from the lobby. It connects item discovery with trading inside a game, while keeping runes as the currency.
 
-Visit Shop now enters the supplied Rogue Encampment screenshot. Click Seller’s Shop to open the shop and inventory pictures, select a highlighted item to see its supplied statistics image, and buy it with sample runes. Purchases appear in the inventory grid. Back to Camp closes the panels; Return to Lobby returns to the market. The img/ folder contains the supplied screenshots and must be included when publishing.
+Listings show the item, its properties, the seller, server, and asking price in runes. Players can search by item or seller name and inspect an item's statistics before visiting the shop.
 
-Shop prices appear with the item statistics rather than on the item icons. Ist and Mal rune pictures occupy inventory cells and disappear as payment is spent; numeric rune balances are hidden. The background scene stays unchanged when the shop panels open.
+Players list items from their trade stash and set a price in runes. Sellers can withdraw listings when they no longer want to sell an item. The trade stash gives buyers a dedicated place to browse the seller's available items.
 
-Hover previews item statistics. Click an item to lock its tooltip; hovering other items will not change it until you click another item or the surrounding scene. Tooltip and purchase controls keep the active selection.
+Visit Shop takes the buyer into the seller's game. From camp, the buyer opens the seller's shop and browses their trade stash alongside their own inventory. Trading games can also advertise items and rune prices in the game list, giving players another way to discover and join a seller's game.
 
-Hover previews display item details and price only. Selected Item and purchase controls appear after clicking an item and disappear when the selection is cleared.
+Hovering over an item shows its statistics and rune price. Clicking selects the item and keeps its details visible while the buyer reviews the purchase. Buying transfers the item into the buyer's inventory and pays the seller with the required runes from the buyer's inventory.
 
-Trading games advertise the eight shop items and their rune prices. Select one and click Join Game (or type its game name) to enter the same shop scene used by Visit Shop. Purchases and available runes are shared between both entry points.
+Purchases complete automatically at the seller's listed rune price, without requiring the seller's attention or a manual trade-window exchange. Buyers can shop while the seller continues playing.
 
-The lobby now uses textures cropped from the supplied original lobby screenshot. Carved frames and gold button borders use CSS border-image without their screenshot centers; live interface text remains separate. The shop scene retains its existing artwork.
+Prices appear with item statistics, keeping the item grid clear. Runes remain physical items in inventory rather than a separate numeric wallet.
 
-The center display uses the original screenshot's Diablo title, character frame, Barbarian preview, and full bottom ornament. Its selected-character name, level, and class remain live. The Barbarian artwork is a static placeholder shared by all selections.
+## Lobby UI concept
 
-Online characters browse separate Hardcore/Softcore and Ladder/Non-Ladder game populations sampled from the existing pool per server. Characters with matching modes share the same games; difficulty and filters still apply. New public games belong to the selected character mode.
+The lobby brings character selection, friends, chat, game browsing, and trading into one interface. Character selection and social features sit on the left, the selected character appears in the center, and game creation and browsing share the right panel. Players can manage their character and find a game without leaving the lobby.
 
-Standard (Softcore) Ladder has 30 sample games per difficulty on each server, before search and filters.
+A server selector is available inside the lobby for America, Europe, and Asia. Changing server updates the game browser and chat for that region, keeping regional conversations separate.
 
-Level 99 characters have a gold portrait halo and laurel accents around level and class. The card border continues to indicate selection.
+Options, Cinematics, and Credits are accessible from the lobby toolbar. Exit Diablo II is available directly from the lobby.
 
-Level 99 decoration uses the transparent img/profile.png portrait frame and img/left_dec.png and img/right_dec.png laurels around the level/class labels. Card dimensions and text sizes match the standard roster entries.
+The character list supports sorting by name, level, or class, plus a custom order that players can arrange by dragging. Recently deleted characters can be restored before the 24-hour permanent-deletion deadline.
 
-Level 99 level and class text have outward-flowing gold and violet gradients. Reduced-motion preferences disable the animation.
+Roster numbers follow the displayed order after sorting or dragging, and sort direction can be reversed.
 
-The narrower Game Details panel combines elapsed time, level restrictions, description, and players. Item Spacing is omitted from these details; the game list takes three quarters of the available width.
+Character deletion requires typing DELETE before confirmation, reducing accidental deletion. Recent Delete shows how many characters are recoverable, provides a Restore action for each one, and explains the 24-hour recovery window.
 
-The TZ filter uses img/tz.png: gray shows all games, full color shows TZ only, and a red slash shows no TZ. Clicking cycles through these states.
+Create Game and Join Game share one Game tab, so players can browse existing games and prepare a new one without switching screens. Normal, Nightmare, and Hell are directly selectable buttons. The Game Name field receives focus when entering the lobby, making it quicker to type the next run's name.
 
-The age filter uses an icon-only stopwatch: gray when off and gold when enabled. Hover shows the current threshold; clicking opens the age settings.
+Game creation details grouped in an expandable Game Settings section. New game activity tags.
+
+Quest, Farming, PvP, and Trading are explicit game activities chosen by the host. Activity filter tabs provide direct access to All and each activity without opening a dropdown. Players can filter by purpose rather than relying entirely on abbreviations in game names. Activity, difficulty, search, Terror Zone, and age filters work together to narrow the list.
+
+The game list now exposes elapsed time. Players can compare these details without selecting each game. Occupancy is shown as current/max, such as 3/8 or 2/4, making each game's actual player limit clear. Now, show game with full room.
+
+Every game-list column supports sorting: game name, activity, player count, time, Terror Zone status, and connection quality. The Players column adds a third sorting mode that puts full games at the bottom while keeping them visible, making available games easier to find.
+
+Game age appears directly in each row, including seconds for games less than a minute old. Selecting a game shows its elapsed time down to the second alongside the host's description and player roster. Players can check whether a run is fresh and who is in it without switching between Settings and Players tabs.
+
+A narrower Game Details panel combines elapsed time, level restrictions, description, and players, reducing the need to switch tabs. Players can search game names, filter by difficulty and activity, and sort the list to find a suitable game. The age filter hides games that have been open for a chosen number of minutes or hours.
+
+Friends have a dedicated tab with collapsible Favorites and Friends groups. Entries show availability and, when a friend is in a game, their character level, act, and difficulty. Players can keep frequent teammates together and collapse groups they are not using.
+
+Chat has direct tabs for All, Lobby, Clan, Trading, PvP, Farming, Quest, and Private. All combines the conversations while retaining each message's channel indicator, and timestamps make the timing of messages clear.
+
+Unread badges appear even on the active channel. Manually scrolling to the bottom clears the current channel's count; doing so in All clears every channel. Private messages also have an unread indicator on the Chat tab. Players can hide system notifications or filter messages containing unwanted words.
+
+Incoming private messages have a sound notification as well as unread counts, so players can notice a reply while browsing games or using another lobby tab.
+
+The chat word filter accepts multiple comma-separated terms. Players can suppress recurring advertisements or unwanted phrases. A separate system-notification toggle hides announcements, including Terror Zone starting, fading.
