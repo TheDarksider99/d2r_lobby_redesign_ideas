@@ -360,10 +360,10 @@ body.intro-active>.screen{visibility:hidden}
 .market-name-button{padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:#75633c;text-underline-offset:3px}
 .market-name-button:hover{color:#ffe3a0}
 .market-name-button:focus-visible{outline:1px solid #dfc57b;outline-offset:3px}
-#market-item-preview{max-width:min(92vw,620px);max-height:90vh;padding:10px;background:#080808;border:2px ridge #a48a50;overflow:auto}
-#market-item-preview::backdrop{background:#000b}
-#market-item-preview img{display:block;max-width:100%;max-height:76vh;object-fit:contain;margin:auto}
-#market-item-preview button{display:block;width:100%;margin-top:8px}
+#market-item-preview{position:fixed;inset:auto;margin:0;width:min(360px,calc(100vw - 16px));max-width:none;max-height:calc(100vh - 16px);padding:6px;background:#080808;border:2px ridge #a48a50;overflow:auto;z-index:1000;box-shadow:0 4px 16px #0009}
+#market-item-preview::backdrop{background:transparent}
+#market-item-preview img{display:block;max-width:100%;max-height:calc(100vh - 80px);object-fit:contain;margin:auto}
+
 
 /* Class portraits in online and offline character lists. */
 .character-entry{flex-direction:row;align-items:center;gap:10px}
@@ -401,7 +401,7 @@ body.intro-active>.screen{visibility:hidden}
 @media(max-width:850px){.chat-actions{grid-template-columns:minmax(0,1fr) 20px 20px;gap:2px}.chat-channel-tab{font-size:7px;padding:4px 0}.chat-actions :is(#system-toggle,#chat-filter-toggle){width:20px;min-height:22px;font-size:12px}.chat-actions #chat-filter-toggle svg{width:13px;height:13px}}
 
 .chat-channel-tab{position:relative}
-.channel-unread{position:absolute;top:-6px;right:-2px;z-index:1;min-width:13px;height:13px;padding:0 3px;border-radius:8px;background:#b93030;color:#fff;border:1px solid #e39275;font:bold 9px/11px Arial;text-align:center;pointer-events:none}
+.channel-unread{position:absolute;top:1px;right:1px;z-index:1;min-width:13px;height:13px;padding:0 3px;border-radius:8px;background:#b93030;color:#fff;border:1px solid #e39275;font:bold 9px/11px Arial;text-align:center;pointer-events:none}
 .channel-unread[hidden]{display:none}
 
 .chat-channel-tabs,.chat-channel-tab{overflow:visible}
@@ -525,30 +525,30 @@ body.intro-active>.screen{visibility:hidden}
 .in-game-chat-heading #in-game-chat-status{flex:1;font:11px Arial;color:#b9cda0}
 #in-game-chat-close{width:22px;height:22px;padding:0;line-height:18px}
 #in-game-chat-content{display:flex;flex-direction:column;gap:5px;flex:1;min-height:0}
-#in-game-chat .chat-actions{display:grid;grid-template-columns:minmax(0,1fr) 26px 26px;gap:3px;flex:none;min-height:27px}
-#in-game-chat .chat-channel-tabs{grid-template-columns:repeat(9,minmax(0,1fr));gap:2px}
-#in-game-chat .chat-channel-tab{font-size:10px;padding:5px 1px}
-#in-game-chat #chat{flex:1;min-height:0;margin:0;padding:6px;border:0;background:#0002;box-shadow:none;font:13px/1.65 Arial;overflow:auto}
+#in-game-chat .chat-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:3px;flex:none;min-height:27px}
+#in-game-chat .chat-channel-tabs{grid-template-columns:repeat(8,minmax(0,1fr));gap:2px}
+#in-game-chat .chat-channel-tab{font-size:12px;padding:5px 1px}
+#in-game-chat #chat{flex:1;min-height:0;margin:0;padding:6px;border:0;background:#0002;box-shadow:none;font:17px/1.65 Arial;overflow:auto}
 #in-game-chat #chat p{margin:0 0 4px}
 #in-game-chat .chat-input{display:flex;height:32px;gap:4px;flex:none}
-#in-game-chat .chat-input input{flex:1;min-width:0;width:auto;height:100%;margin:0;padding:4px 6px;font:13px Arial;border:1px solid #69583b;background:#080808;color:#ddd}
+#in-game-chat .chat-input input{flex:1;min-width:0;width:auto;height:100%;margin:0;padding:4px 6px;font:17px Arial;border:1px solid #69583b;background:#080808;color:#ddd}
 #in-game-chat .chat-input .btn{padding:3px 6px;font:11px Georgia;letter-spacing:0;border-width:1px;white-space:nowrap}
 #in-game-chat .chat-filter-panel{padding:6px;flex:none}
 #in-game-chat .chat-filter-panel textarea{min-height:38px;max-height:65px}
 #in-game-chat #chat .chat-invite-line{font:inherit}
 #in-game-chat .chat-channel-tab[data-channel="Game"]{--channel-color:#e9d09c}
-@media(max-width:850px){#in-game-chat{width:70%;height:52%;min-height:145px;padding:4px}#in-game-chat .chat-actions{grid-template-columns:minmax(0,1fr) 20px 20px;min-height:22px}#in-game-chat .chat-channel-tab{font-size:8px;padding:4px 0}#in-game-chat #chat{font-size:10px}#in-game-chat .chat-input{height:26px}#in-game-chat .chat-input input{font-size:10px}#in-game-chat .chat-input .btn{font-size:9px;padding:2px 4px}.in-game-chat-heading{margin-bottom:4px}}
+@media(max-width:850px){#in-game-chat{width:70%;height:52%;min-height:145px;padding:4px}#in-game-chat .chat-actions{grid-template-columns:minmax(0,1fr);min-height:22px}#in-game-chat .chat-channel-tab{font-size:10px;padding:4px 0}#in-game-chat #chat{font-size:14px}#in-game-chat .chat-input{height:26px}#in-game-chat .chat-input input{font-size:14px}#in-game-chat .chat-input .btn{font-size:9px;padding:2px 4px}.in-game-chat-heading{margin-bottom:4px}}
 
 #chat .player-connection-notice{color:var(--gold)}
 
 /* Incoming messages can be read without opening chat controls or interrupting play. */
-#in-game-chat-preview{position:absolute;z-index:5;left:1.5%;bottom:18%;width:min(610px,55%);max-height:28%;padding:6px 8px;overflow:hidden;background:#0003;color:#e6e3de;font:13px/1.65 Arial;text-shadow:0 1px 3px #000,0 0 3px #000;pointer-events:none}
+#in-game-chat-preview{position:absolute;z-index:5;left:1.5%;bottom:18%;width:min(610px,55%);max-height:28%;padding:6px 8px;overflow:hidden;background:#0003;color:#e6e3de;font:17px/1.65 Arial;text-shadow:0 1px 3px #000,0 0 3px #000;pointer-events:none}
 #in-game-chat-preview p{margin:0 0 4px}
 #in-game-chat-preview .player-name,#in-game-chat-preview .chat-self{color:var(--channel-color)}
 #in-game-chat-preview .player-connection-notice{color:var(--gold)}
 #in-game-chat-preview .channel-tag{display:inline-block;min-width:1.2em;margin-right:.3em;color:var(--channel-color);font-family:Arial,sans-serif}
 #in-game-chat-preview .chat-timestamp{color:#aaa;font-size:.8em;margin-right:.55em;font-variant-numeric:tabular-nums}
-@media(max-width:850px){#in-game-chat-preview{width:70%;font-size:10px;padding:4px 6px}}
+@media(max-width:850px){#in-game-chat-preview{width:70%;font-size:14px;padding:4px 6px}}
 
 #chat-invite-draft{display:inline-flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;max-width:40%;padding:2px 5px;border:1px solid #806b3b;background:#211c13;color:#dbc489;font:11px Georgia}
 #chat-invite-draft .draft-join-label{white-space:nowrap}
@@ -563,5 +563,120 @@ body.intro-active>.screen{visibility:hidden}
 .chat-composer-field{display:flex;align-items:center;flex:1;min-width:0;height:100%;border:1px solid #69583b;background:#080808;font:16px Arial}
 #chat-composer-tag{flex:none;padding-left:6px;color:#c5ae77;white-space:nowrap;font:inherit}
 #chat-form .chat-composer-field input{flex:1;min-width:0;width:auto;height:100%;margin:0;border:0;background:none;padding:4px 6px;font:inherit;color:#ddd;outline-offset:-2px}
-#in-game-chat .chat-composer-field{font-size:13px}
-@media(max-width:850px){.chat-composer-field{font-size:11px}#in-game-chat .chat-composer-field{font-size:10px}#chat-composer-tag{padding-left:4px}}
+#in-game-chat .chat-composer-field{font-size:17px}
+@media(max-width:850px){.chat-composer-field{font-size:11px}#in-game-chat .chat-composer-field{font-size:14px}#chat-composer-tag{padding-left:4px}}
+
+/* Achievement titles sit at the bottom right of each roster entry. */
+.character-entry .character-title{position:absolute;right:9px;bottom:5px;margin:0;color:#bda56c;font-size:11px;line-height:1;pointer-events:none}
+.character-entry.level-99 .character-title{color:#dac4f1}
+@media(max-width:850px){.character-entry .character-title{right:5px;bottom:3px;font-size:8px}}
+
+/* Full games remain selectable while the entire row is subdued. */
+.game.full-game{opacity:.45}
+
+#in-game-chat .in-game-chat-heading .mini-control{display:inline-flex;align-items:center;justify-content:center;flex:none;width:22px;min-width:22px;height:22px;padding:0}
+
+/* In-game settings combine text size and the shared word filter. */
+.in-game-text-size{display:none}
+#in-game-chat .in-game-text-size{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+#in-game-chat-text-size{flex:1;min-width:0}
+#in-game-chat-text-size-value{min-width:35px;color:#e6e3de}
+#in-game-chat #chat,#in-game-chat .chat-input input,#in-game-chat .chat-composer-field,#in-game-chat-preview{font-size:var(--game-chat-size,17px)}
+@media(max-width:850px){#in-game-chat #chat,#in-game-chat .chat-input input,#in-game-chat .chat-composer-field,#in-game-chat-preview{font-size:calc(var(--game-chat-size,17px) - 3px)}}
+
+/* Keep channel colors when the shared tabs are inside the game dialog. */
+#in-game-chat .chat-channel-tab{color:var(--channel-color);background:linear-gradient(#202124,#09090a);border:1px solid #4b4538}
+#in-game-chat .chat-channel-tab.active{background:#353025;border-color:var(--channel-color);box-shadow:inset 0 -2px var(--channel-color)}
+
+#in-game-chat .in-game-chat-heading > span:first-child{font-size:14px}
+
+/* Increase lobby game-panel typography by 2px at each breakpoint. */
+.panel.right{font-size:16px}
+.panel.right .tab{font-size:16px}
+.panel.right .btn{font-size:17px}
+.panel.right :is(.field label,.filterline label,.game-settings-group>summary){font-size:15px}
+.panel.right :is(.field input,.filterline input,.filterline select,.description-field input,.create-option input[type=number]){font-size:15.3333px}
+.panel.right :is(.difficulty-button,.create-options,.creation-layout .create-options select){font-size:13px}
+.panel.right :is(.game,.game-header,.detail-tab,.age-filter-panel,.age-filter-inputs input,.age-filter-inputs select){font-size:14px}
+.panel.right .mini-control{font-size:16px}
+.panel.right .settings p{font-size:15px}
+.panel.right :is(.settings h4,.settings strong,.game-detail-players){font-size:16px}
+.panel.right .activity-filter-tab{font-size:12px}
+@media(max-width:850px){
+ .panel.right .tab{font-size:11px}
+ .panel.right .btn{font-size:12px}
+ .panel.right :is(.field label,.filterline label,.create-options){font-size:10px}
+ .panel.right :is(.field input,.filterline input,.filterline select){font-size:11px}
+ .panel.right .description-field input{font-size:15.3333px}
+ .panel.right .difficulty-button{font-size:9px}
+ .panel.right :is(.game,.game-header,.settings p){font-size:10px}
+ .panel.right :is(.settings h4,.settings strong,.game-detail-players,.detail-tab,.game-settings-group>summary){font-size:11px}
+ .panel.right .mini-control{font-size:12px}
+ .panel.right .activity-filter-tab{font-size:9px}
+}
+@media(max-width:800px){.panel.right .creation-layout .create-option{font-size:12px}}
+
+/* Larger left-panel labels and controls; chat messages and composer retain their sizes. */
+.screen .panel:not(.right) .server-row,.screen .panel:not(.right) .server-row select,.screen .panel:not(.right) .character-mode,.screen .panel:not(.right) .character-sortbar,.screen .panel:not(.right) .restore-character{font-size:14px}
+.screen .panel:not(.right) .chat-section-tab,.screen .panel:not(.right) .character-entry,.screen .panel:not(.right) .friend-group-title,.screen .panel:not(.right) .friend-name{font-size:17px}
+.screen .panel:not(.right) .character-entry small,.screen .panel:not(.right) .character-entry .character-title,.screen .panel:not(.right) .deleted-character-entry small{font-size:13px}
+.screen .panel:not(.right) .btn{font-size:17px}
+.screen .panel:not(.right) .chat-channel-tab,.screen .panel:not(.right) .server-menu-actions .mini-control{font-size:12px}
+.screen .panel:not(.right) .chat-actions select,.screen .panel:not(.right) .recent-deleted-title,.screen .panel:not(.right) .deleted-character-entry{font-size:15px}
+.screen .panel:not(.right) .chat-actions .mini-control{font-size:13px}
+.screen .panel:not(.right) .friends-panel{font-size:16px}
+.screen .panel:not(.right) .friend small{font-size:14px}
+.screen .panel:not(.right) .chat-filter-panel label,.screen .panel:not(.right) .chat-filter-panel textarea{font-size:14px}
+.screen .panel:not(.right) .chat-filter-panel small{font-size:13px}
+.screen .panel:not(.right) .market-panel{font-size:14px}
+.screen .panel:not(.right) .market-heading h2{font-size:22px}
+.screen .panel:not(.right) .market-item h3{font-size:16px}
+.screen .panel:not(.right) .market-item p,.screen .panel:not(.right) .market-item .mini-control{font-size:13px}
+.screen .panel:not(.right) .market-listing .btn{font-size:14px}
+@media(max-width:1100px){.screen .panel:not(.right) .server-menu-actions .mini-control{font-size:10px}}
+@media(max-width:850px){
+.screen .panel:not(.right) .server-row,.screen .panel:not(.right) .server-row select,.screen .panel:not(.right) .character-mode{font-size:11px}
+.screen .panel:not(.right) .chat-section-tab,.screen .panel:not(.right) .character-entry,.screen .panel:not(.right) .friend-group-title,.screen .panel:not(.right) .friend-name{font-size:12px}
+.screen .panel:not(.right) .character-entry small,.screen .panel:not(.right) .character-entry .character-title,.screen .panel:not(.right) .friend small{font-size:10px}
+.screen .panel:not(.right) .btn{font-size:12px}
+.screen .panel:not(.right) .chat-channel-tab{font-size:9px}
+.screen .panel:not(.right) .chat-actions select,.screen .panel:not(.right) .chat-actions .mini-control{font-size:10px}
+.screen .panel:not(.right) .market-panel{font-size:12px}
+.screen .panel:not(.right) .market-heading h2{font-size:16px}
+.screen .panel:not(.right) .market-item h3{font-size:13px}
+.screen .panel:not(.right) .market-item .mini-control{font-size:11px}
+}
+
+/* Server first, menu next, chat controls anchored to the right. */
+.screen .panel:not(.right) .server-row{flex-wrap:nowrap;justify-content:flex-start;gap:5px}
+.screen .panel:not(.right) .server-location{margin-left:0;gap:4px;flex:none}
+.screen .panel:not(.right) .server-location select{width:90px}
+#lobby-chat-tools{display:flex;align-items:center;gap:3px;margin-left:auto;flex:none}
+#lobby-chat-tools[hidden]{display:none}
+#lobby-chat-tools .mini-control{display:inline-flex;align-items:center;justify-content:center;width:25px;min-width:25px;padding:0}
+.screen .panel:not(.right) .chat-actions{grid-template-columns:minmax(0,1fr)}
+@media(max-width:850px){.screen .panel:not(.right) .server-location select{width:67px}#lobby-chat-tools .mini-control{width:20px;min-width:20px}}
+
+/* Shared player communities keep a second destination tag in the composer. */
+.community-tag{color:#64d6c6;white-space:nowrap}
+#chat-community{flex:0 1 auto;max-width:145px;min-width:70px;width:auto;height:auto;margin:0;padding:2px;border:0;background:#111;color:#64d6c6;font:inherit}
+#chat-community[hidden]{display:none}
+.screen .panel:not(.right) .chat-channel-tabs,#in-game-chat .chat-channel-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;min-width:0}
+.screen .panel:not(.right) .chat-channel-tab,#in-game-chat .chat-channel-tab{flex:1 1 0;min-width:0;padding-left:5px;padding-right:5px}
+
+/* Social hub and its three sections. */
+.social-panel{display:flex;flex-direction:column;flex:1;min-height:0;gap:9px}
+.social-panel[hidden],.social-content[hidden]{display:none!important}
+.social-tabs{display:flex;gap:3px;flex:none;min-height:32px}
+.social-tab{flex:1;min-width:0;padding:5px 2px;border:2px ridge #4b4538;background:linear-gradient(#252629,#09090a);color:#bfb7a4;font:14px Georgia;cursor:pointer}
+.social-tab.active{background:#29251e;color:white;border-bottom-color:#a68d58}
+.social-tab:focus-visible{outline:1px solid var(--gold);outline-offset:1px}
+.social-content{flex:1;min-height:0;overflow:auto;padding:10px;font:14px Arial}
+.social-empty{color:#aaa;line-height:1.5}
+.social-community{padding:12px 4px;border-bottom:1px solid #323235;color:#64d6c6}
+@media(max-width:850px){.social-panel{gap:4px}.social-tabs{min-height:24px}.social-tab{font-size:10px}.social-content{padding:4px;font-size:12px}}
+
+/* Item artwork in market listings. */
+.market-item-icon{display:flex;align-items:center;justify-content:center;width:48px;min-height:48px}
+.market-item-icon img{display:block;max-width:100%;max-height:64px;object-fit:contain}
+@media(max-width:850px){.market-item-icon{width:32px;min-height:32px}.market-item-icon img{max-height:44px}}

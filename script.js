@@ -91,7 +91,7 @@ function renderDetails(){
  details.innerHTML=`<p>Elapsed Time</p><strong>${formatDetailedTime(game.elapsedSeconds)}</strong><p>Level Restrictions</p><strong>Any</strong><p>Description</p><strong>${escapeHtml(game.description||'—')}</strong><p>Players (${game.players}/${game.maxPlayers})</p><ul class="game-detail-players">${Array.from({length:game.players},(_,index)=>`<li>${index===0?'Host':`Player ${index+1}`}</li>`).join('')}</ul>`;
 }
 document.querySelectorAll('.game-header [data-sort]').forEach(h=>h.addEventListener('click',()=>{const key=h.dataset.sort;if(key==='players'){playersSortMode=sortKey==='players'?(playersSortMode+1)%3:0;sortKey=key;sortAsc=playersSortMode!==1}else{if(sortKey===key){sortAsc=!sortAsc}else{sortKey=key;sortAsc=true}}render()}));
-function render(){const q=search.value.toLowerCase();list.innerHTML='';if(document.body.classList.contains('offline-character')){document.getElementById('game-details').innerHTML='';return;}document.querySelectorAll('.game-header [data-sort]').forEach(h=>{h.classList.toggle('sorted',h.dataset.sort===sortKey);h.title=h.dataset.sort===sortKey?(sortKey==='players'&&playersSortMode===2?'Ascending ▲ (full games last)':sortAsc?'Ascending ▲':'Descending ▼'):'Click to sort'});let visible=gamesForCharacter().filter(g=>g.difficulty===selectedDifficulty&&g.name.toLowerCase().includes(q)&&(selectedActivity==='all'||g.activity===selectedActivity)&&(tzMode==='all'||(tzMode==='tz'&&g.tz)||(tzMode==='non-tz'&&!g.tz))&&(!ageFilterEnabled.checked||g.elapsedSeconds<Math.max(1,Number(ageFilterValue.value)||1)*(ageFilterUnit.value==='hours'?3600:60)));if(sortKey){visible.sort((a,b)=>{if(sortKey==='players'&&playersSortMode===2){const af=a.players>=a.maxPlayers,bf=b.players>=b.maxPlayers;if(af!==bf)return af?1:-1;}let av=a[sortKey],bv=b[sortKey];if(typeof av==='string'){return (sortAsc?1:-1)*av.localeCompare(bv)}return (sortAsc?1:-1)*(av-bv)})}visible.forEach(g=>{const row=document.createElement('div');row.className='game'+(g.name===selectedName?' selected':'');row.innerHTML=`<span class="activity-${g.activity.toLowerCase()}">${g.name}</span><span class="activity-${g.activity.toLowerCase()}">${g.activity}</span><span class="${g.players>=g.maxPlayers?'full-players':'gold'}">${g.players}/${g.maxPlayers}</span><span>${formatTime(g.elapsedSeconds)}</span><span title="${g.tz?'Terror Zone':'Normal game'}" class="${g.tz?'gold':''}">${g.tz?'✦':''}</span><span title="Ping indicator" class="${g.ping}">●</span>`;row.onclick=()=>{selectedName=g.name;document.querySelector('.fields input').value=g.name;render()};list.appendChild(row)});renderDetails()}
+function render(){const q=search.value.toLowerCase();list.innerHTML='';if(document.body.classList.contains('offline-character')){document.getElementById('game-details').innerHTML='';return;}document.querySelectorAll('.game-header [data-sort]').forEach(h=>{h.classList.toggle('sorted',h.dataset.sort===sortKey);h.title=h.dataset.sort===sortKey?(sortKey==='players'&&playersSortMode===2?'Ascending ▲ (full games last)':sortAsc?'Ascending ▲':'Descending ▼'):'Click to sort'});let visible=gamesForCharacter().filter(g=>g.difficulty===selectedDifficulty&&g.name.toLowerCase().includes(q)&&(selectedActivity==='all'||g.activity===selectedActivity)&&(tzMode==='all'||(tzMode==='tz'&&g.tz)||(tzMode==='non-tz'&&!g.tz))&&(!ageFilterEnabled.checked||g.elapsedSeconds<Math.max(1,Number(ageFilterValue.value)||1)*(ageFilterUnit.value==='hours'?3600:60)));if(sortKey){visible.sort((a,b)=>{if(sortKey==='players'&&playersSortMode===2){const af=a.players>=a.maxPlayers,bf=b.players>=b.maxPlayers;if(af!==bf)return af?1:-1;}let av=a[sortKey],bv=b[sortKey];if(typeof av==='string'){return (sortAsc?1:-1)*av.localeCompare(bv)}return (sortAsc?1:-1)*(av-bv)})}visible.forEach(g=>{const row=document.createElement('div');row.className='game'+(g.name===selectedName?' selected':'')+(g.players>=g.maxPlayers?' full-game':'');row.innerHTML=`<span class="activity-${g.activity.toLowerCase()}">${g.name}</span><span class="activity-${g.activity.toLowerCase()}">${g.activity}</span><span class="${g.players>=g.maxPlayers?'full-players':'gold'}">${g.players}/${g.maxPlayers}</span><span>${formatTime(g.elapsedSeconds)}</span><span title="${g.tz?'Terror Zone':'Normal game'}" class="${g.tz?'gold':''}">${g.tz?'✦':''}</span><span title="Ping indicator" class="${g.ping}">●</span>`;row.onclick=()=>{selectedName=g.name;document.querySelector('.fields input').value=g.name;render()};list.appendChild(row)});renderDetails()}
 search.addEventListener('input',render);
 activityFilter.addEventListener('click',event=>{
  const tab=event.target.closest('[data-activity]');if(!tab)return;
@@ -168,8 +168,13 @@ let selectedChatChannel='All';
 let composerChannel='All';
 let lobbyComposerChannel='All';
 const chatLog=document.getElementById('chat');
-const channelColors={Game:'#e9d09c',All:'#e6e3de',Lobby:'#d5b968',Clan:'#70ce78',Trading:'#d4a3f5',PvP:'#ed7777',Farming:'#e6e3de',Quest:'#69b8ff',Private:'#e69ccc'};
-const channelIcons={Game:'G',Lobby:'\u25c6',Clan:'\u2663',Trading:'\u2696',PvP:'\u2694',Farming:'\u2660',Quest:'\u2726'};
+const communityNames=['Rushing','Barbarian','Baal Runs','Sorceress','Holy Grail'];
+let selectedCommunity=communityNames[0];
+const communityPicker=document.getElementById('chat-community');
+communityNames.forEach(name=>{const option=document.createElement('option');option.value=name;option.textContent='['+name+']';communityPicker.append(option);});
+communityPicker.addEventListener('change',()=>{selectedCommunity=communityPicker.value;updateComposerChannel();});
+const channelColors={Communities:'#64d6c6',Game:'#e9d09c',All:'#e6e3de',Lobby:'#d5b968',Clan:'#70ce78',Trading:'#d4a3f5',PvP:'#ed7777',Farming:'#e6e3de',Quest:'#69b8ff',Private:'#e69ccc'};
+const channelIcons={Communities:'C',Game:'G',Lobby:'\u25c6',Clan:'\u2663',Trading:'\u2696',PvP:'\u2694',Farming:'\u2660',Quest:'\u2726'};
 let privateRecipient=null;
 let privateRecipientName=null;
 function selectPrivateRecipient(account,name){privateRecipient=account||null;privateRecipientName=privateRecipient?(name||privateRecipient.split('#')[0]):null;}
@@ -182,6 +187,12 @@ function beginWhisper(battletag,name){
 function decorateChatMessage(message,channel){
  if(channel.includes('#')){message.dataset.recipient=channel;channel='Private';}
  message.dataset.channel=channel;
+ if(channel==='Communities'){
+  if(!message.dataset.community)message.dataset.community=message.querySelector('.chat-self')?selectedCommunity:communityNames[Math.floor(Math.random()*communityNames.length)];
+  const community=document.createElement('span');community.className='community-tag';community.textContent='['+message.dataset.community+'] ';
+  const sender=message.querySelector('.player-name,.chat-self');if(sender)sender.before(community);
+ }
+
  if(document.getElementById('market-shop').open&&currentCampGame){
   const participant=message.querySelector('.player-name')?.dataset.battletag||message.dataset.recipient;
   const relatedWhisper=channel==='Private'&&participant&&Array.from(chatLog.querySelectorAll('p[data-channel="Game"] .player-name')).some(sender=>sender.dataset.battletag===participant&&sender.closest('p').dataset.game===currentGameChatKey());
@@ -198,6 +209,15 @@ function decorateChatMessage(message,channel){
  message.prepend(timestamp);
 }
 chatLog.querySelectorAll(':scope > p').forEach(message=>decorateChatMessage(message,'Lobby'));
+function createCommunitySamples(){
+ const samples=[['RushGuide','Normal through Hell rush, two spots open.'],['AxeMaster','Whirlwind or Frenzy for a fresh Barbarian?'],['BaalRunner','Next Baal run starting soon. Need a teleporter.'],['FrostNova','Sharing cold Sorceress leveling tips.'],['GrailHunter','Finally found my first Death?s Fathom!']];
+ return samples.map(([name,text],index)=>{
+  const message=document.createElement('p'),sender=document.createElement('span'),body=document.createElement('span');
+  message.dataset.community=communityNames[index];sender.className='player-name';sender.dataset.character=name;sender.dataset.battletag=name+'#'+(3200+index);sender.textContent=name+':';
+  body.className='message-body';body.textContent=' '+text;message.append(sender,body);decorateChatMessage(message,'Communities');return message;
+ });
+}
+chatLog.append(...createCommunitySamples());
 const channelSamples=[
  ['Clan','AshenBlade','AshenBlade#1200','Clan Baal runs tonight. Who is joining?'],
  ['Clan','MoonWarden','MoonWarden#1317','I can bring my sorceress. Meet in Act V.'],
@@ -273,22 +293,25 @@ function chatIsVisible(){
  return !chatLog.hidden&&(!inGame||!document.getElementById('in-game-chat').hidden)&&!document.body.classList.contains('intro-active')&&!document.hidden&&!blocked;
 }
 let chatScrollPosition=chatLog.scrollTop;
-function markChatReadAtBottom(){
- if(!chatIsVisible()||chatLog.scrollHeight-chatLog.clientHeight-chatLog.scrollTop>2)return;
+function markChatReadOnScrollUp(){
+ if(!chatIsVisible())return;
  chatLog.querySelectorAll('p[data-unread="true"]').forEach(message=>{
   if(chatMessageVisibleInChannel(message,selectedChatChannel))delete message.dataset.unread;
  });
  updateChannelBadges();
 }
+let chatScrollDrag=false;
+chatLog.addEventListener('pointerdown',()=>{chatScrollDrag=true;});
+document.addEventListener('pointerup',()=>{chatScrollDrag=false;});
+document.addEventListener('pointercancel',()=>{chatScrollDrag=false;});
 chatLog.addEventListener('scroll',()=>{
- const movedDown=chatLog.scrollTop>chatScrollPosition;
+ const movedUp=chatLog.scrollTop<chatScrollPosition;
  chatScrollPosition=chatLog.scrollTop;
- if(movedDown)markChatReadAtBottom();
+ if(chatScrollDrag&&movedUp)markChatReadOnScrollUp();
 });
-// A deliberate downward gesture also acknowledges messages when already at the bottom.
-chatLog.addEventListener('wheel',event=>{if(event.deltaY>0)requestAnimationFrame(markChatReadAtBottom);},{passive:true});
+chatLog.addEventListener('wheel',event=>{if(event.deltaY<0)markChatReadOnScrollUp();},{passive:true});
 chatLog.addEventListener('keydown',event=>{
- if(['End','PageDown','ArrowDown',' '].includes(event.key)&&!event.shiftKey)requestAnimationFrame(markChatReadAtBottom);
+ if(['Home','PageUp','ArrowUp'].includes(event.key)||(event.key===' '&&event.shiftKey))markChatReadOnScrollUp();
 });
 function appendChatMessage(message){
  const position=chatLog.scrollTop;
@@ -296,18 +319,17 @@ function appendChatMessage(message){
  chatLog.append(message);applyChatWordFilter();applyChatChannel();
  chatLog.scrollTop=followLatest?chatLog.scrollHeight:position;
  chatScrollPosition=chatLog.scrollTop;
- if(followLatest)markChatReadAtBottom();
 }
 function jumpToLatestChat(){
  if(chatLog.hidden)return;
  chatLog.scrollTop=chatLog.scrollHeight;
  chatScrollPosition=chatLog.scrollTop;
- markChatReadAtBottom();
 }
 function updateComposerChannel(){
  const input=document.getElementById('message');
  const destination=composerChannel==='Private'&&privateRecipient?privateRecipientName:chatChannelLabel(composerChannel);
  document.getElementById('chat-composer-tag').textContent='['+destination+']';
+ communityPicker.hidden=composerChannel!=='Communities';communityPicker.value=selectedCommunity;
  input.placeholder='';
  input.setAttribute('aria-label','Chat message to '+destination);
  const send=document.getElementById('chat-send');send.disabled=composerChannel==='All'||(composerChannel==='Private'&&!privateRecipient);
@@ -328,6 +350,7 @@ chatLog.addEventListener('click',event=>{
  const message=event.target.closest('p[data-channel]');if(!message||(selectedChatChannel==='Private'&&message.dataset.channel!=='Private'))return;
  event.preventDefault();event.stopImmediatePropagation();
  composerChannel=message.dataset.channel;
+ if(composerChannel==='Communities')selectedCommunity=message.dataset.community||communityNames[0];
  if(composerChannel==='Private'){const sender=message.querySelector('.player-name');selectPrivateRecipient(message.dataset.recipient||sender?.dataset.battletag,message.dataset.recipientName||sender?.dataset.character);}
  updateComposerChannel();document.getElementById('message').focus();
 },true);
@@ -403,6 +426,11 @@ function syncCharacterGames(){
  }
  render();
 }
+function characterClassWithTitle(level,cls){
+ const value=Number(level);
+ const title=value>=70?(['Sorceress','Amazon','Assassin'].includes(cls)?'Matriarch':'Patriarch'):value>=40?'Champion':value>=25?'Slayer':'';
+ return title?`${cls} ${title}`:cls;
+}
 function updateCenterCharacter(){
  syncCharacterGames();
  const character=characterData[characterMode].find(c=>c[0]===chosenCharacter);
@@ -410,7 +438,7 @@ function updateCenterCharacter(){
  const [name,level,cls]=character;
  const display=document.querySelector('.middle .char-name');
  display.replaceChildren(document.createTextNode(name));
- const subtitle=document.createElement('small');subtitle.textContent=`LEVEL ${level} ${cls.toUpperCase()}`;display.appendChild(subtitle);
+ const subtitle=document.createElement('small');subtitle.textContent=`LEVEL ${level} ${characterClassWithTitle(level,cls).toUpperCase()}`;display.appendChild(subtitle);
  const figure=document.querySelector('.middle .silhouette');figure.textContent=classSymbols[cls]||'⚔';
  figure.setAttribute('aria-label',`${cls} character placeholder`);
  figure.title=`${name} — Level ${level} ${cls}`;
@@ -427,7 +455,7 @@ function renderRecentDeleted(){
  for(const [name,level,cls] of entries){
   const row=document.createElement('div');row.className='deleted-character-entry';
   const nameEl=document.createElement('span');nameEl.textContent=name;
-  const detail=document.createElement('small');detail.textContent=`Level ${level} ${cls}`;
+  const detail=document.createElement('small');detail.textContent=`Level ${level} ${characterClassWithTitle(level,cls)}`;
   const info=document.createElement('div');info.className='deleted-info';info.append(nameEl,detail);
   const restore=document.createElement('button');restore.type='button';restore.className='restore-character';restore.textContent='Restore';restore.title=`Restore ${name}`;
   restore.addEventListener('click',()=>{
@@ -454,6 +482,8 @@ function renderCharacters(){const root=document.getElementById('character-roster
   }
   const portraitFrame=document.createElement('span');portraitFrame.className='level-99-portrait';portraitFrame.append(portrait);button.append(handle,portraitFrame,info);
  }else{button.append(handle,portrait,info);}
+ const titleText=characterClassWithTitle(level,cls).slice(cls.length).trim();
+ if(titleText){const title=document.createElement('small');title.className='character-title';title.textContent=titleText;button.append(title);}
  if(characterMode==='online'&&characterIcons[name]){
   const icons=document.createElement('span');icons.className='character-icons';
   for(const kind of characterIcons[name]){
@@ -508,16 +538,44 @@ updateCenterCharacter();
 
 // Chat section switching: preserves existing lobby messages and chat filters.
 document.querySelectorAll('[data-chat-view]').forEach(button=>button.addEventListener('click',()=>{
- const view=button.dataset.chatView;const friends=view==='friends';const lobby=view==='lobby';
+ const view=button.dataset.chatView;const social=view==='social';const lobby=view==='lobby';
  document.getElementById('characters-panel').hidden=view!=='characters';
  document.querySelectorAll('[data-chat-view]').forEach(tab=>tab.classList.toggle('active',tab===button));
- document.getElementById('friends-panel').hidden=!friends;
+ document.getElementById('social-panel').hidden=!social;
  document.getElementById('chat').hidden=!lobby;
  document.querySelector('.chat-actions').hidden=!lobby;
+ document.getElementById('lobby-chat-tools').hidden=!lobby;
  document.getElementById('chat-filter-panel').hidden=!lobby || document.getElementById('chat-filter-toggle').getAttribute('aria-expanded')!=='true';
  document.getElementById('chat-form').hidden=!lobby;
- if(lobby){applyChatChannel();jumpToLatestChat();}
+ if(lobby){selectedChatChannel='All';composerChannel='All';applyChatChannel();jumpToLatestChat();}
 }));
+// Social sections retain their contents when switching tabs.
+const socialTabs=[...document.querySelectorAll('[data-social-view]')];
+function selectSocialTab(button){
+ socialTabs.forEach(tab=>{
+  const selected=tab===button;
+  tab.classList.toggle('active',selected);
+  tab.setAttribute('aria-selected',String(selected));
+  tab.tabIndex=selected?0:-1;
+  document.getElementById(tab.getAttribute('aria-controls')).hidden=!selected;
+ });
+}
+socialTabs.forEach((button,index)=>{
+ button.addEventListener('click',()=>selectSocialTab(button));
+ button.addEventListener('keydown',event=>{
+  let next;
+  if(event.key==='ArrowRight')next=(index+1)%socialTabs.length;
+  else if(event.key==='ArrowLeft')next=(index+socialTabs.length-1)%socialTabs.length;
+  else if(event.key==='Home')next=0;
+  else if(event.key==='End')next=socialTabs.length-1;
+  else return;
+  event.preventDefault();selectSocialTab(socialTabs[next]);socialTabs[next].focus();
+ });
+});
+communityNames.forEach(name=>{
+ const row=document.createElement('div');row.className='social-community';row.textContent=name;
+ document.getElementById('social-community-list').append(row);
+});
 document.querySelectorAll('.friend-group-title').forEach(button=>button.addEventListener('click',()=>{
  const open=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(open));
  button.nextElementSibling.hidden=!open;button.querySelector('.triangle').textContent=open?'▾':'▸';
@@ -566,14 +624,14 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
 (() => {
  const wallet = {Ist: 6, Mal: 4};
  const offers = [
-  {name: 'Harlequin Crest', stats: '+2 All Skills · 135 Defense · 50% Magic Find', price: 1, rune: 'Ist', symbol: '♜', tooltip: 'item9.png', rect: [86,207,185,185]},
-  {name: 'Tal Rasha’s Guardianship', stats: '910 Defense · 88% Magic Find', price: 2, rune: 'Ist', symbol: '♜', tooltip: 'item2.png', rect: [86,395,185,278]},
-  {name: 'Trang-Oul’s Claws', stats: '20% Faster Cast Rate · Cold Resist +30%', price: 1, rune: 'Mal', symbol: '✧', tooltip: 'item3.png', rect: [835,675,185,185]},
-  {name: 'Magefist', stats: '+1 Fire Skills · 20% Faster Cast Rate', price: 1, rune: 'Mal', symbol: '✧', tooltip: 'item4.png', rect: [86,861,185,185]},
-  {name: 'Chance Guards', stats: '40% Magic Find · 200% Extra Gold', price: 1, rune: 'Ist', symbol: '✧', tooltip: 'item5.png', rect: [86,675,185,185]},
-  {name: 'Skullder’s Ire', stats: '+1 All Skills · 727 Defense', price: 2, rune: 'Mal', symbol: '♜', tooltip: 'item6.png', rect: [835,395,185,278]},
-  {name: 'Guillaume’s Face', stats: '35% Crushing Blow · 15% Deadly Strike', price: 1, rune: 'Ist', symbol: '♛', tooltip: 'item1.png', rect: [835,207,185,185]},
-  {name: 'Frostburn', stats: '+40% Maximum Mana · 49 Defense', price: 1, rune: 'Mal', symbol: '✧', tooltip: 'item8.png', rect: [835,861,185,185]}
+  {name: 'Harlequin Crest', stats: '+2 All Skills · 135 Defense · 50% Magic Find', price: 1, rune: 'Ist', symbol: '♜', icon: 'harlequin_crest_shako.png', tooltip: 'item9.png', rect: [86,207,185,185]},
+  {name: 'Tal Rasha’s Guardianship', stats: '910 Defense · 88% Magic Find', price: 2, rune: 'Ist', symbol: '♜', icon: "tal-rasha's_guardianship_lacquered_plate.png", tooltip: 'item2.png', rect: [86,395,185,278]},
+  {name: 'Trang-Oul’s Claws', stats: '20% Faster Cast Rate · Cold Resist +30%', price: 1, rune: 'Mal', symbol: '✧', icon: 'bracers_m.png', tooltip: 'item3.png', rect: [835,675,185,185]},
+  {name: 'Magefist', stats: '+1 Fire Skills · 20% Faster Cast Rate', price: 1, rune: 'Mal', symbol: '✧', icon: 'light_gauntlets.png', tooltip: 'item4.png', rect: [86,861,185,185]},
+  {name: 'Chance Guards', stats: '40% Magic Find · 200% Extra Gold', price: 1, rune: 'Ist', symbol: '✧', icon: 'chance_guard.png', tooltip: 'item5.png', rect: [86,675,185,185]},
+  {name: 'Skullder’s Ire', stats: '+1 All Skills · 727 Defense', price: 2, rune: 'Mal', symbol: '♜', icon: 'splint_mail.png', tooltip: 'item6.png', rect: [835,395,185,278]},
+  {name: 'Guillaume’s Face', stats: '35% Crushing Blow · 15% Deadly Strike', price: 1, rune: 'Ist', symbol: '♛', icon: 'great_helm.png', tooltip: 'item1.png', rect: [835,207,185,185]},
+  {name: 'Frostburn', stats: '+40% Maximum Mana · 49 Defense', price: 1, rune: 'Mal', symbol: '✧', icon: 'gaunlets_h_special.png', tooltip: 'item8.png', rect: [835,861,185,185]}
  ];
  const shopSellers = ['AshenWolf', 'FrostVale', 'BoneMancer', 'EmberFox', 'LuckyHork', 'DuskRaven', 'IronThorn', 'ColdSnap'];
  const tradeDescriptions = ['135 def shako', 'tal armor here', 'trang gloves ft', 'magefist for mal', '40 mf chances', 'skullders ft', 'gface here', 'frostburn for mal'];
@@ -730,31 +788,57 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   }else{openGameMenu();}
  });
 
- function previewMarketItem(item) {
+ let previewAnchor=null;
+ function closeMarketPreview(){
+  const preview=document.getElementById('market-item-preview');
+  if(preview?.open)preview.close();
+  if(previewAnchor)previewAnchor.setAttribute('aria-expanded','false');
+  previewAnchor=null;
+ }
+ function positionMarketPreview(){
+  const preview=document.getElementById('market-item-preview');
+  if(!preview?.open||!previewAnchor)return;
+  const anchor=previewAnchor.getBoundingClientRect(),box=preview.getBoundingClientRect();
+  let left=anchor.right+10;
+  if(left+box.width>window.innerWidth-8)left=anchor.left-box.width-10;
+  preview.style.left=Math.max(8,Math.min(left,window.innerWidth-box.width-8))+'px';
+  preview.style.top=Math.max(8,Math.min(anchor.top,window.innerHeight-box.height-8))+'px';
+ }
+ function previewMarketItem(item,anchor) {
+  if(previewAnchor===anchor){closeMarketPreview();return;}
+  closeMarketPreview();
   let preview=document.getElementById('market-item-preview');
   if(!preview){
    preview=document.createElement('dialog');preview.id='market-item-preview';
-   preview.innerHTML='<img alt=""><button type="button" class="mini-control">Close</button>';
-   preview.querySelector('button').addEventListener('click',()=>preview.close());
-   preview.addEventListener('click',event=>{if(event.target===preview)preview.close();});
+   preview.innerHTML='<img alt="">';
+   document.addEventListener('click',event=>{
+    if(preview.open&&!preview.contains(event.target)&&!event.target.closest('.market-name-button'))closeMarketPreview();
+   });
+   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&preview.open){event.preventDefault();closeMarketPreview();}});
+   window.addEventListener('resize',closeMarketPreview);
+   document.addEventListener('scroll',event=>{if(!preview.contains(event.target))closeMarketPreview();},true);
    document.body.append(preview);
   }
-  const picture=preview.querySelector('img');picture.src='img/'+item.tooltip;picture.alt=item.name+' statistics';
-  preview.setAttribute('aria-label',item.name+' tooltip');preview.showModal();
+  previewAnchor=anchor;anchor.setAttribute('aria-expanded','true');
+  const picture=preview.querySelector('img');picture.onload=positionMarketPreview;
+  picture.src='img/'+item.tooltip;picture.alt=item.name+' statistics';
+  preview.setAttribute('aria-label',item.name+' tooltip');preview.show();positionMarketPreview();
  }
  function renderMarket() {
+  closeMarketPreview();
   const list = document.getElementById('market-list');
   list.replaceChildren();
   const query = search.value.trim().toLowerCase();
   offers.filter(item => !item.sold && `${item.name} ${item.seller} ${item.server}`.toLowerCase().includes(query)).forEach(item => {
    const row = document.createElement('article');
    row.className = 'market-item';
-   row.innerHTML = `<div class="market-item-icon" aria-hidden="true">${item.symbol}</div><div class="market-item-copy"><h3>${escapeHtml(item.name)}</h3><small>${escapeHtml(item.stats)}</small><p>${item.mine ? 'Your listing' : 'Seller: ' + escapeHtml(item.seller)} <span class="market-server">&#183; ${escapeHtml(item.server)}</span></p><strong>${item.price} ${item.rune}</strong></div>`;
+   row.innerHTML = `<div class="market-item-icon" aria-hidden="true">${item.icon ? `<img src="img/${escapeHtml(item.icon)}" alt="" loading="lazy">` : item.symbol}</div><div class="market-item-copy"><h3>${escapeHtml(item.name)}</h3><small>${escapeHtml(item.stats)}</small><p>${item.mine ? 'Your listing' : 'Seller: ' + escapeHtml(item.seller)} <span class="market-server">&#183; ${escapeHtml(item.server)}</span></p><strong>${item.price} ${item.rune}</strong></div>`;
    if(item.tooltip){
     const heading=row.querySelector('h3'),nameButton=document.createElement('button');
     nameButton.type='button';nameButton.className='market-name-button';nameButton.textContent=item.name;
     nameButton.setAttribute('aria-label','View '+item.name+' tooltip');
-    nameButton.addEventListener('click',()=>previewMarketItem(item));heading.replaceChildren(nameButton);
+    nameButton.setAttribute('aria-haspopup','dialog');nameButton.setAttribute('aria-expanded','false');
+    nameButton.addEventListener('click',()=>previewMarketItem(item,nameButton));heading.replaceChildren(nameButton);
    }
    const action = document.createElement('button');
    action.type = 'button'; action.className = 'mini-control';
@@ -776,7 +860,7 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   const inventory = document.getElementById('market-owned'); inventory.replaceChildren();
   owned.forEach(item => {const li = document.createElement('li'); li.textContent = item.name; inventory.append(li);});
  }
- document.querySelectorAll('[data-chat-view]').forEach(tab => tab.addEventListener('click', () => {panel.hidden = tab.dataset.chatView !== 'market';}));
+ document.querySelectorAll('[data-chat-view]').forEach(tab => tab.addEventListener('click', () => {panel.hidden = tab.dataset.chatView !== 'market';if(panel.hidden)closeMarketPreview();}));
  search.addEventListener('input', renderMarket);
 
  buy.addEventListener('click', () => {
@@ -855,7 +939,7 @@ function buildRealm(server){
  });
  assignGameModes(realmGames);
  realmDefaultGames[server]=realmGames.map(game=>({...game}));
- return {games:realmGames,messages};
+ return {games:realmGames,messages:[...messages,...createCommunitySamples()]};
 }
 let activeRealm='America';
 let playServerConnection=null;
@@ -909,7 +993,7 @@ document.getElementById('chat-server').addEventListener('change',event=>{
 
 // Global theme playlist survives welcome, connection, lobby and server changes.
 (()=>{
- const tracks=['img/theme1.mp3','img/theme2.mp3'];
+ const tracks=['sound/theme1.mp3','sound/theme2.mp3'];
  const playlist=[];
  for(let pass=0;pass<5;pass++){
   const pair=Math.random()<0.5?[...tracks]:[...tracks].reverse();
@@ -940,7 +1024,7 @@ document.getElementById('chat-server').addEventListener('change',event=>{
 
 // Shared UI sounds also cover controls created after page load.
 (()=>{
- const sounds=[null,...[1,2,3].map(index=>{const audio=new Audio('img/button'+index+'.mp3');audio.preload='auto';audio.volume=1;return audio;})];
+ const sounds=[null,...[1,2,3].map(index=>{const audio=new Audio('sound/button'+index+'.mp3');audio.preload='auto';audio.volume=1;return audio;})];
  function playButtonSound(index){const audio=sounds[index];audio.currentTime=0;audio.play().catch(()=>{});}
  const tabSelector='.tab,.chat-section-tab,.character-mode,.detail-tab,[role="tab"]';
  document.addEventListener('click',event=>{
@@ -981,7 +1065,7 @@ function nextGameSystemNotice(){
 // Reparent the same chat controls so both surfaces use one message history and unread state.
 function mountInGameChat(game){
  clearGameInviteDraft();hideInGameMessagePreview();
- const nodes=[document.querySelector('.chat-actions'),document.getElementById('chat-filter-panel'),chatLog,document.getElementById('chat-form'),playerMenu];
+ const nodes=[document.querySelector('.chat-actions'),document.getElementById('chat-filter-panel'),chatLog,document.getElementById('chat-form'),playerMenu,document.getElementById('system-toggle'),document.getElementById('chat-filter-toggle')];
  if(!gameChatMount){
   lobbyChatChannel=selectedChatChannel;lobbyComposerChannel=composerChannel;
   gameChatMount=nodes.map(node=>{const anchor=document.createComment('lobby-chat-position');node.before(anchor);return {node,anchor,hidden:node.hidden};});
@@ -989,13 +1073,18 @@ function mountInGameChat(game){
  currentCampGame={players:1,maxPlayers:8,...game,realm:game.realm||activeRealm};
  if(characterMode==='online'&&!currentCampGame.isPrivate&&!games.some(entry=>entry.name===game.name&&entry.characterGameMode===game.characterGameMode))games.push(currentCampGame);
  const host=document.getElementById('in-game-chat-content');nodes.forEach(node=>{host.append(node);node.hidden=false;});
+ const settingsButton=document.getElementById('in-game-chat-settings');
+ settingsButton.before(document.getElementById('system-toggle'));
+ chatFilterButton.hidden=true;
+ settingsButton.setAttribute('aria-expanded',String(chatFilterPanel.classList.contains('open')));
  chatFilterPanel.hidden=!chatFilterPanel.classList.contains('open');
  document.getElementById('game-chat-channel').hidden=false;
+ chatChannel.querySelector('[data-channel="Lobby"]').hidden=true;
  document.getElementById('in-game-invite').hidden=false;
  document.getElementById('in-game-invite').disabled=!!gameEntryProblem(currentCampGame);
  document.getElementById('in-game-invite').title=gameEntryProblem(currentCampGame)||'Post this game to a chat channel';
  document.getElementById('in-game-chat-status').textContent='';
- const preview=document.getElementById('in-game-chat-preview');preview.replaceChildren();preview.dataset.game=currentGameChatKey();preview.hidden=true;
+ const preview=document.getElementById('in-game-chat-preview');preview.replaceChildren();preview.dataset.game=currentGameChatKey();preview.dataset.channel='Game';preview.hidden=true;
  document.getElementById('in-game-chat').hidden=true;
  selectedChatChannel='Game';composerChannel='Game';
  const key=currentGameChatKey();
@@ -1013,6 +1102,7 @@ function unmountInGameChat(){
  gameChatMount.forEach(({node,anchor,hidden})=>{anchor.replaceWith(node);node.hidden=hidden;});
  gameChatMount=null;
  document.getElementById('game-chat-channel').hidden=true;
+ chatChannel.querySelector('[data-channel="Lobby"]').hidden=false;
  document.getElementById('in-game-invite').hidden=true;
  if(selectedChatChannel==='Game')selectedChatChannel=lobbyChatChannel;
  if(composerChannel==='Game')composerChannel=lobbyComposerChannel;
@@ -1025,7 +1115,8 @@ function hideInGameMessagePreview(){
 }
 function showInGameMessagePreview(message){
  if(!document.getElementById('market-shop').open||!document.getElementById('in-game-chat').hidden)return;
- if(message.dataset.channel!=='Private'&&(message.dataset.channel!=='Game'||message.dataset.game!==currentGameChatKey()))return;
+ const previewChannel=document.getElementById('in-game-chat-preview').dataset.channel||'Game';
+ if(!chatMessageVisibleInChannel(message,previewChannel))return;
  if(message.classList.contains('word-filtered')||(message.classList.contains('system-notice')&&chatLog.classList.contains('hide-system')))return;
  const preview=document.getElementById('in-game-chat-preview');
  const key=currentGameChatKey();if(preview.dataset.game!==key){preview.replaceChildren();preview.dataset.game=key;}
@@ -1046,18 +1137,39 @@ function openInGameChat(){
  if(!document.getElementById('market-shop').open||!gameChatMount)return;
  hideInGameMessagePreview();
  document.getElementById('in-game-chat').hidden=false;
+ selectedChatChannel='All';composerChannel='All';
  applyChatChannel();jumpToLatestChat();document.getElementById('message').focus();
 }
 function closeInGameChat(focusGame=true){
+ const panel=document.getElementById('in-game-chat');
+ const wasOpen=!panel.hidden;
  hideInGameMessagePreview();
- document.getElementById('in-game-chat').hidden=true;
+ panel.hidden=true;
+ if(wasOpen&&document.getElementById('market-shop').open){
+  const preview=document.getElementById('in-game-chat-preview');
+  preview.replaceChildren();preview.dataset.game=currentGameChatKey();preview.dataset.channel=selectedChatChannel;
+  const messages=Array.from(chatLog.querySelectorAll(':scope > p')).filter(message=>chatMessageVisibleInChannel(message,selectedChatChannel)&&!message.classList.contains('word-filtered')&&!(message.classList.contains('system-notice')&&chatLog.classList.contains('hide-system'))).slice(-6);
+  messages.forEach(showInGameMessagePreview);
+ }
+
  if(focusGame&&document.getElementById('market-shop').open)document.getElementById('market-shop').focus();
 }
-document.getElementById('in-game-chat-close').addEventListener('click',()=>closeInGameChat());
+const inGameChatSettings=document.getElementById('in-game-chat-settings');
+inGameChatSettings.addEventListener('click',()=>{
+ chatFilterButton.click();
+ inGameChatSettings.setAttribute('aria-expanded',String(!chatFilterPanel.hidden));
+ if(!chatFilterPanel.hidden)document.getElementById('in-game-chat-text-size').focus();
+});
+const inGameChatTextSize=document.getElementById('in-game-chat-text-size');
+inGameChatTextSize.addEventListener('input',()=>{
+ const size=Math.max(10,Math.min(26,Number(inGameChatTextSize.value)||17));
+ document.documentElement.style.setProperty('--game-chat-size',size+'px');
+ document.getElementById('in-game-chat-text-size-value').textContent=size+'px';
+});
 document.getElementById('market-shop').addEventListener('click',event=>{
  const panel=document.getElementById('in-game-chat');
  const insideChat=event.composedPath().some(node=>node===panel||node===playerMenu);
- if(insideChat||(panel.hidden&&document.getElementById('in-game-chat-preview').hidden))return;
+ if(insideChat||panel.hidden)return;
  closeInGameChat(false);
 });
 function handleInGameChatEnter(event){
@@ -1105,6 +1217,7 @@ document.getElementById('game-save-exit').addEventListener('click',()=>{
 document.getElementById('market-shop').addEventListener('close',()=>{
  const menu=document.getElementById('game-escape-menu');if(menu.open)menu.close();gameMenuReturnFocus=null;
  unmountInGameChat();currentCampGame=null;
+ document.getElementById('game-name').focus({preventScroll:true});
 });
 
 // Regular games and chat invitations share the existing camp scene.
@@ -1194,7 +1307,7 @@ function playJoinGameLoading(onReady){
  let overlay=document.getElementById('join-loading');
  if(!overlay){
   overlay=document.createElement('dialog');overlay.id='join-loading';overlay.setAttribute('aria-label','Loading game');
-  const video=document.createElement('video');video.src='img/join_game.mp4';video.muted=true;video.playsInline=true;video.preload='auto';
+  const video=document.createElement('video');video.src='sound/join_game.mp4';video.muted=true;video.playsInline=true;video.preload='auto';
   overlay.append(video);document.body.append(overlay);
   overlay.addEventListener('cancel',event=>event.preventDefault());
  }
@@ -1209,10 +1322,11 @@ function playJoinGameLoading(onReady){
 
 // Every ten seconds, deliver one realm-appropriate demo message.
 (()=>{
- const privateMessageSound=new Audio('img/message.mp3');privateMessageSound.preload='auto';privateMessageSound.volume=1;
- const channels=['Lobby','Clan','Trading','PvP','Farming','Quest','Private'];
+ const privateMessageSound=new Audio('sound/message.mp3');privateMessageSound.preload='auto';privateMessageSound.volume=1;
+ const channels=['Communities','Lobby','Clan','Trading','PvP','Farming','Quest','Private'];
  const extraMessages={
   Game:['Anyone need a waypoint before we head out?','Ready when you are.','I will open a portal when I get there.'],
+  Communities:['Anyone joining our community runs tonight?','Happy to help with builds and quests.','Room for one more in our next run.'],
   Lobby:['Anyone starting a fresh character today?','Nice runs everyone, thanks for the party!','What is the current Terror Zone?','Back after a break. Good to see the lobby busy.','Looking for a relaxed group for a few runs.'],
   Clan:['Clan stash has spare leveling gear.','We still have two spots for tonight.','Meet in Act V when you are ready.','Great teamwork on that last run!','Who needs help gearing an alternate character?'],
   Trading:['FT 4os Monarch, looking for runes.','ISO lightning skiller, whisper your price.','Selling a keyset, open to offers.','Looking for a Raven Frost with good dexterity.','FT spare Spirit sword for a new player.'],
@@ -1228,7 +1342,7 @@ function playJoinGameLoading(onReady){
    const existing=Array.from(chatLog.querySelectorAll('p')).filter(message=>message.dataset.channel===channel&&!message.classList.contains('private-outgoing')&&!message.classList.contains('chat-game-invite'));
    const pool=existing.map(message=>{
     const sender=message.querySelector('.player-name');if(!sender)return null;
-    const copy=message.cloneNode(true);copy.querySelectorAll('.player-name,.channel-tag,time').forEach(node=>node.remove());
+    const copy=message.cloneNode(true);copy.querySelectorAll('.player-name,.channel-tag,.community-tag,time').forEach(node=>node.remove());
     return {character:sender.dataset.character,battletag:sender.dataset.battletag,text:copy.textContent.trim()};
    }).filter(Boolean);
    const people=pool.length?[...pool]:[{character:activeRealm==='Europe'?'OakKnight':activeRealm==='Asia'?'PacificRunner':'NeonRaven',battletag:'DemoPlayer#2400'}];
