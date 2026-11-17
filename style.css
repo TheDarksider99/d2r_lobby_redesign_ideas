@@ -680,3 +680,449 @@ body.intro-active>.screen{visibility:hidden}
 .market-item-icon{display:flex;align-items:center;justify-content:center;width:48px;min-height:48px}
 .market-item-icon img{display:block;max-width:100%;max-height:64px;object-fit:contain}
 @media(max-width:850px){.market-item-icon{width:32px;min-height:32px}.market-item-icon img{max-height:44px}}
+
+.shop-inspection[hidden]{display:none!important}
+
+.game-details-title{margin:0 0 12px;padding:5px 1px;color:#fff;font:small-caps 14px Georgia;letter-spacing:0}
+@media(max-width:850px){.game-details-title{font-size:11px}}
+
+/* Clan browser: fixed navigation with one flat, scrolling roster. */
+#clan-panel.clan-browser{display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.clan-controls{flex:none}
+.clan-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.clan-heading h3{margin:0;color:#8fa892;font:small-caps 18px Georgia}
+.clan-heading>span{font-size:11px;color:#aaa}
+.clan-navigation{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;margin-bottom:10px}
+.clan-navigation button{display:flex;justify-content:space-between;align-items:center;gap:4px;min-width:0;border:1px solid #303e34;background:#111613;color:#b6c0b8;padding:7px 6px;cursor:pointer;font:12px Georgia;text-align:left}
+.clan-navigation button[data-group="leadership"]{grid-column:2 / 5;grid-row:1;justify-content:center;gap:10px}
+.clan-navigation button[data-group="all"]{grid-column:5;grid-row:1;justify-self:end;width:fit-content;justify-content:center;gap:8px;padding-left:8px;padding-right:8px}
+.clan-navigation button:not([data-group="all"]):not([data-group="leadership"]){grid-row:2;position:relative;justify-content:center;text-align:center;padding-bottom:20px}
+.clan-navigation button:not([data-group="all"]):not([data-group="leadership"]) span{position:absolute;right:5px;bottom:4px}
+.clan-navigation button span{font:10px Arial;color:#999}
+.clan-navigation button.active{border-color:#829687;background:#202c24;color:#fff}
+.clan-navigation button.active span{color:#8fa892}
+.clan-navigation button:hover{filter:brightness(1.25)}
+.clan-navigation button:focus-visible{outline:1px solid #8fa892;outline-offset:1px}
+.clan-filter-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,.55fr);gap:8px}
+.clan-filter-row label{font-size:11px;color:#829687;min-width:0}
+.clan-filter-row input,.clan-filter-row select{display:block;width:100%;min-width:0;height:29px;margin-top:4px;border:1px solid #303e34;background:#0b0e0c;color:#ddd;padding:4px;font:12px Arial}
+.clan-filter-row select:disabled{opacity:.45}
+.clan-online-filter{display:flex;align-items:center;gap:5px;margin-top:8px;font-size:11px;color:#bbb}
+.clan-online-filter input{accent-color:#829687;margin:0}
+.clan-list-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid #303e34;padding-bottom:7px;flex:none}
+.clan-list-heading h4{margin:0;color:#ddd;font:14px Georgia}
+.clan-list-heading>span{font-size:11px;color:#aaa}
+.clan-members{list-style:none;margin:0;padding:0 5px 0 0;flex:1;min-height:0;overflow:auto}
+.clan-member{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 8px;padding:10px 5px;border-bottom:1px solid #252e28}
+.clan-member:hover{background:#171e19}
+.clan-member-name{color:#aec0b1;font-size:14px;overflow-wrap:anywhere}
+.clan-member-status{font-size:10px;color:#777;align-self:center}
+.clan-member-status.is-online{color:#8caf94}
+.clan-member-rank{grid-column:1 / -1;color:#9eafa2;font-size:11px}
+.clan-member small{grid-column:1 / -1;color:#aaa;font-size:11px;line-height:1.5}
+.clan-empty{color:#aaa;font-size:12px}
+.clan-empty[hidden]{display:none}
+.clan-structure{flex:none;max-height:45%;overflow:auto;border-top:1px solid #303e34;color:#829687;font-size:11px}
+.clan-structure summary{padding:8px 0;cursor:pointer}
+.clan-structure table{width:100%;border-collapse:collapse;font-size:10px;color:#ccc}
+.clan-structure th,.clan-structure td{padding:6px 3px;text-align:left;border-bottom:1px solid #323235}
+.clan-structure tbody th{font-weight:normal}
+.clan-structure tfoot{color:#8fa892}
+@media(max-width:850px){#clan-panel.clan-browser{gap:6px}.clan-heading{margin-bottom:8px}.clan-heading h3{font-size:14px}.clan-heading>span{font-size:10px}.clan-navigation{gap:3px;margin-bottom:6px}.clan-navigation button{font-size:10px;padding:5px 4px}.clan-member{padding:7px 3px}.clan-member-name{font-size:12px}}
+
+@media(max-width:850px){.clan-navigation button:not([data-group="all"]):not([data-group="leadership"]){padding-bottom:18px}}
+
+.clan-member-character{color:#aaa;font-size:11px}
+
+/* Each lower clan rank steps farther into the roster. */
+.clan-member{margin-left:calc(var(--clan-rank-depth,0) * 10px)}
+@media(max-width:850px){.clan-member{margin-left:calc(var(--clan-rank-depth,0) * 6px)}}
+
+/* Green clan identity; rank labels retain six distinct colors. */
+#clan-panel{border-color:#3a463d;background:linear-gradient(145deg,#131914,#0c100d 65%)}
+.social-tab[data-social-view="clan"]{color:#95aa99}
+.social-tab[data-social-view="clan"].active{background:#202c24;border-color:#3a463d;border-bottom-color:#8fa892;color:#bdccbf}
+#clan-panel input:focus-visible,#clan-panel select:focus-visible{outline:1px solid #8fa892;outline-offset:1px}
+#clan-panel [data-rank="Clan Leader"]{--rank-color:#f0cf78}
+#clan-panel [data-rank="Deputy Leader"]{--rank-color:#e9a879}
+#clan-panel [data-rank="Elder"]{--rank-color:#c1a3e8}
+#clan-panel [data-rank="Division Leader"]{--rank-color:#8bbef0}
+#clan-panel [data-rank="Squad Leader"]{--rank-color:#76cfc1}
+#clan-panel [data-rank="Clan Member"]{--rank-color:#a4c9ab}
+.clan-member-rank{color:var(--rank-color,#a4c9ab)}
+.clan-member{border-left:2px solid var(--rank-color,#a4c9ab);padding-left:8px}
+.clan-structure tbody th{color:var(--rank-color,#a4c9ab)}
+
+/* Clan group buttons share one height and count placement. */
+.clan-navigation{grid-auto-rows:32px}
+.clan-navigation button[data-group="leadership"],.clan-navigation button:not([data-group="all"]):not([data-group="leadership"]){position:relative;height:100%;padding:3px 6px 11px;justify-content:center}
+.clan-navigation button[data-group="leadership"] span{position:absolute;right:5px;bottom:4px}
+@media(max-width:850px){.clan-navigation{grid-auto-rows:28px}.clan-navigation button[data-group="leadership"],.clan-navigation button:not([data-group="all"]):not([data-group="leadership"]){padding:2px 4px 10px}}
+
+/* Gold-framed stone controls, matching the classic Send button. */
+:is(.screen, .delete-dialog) :is(.btn, .mini-control, .difficulty-button, .delete-buttons button, .restore-character, .clan-navigation button) {
+  border: 6px solid #806438;
+  border-image: url('assets/ui/button-frame.png') 12 / 6px / 0 stretch;
+  background-color: #24231f;
+  background-image: radial-gradient(ellipse at center, #ffffff16 0%, #0002 35%, #000b 100%), url('assets/ui/button-face.png');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  box-shadow: inset 0 0 8px 2px #000c, 0 1px 3px #0009;
+  text-shadow: 0 2px 2px #000;
+}
+:is(.screen, .delete-dialog) button:focus-visible {
+  outline: 2px solid #d5b768;
+  outline-offset: 2px;
+}
+.screen :is(.difficulty-button, .clan-navigation button).active,
+.screen .mini-control[aria-pressed='true'] {
+  background-image: radial-gradient(ellipse at center, #c29b4438 0%, #0003 45%, #000c 100%), url('assets/ui/button-face.png');
+  color: #f1dfb1;
+  box-shadow: inset 0 0 8px 2px #000c, inset 0 -1px 0 #b0985e, 0 1px 3px #0009;
+}
+.screen .mini-control[data-mode='non-tz'] {
+  background-image: radial-gradient(ellipse at center, #6085a94d 0%, #0005 45%, #000c 100%), url('assets/ui/button-face.png');
+}
+/* Compact controls retain a substantial frame without crowding their labels. */
+:is(.screen, .delete-dialog) :is(.mini-control, .difficulty-button, .restore-character, .clan-navigation button) {
+  border-width: 4px;
+  border-image-width: 4px;
+}
+.screen .actions :is(#create-game, #join-game) {
+  border: 0;
+  border-image: none;
+  background: url('img/big_button.png') center / 100% 100% no-repeat;
+  box-shadow: none;
+  width: 48%;
+  min-height: 54px;
+  aspect-ratio: 1000 / 256;
+  padding: 10px 26px;
+  color: #e6e3de;
+  letter-spacing: 1.5px;
+  text-shadow: 0 2px 3px #000;
+}
+.screen .actions :is(#create-game, #join-game):hover { filter: brightness(1.2); }
+.screen .actions :is(#create-game, #join-game):active { filter: brightness(.85); }
+@media(max-width:850px) {
+  .screen .actions :is(#create-game, #join-game) { min-height: 34px; padding: 6px 17px; letter-spacing: .5px; }
+}
+
+/* Tabs use fine gold edges and stone faces shaded toward the perimeter. */
+.screen :is(.tab, .chat-section-tab, .chat-channel-tab, .social-tab, .character-mode, .detail-tab, .activity-filter-tab) {
+  border: 1px solid #82704f;
+  border-image: none;
+  background-color: #191a1c;
+  background-image: radial-gradient(ellipse at center, #ffffff08 0%, #0003 48%, #000c 100%), url('assets/ui/button-face.png');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 1px #000b, inset 0 0 9px #0009, 0 1px 2px #000;
+  color: #899593;
+  text-shadow: 0 2px 2px #000;
+}
+.screen :is(.tab, .chat-section-tab, .chat-channel-tab, .social-tab, .character-mode, .detail-tab, .activity-filter-tab).active {
+  border-color: #b39b6e;
+  background-image: radial-gradient(ellipse at center, #ffffff12 0%, #0002 48%, #000b 100%), url('assets/ui/button-face.png');
+  box-shadow: inset 0 0 0 1px #0009, inset 0 0 9px #0008, inset 0 -1px 0 #c4b99a, 0 1px 2px #000;
+  color: #f0eeea;
+}
+.screen :is(.chat-channel-tab, .activity-filter-tab) { color: var(--channel-color, var(--activity-color, #899593)); }
+.screen :is(.chat-channel-tab, .activity-filter-tab).active { border-bottom-color: var(--channel-color, var(--activity-color, #c4b99a)); }
+
+/* Inset game frame and a separately framed Exit footer. */
+.screen .panel.right { gap: 10px; }
+.game-panel-inner {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  gap: 7px;
+  padding: 8px;
+  border: 1px solid #454239;
+  box-shadow: 0 1px 0 #080808, 0 2px 0 #282824;
+}
+.exit-frame {
+  flex: none;
+  display: flex;
+  padding: 4px;
+  border: 1px solid #454239;
+  background: #090909;
+  box-shadow: 0 1px 0 #080808, 0 2px 0 #282824;
+}
+.screen .exit-frame .exit { width: 100%; margin: 0; }
+.screen .actions :is(#create-game, #join-game) {
+  flex: none;
+  width: 43%;
+  min-height: 46px;
+  padding: 8px 22px;
+}
+@media(max-width:850px) {
+  .screen .panel.right { gap: 7px; }
+  .game-panel-inner { padding: 4px; gap: 4px; }
+  .exit-frame { padding: 2px; }
+  .screen .actions :is(#create-game, #join-game) { min-height: 29px; padding: 5px 14px; }
+}
+
+/* Lobby chat uses the same restrained inset frames as the game panel. */
+.screen .panel:not(.right) .chat-log,
+.screen .panel:not(.right) .chat-input {
+  border: 1px solid #454239;
+  border-image: none;
+  box-shadow: 0 1px 0 #080808, 0 2px 0 #282824;
+}
+.screen .panel:not(.right) .chat-log { min-height: 0; }
+.screen .panel:not(.right) .chat-input {
+  flex-shrink: 0;
+  padding: 3px;
+  background: #090909;
+  margin-top: 3px;
+}
+
+/* Center both composer buttons within their stone faces. */
+.chat-input > .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0;
+  padding-bottom: 0;
+  line-height: 1;
+}
+#exit-confirm-dialog {
+  width: min(760px, calc(100vw - 32px));
+  padding: clamp(22px, 4vw, 44px) 28px 22px;
+  border: 10px solid #393a37;
+  border-image: url('assets/ui/panel-frame.png') 44 / 18px / 0 stretch;
+  background: linear-gradient(#0008, #0008), url('assets/ui/stone-tile.png');
+  color: #eee8d8;
+  box-shadow: inset 0 0 24px #000, 0 12px 60px #000;
+  text-align: center;
+}
+#exit-confirm-dialog::backdrop { background: #000b; }
+#exit-confirm-title {
+  margin: 20px 0 64px;
+  font: small-caps clamp(16px, 2vw, 23px) Georgia;
+  letter-spacing: 2px;
+  line-height: 1.5;
+}
+.exit-confirm-actions { display: flex; justify-content: center; gap: 12px; }
+.exit-confirm-actions button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48%;
+  aspect-ratio: 1000 / 256;
+  min-height: 52px;
+  border: 0;
+  padding: 10px 26px;
+  background: url('img/big_button.png') center / 100% 100% no-repeat;
+  color: #eee8d8;
+  font: small-caps clamp(18px, 2.4vw, 28px) Georgia;
+  text-shadow: 0 2px 3px #000;
+  cursor: pointer;
+}
+.exit-confirm-actions button:hover { filter: brightness(1.2); }
+.exit-confirm-actions button:focus-visible { outline: 2px solid #d5b768; outline-offset: 2px; }
+
+/* One gear opens the former toolbar actions. */
+.screen .panel:not(.right) .server-menu-actions #main-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 29px;
+  height: 29px;
+  padding: 0;
+  font: 19px/1 Georgia;
+}
+#main-menu-panel {
+  width: min(360px, calc(100vw - 32px));
+  padding: 24px;
+  border: 8px solid #393a37;
+  border-image: url('assets/ui/panel-frame.png') 44 / 16px / 0 stretch;
+  background: linear-gradient(#0007, #0009), url('assets/ui/stone-tile.png');
+  box-shadow: inset 0 0 20px #000, 0 10px 40px #000;
+}
+#main-menu-panel:popover-open { display: flex; flex-direction: column; gap: 10px; }
+#main-menu-panel::backdrop { background: #0007; }
+.screen .server-menu-actions #main-menu-panel button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 58px;
+  aspect-ratio: 1000 / 256;
+  padding: 10px 30px;
+  border: 0;
+  border-image: none;
+  background: url('img/big_button.png') center / 100% 100% no-repeat;
+  box-shadow: none;
+  color: #eee8d8;
+  font: small-caps 20px Georgia;
+  letter-spacing: 1.5px;
+  text-shadow: 0 2px 3px #000;
+  cursor: pointer;
+}
+#main-menu-panel button:hover { filter: brightness(1.2); }
+
+.screen .panel:not(.right) #main-menu-panel .server-location {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 8px 8px;
+  color: #d5c7a4;
+  font: small-caps 18px Georgia;
+}
+.screen .panel:not(.right) #main-menu-panel .server-location select {
+  width: 140px;
+  height: 32px;
+  font: 15px Georgia;
+}
+
+.screen .character-footer .character-tools { width: 100%; align-items: center; }
+.screen .character-tools .server-menu-actions { margin-right: auto; }
+.screen .character-tools #main-menu-toggle { width: 43px; height: 35px; }
+.chat-filter-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #c3ad70; }
+.chat-filter-heading #chat-filter-close { display: inline-flex; align-items: center; justify-content: center; padding: 0; width: 25px; height: 25px; font: 20px/1 Georgia; }
+
+/* Chat visibility and word filters sit beside the left composer button. */
+.screen .panel:not(.right) .chat-input #lobby-chat-tools {
+  margin-left: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 3px;
+  flex: none;
+}
+.screen .panel:not(.right) .chat-input #lobby-chat-tools[hidden] { display: none; }
+.screen .panel:not(.right) .chat-input #lobby-chat-tools .mini-control {
+  width: 29px;
+  min-width: 29px;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+/* Keep native select text legible inside the gear popover. */
+.screen .panel:not(.right) #main-menu-panel .server-location select {
+  color: #e1d7bd;
+  background: #111214;
+  border: 1px solid #665a46;
+  padding: 3px 7px;
+  color-scheme: dark;
+  opacity: 1;
+}
+#main-menu-panel {
+  height: auto;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+#main-menu-panel > * { flex-shrink: 0; }
+
+/* Keep the gear menu centered independently of its Characters-row trigger. */
+#main-menu-panel {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  margin: 0;
+  transform: translate(-50%, -50%);
+}
+
+/* Class portraits replace the roster's right-hand status text. */
+.clan-member .clan-member-portrait {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid #3b403b;
+  background: radial-gradient(#252b26, #101410);
+  color: #626b63;
+  box-shadow: inset 0 0 6px #0009;
+  overflow: hidden;
+}
+.clan-member .clan-member-portrait.is-online { border-color: #64aa63; box-shadow: 0 0 4px #47864a44; }
+.clan-member-portrait img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.clan-member-portrait svg { width: 28px; height: 28px; }
+.clan-member .clan-member-rank { grid-column: 1; }
+@media(max-width:850px) {
+  .clan-member .clan-member-portrait { width: 34px; height: 34px; }
+  .clan-member-portrait svg { width: 23px; height: 23px; }
+}
+
+/* Richer clan colors and traditional lettering to match the lobby. */
+#clan-panel {
+  color: #d2c7ad;
+  font-family: Georgia, 'Times New Roman', serif;
+  border-color: #46543b;
+  background: linear-gradient(135deg, #182015dd, #090e0bdd 70%), url('assets/ui/stone-tile.png');
+}
+#clan-panel .clan-heading h3 { color: #c6ac67; font-family: Georgia, 'Times New Roman', serif; }
+#clan-panel :is(.clan-heading > span, .clan-list-heading > span) { color: #baaa80; }
+#clan-panel :is(.clan-filter-row label, .clan-online-filter, .clan-structure) { color: #a5ad78; }
+#clan-panel :is(input, select) { font-family: Georgia, 'Times New Roman', serif; color: #e0d6bd; }
+#clan-panel input::placeholder { color: #9c957f; opacity: 1; }
+#clan-panel .clan-list-heading h4 { color: #d9c594; font-variant: small-caps; letter-spacing: .6px; }
+#clan-panel .clan-member-name { color: #d3c49c; font-family: Georgia, 'Times New Roman', serif; }
+#clan-panel .clan-member-character { color: #b7ad91; font-family: Georgia, 'Times New Roman', serif; }
+#clan-panel .clan-member-rank { font-family: Georgia, 'Times New Roman', serif; }
+#clan-panel .clan-member { border-bottom-color: #303c29; }
+#clan-panel .clan-member:hover { background: #25301b66; }
+#clan-panel .clan-navigation button span { color: #c2ae7b; font-family: Georgia, 'Times New Roman', serif; }
+#clan-panel [data-rank="Clan Leader"] { --rank-color: #e8b943; }
+#clan-panel [data-rank="Deputy Leader"] { --rank-color: #dc9050; }
+#clan-panel [data-rank="Elder"] { --rank-color: #ad78dc; }
+#clan-panel [data-rank="Division Leader"] { --rank-color: #579fdf; }
+#clan-panel [data-rank="Squad Leader"] { --rank-color: #41bda4; }
+#clan-panel [data-rank="Clan Member"] { --rank-color: #8fb45c; }
+#clan-panel .clan-structure table { color: #cfc2a2; font-family: Georgia, 'Times New Roman', serif; }
+
+.clan-member { cursor: context-menu; }
+#clan-member-context {
+  position: fixed;
+  z-index: 1200;
+  width: 205px;
+  border: 2px ridge #756345;
+  background: #10130f;
+  box-shadow: 0 8px 24px #000b;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+#clan-member-context[hidden] { display: none; }
+.clan-context-name { padding: 9px; border-bottom: 1px solid #554936; color: #dfcfaa; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#clan-member-context button {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-bottom: 1px solid #383b2f;
+  background: linear-gradient(#25271e, #11140e);
+  color: #c6a56b;
+  font: small-caps 14px Georgia;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+#clan-member-context button:hover, #clan-member-context button:focus-visible { background: #3c3925; color: #fff0c9; outline: 1px solid #998052; outline-offset: -2px; }
+#clan-member-context button:disabled,
+#clan-member-context button:disabled:hover {
+  color: #66685d;
+  background: #141610;
+  cursor: default;
+  outline: none;
+}
+
+/* Match the clan roster to the lobby's charcoal stone palette. */
+#clan-panel {
+  border-color: #514b3d;
+  background-color: #101010;
+  background-image: linear-gradient(90deg, #0005, transparent 40%, #0004), url('assets/ui/stone-tile.png');
+}
+#clan-panel .clan-member { border-bottom-color: #35322b; }
+#clan-panel .clan-member:hover { background: #75603a1f; }
+#clan-panel :is(.clan-list-heading, .clan-structure) { border-color: #494336; }
+#clan-panel :is(.clan-filter-row input, .clan-filter-row select) {
+  background: linear-gradient(#0008, #000a), url('assets/ui/stone-tile.png');
+  border-color: #554a38;
+}
+#clan-panel :is(.clan-filter-row label, .clan-online-filter, .clan-structure) { color: #b3a176; }

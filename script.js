@@ -576,6 +576,104 @@ communityNames.forEach(name=>{
  const row=document.createElement('div');row.className='social-community';row.textContent=name;
  document.getElementById('social-community-list').append(row);
 });
+// Clan roster: five senior leaders and five divisions of twenty-three.
+const clanRanks=[
+ {rank:'Clan Leader',count:1,reportsTo:'None'},
+ {rank:'Deputy Leader',count:1,reportsTo:'Clan Leader'},
+ {rank:'Elder',count:3,reportsTo:'Clan Leader'},
+ {rank:'Division Leader',count:5,reportsTo:'Senior Leadership'},
+ {rank:'Squad Leader',count:10,reportsTo:'Division Leader'},
+ {rank:'Clan Member',count:100,reportsTo:'Squad Leader'}
+];
+const clanRoster=(()=>{
+ const prefixes=['Ash','Frost','Rune','Storm','Iron','Moon','Shadow','Dawn','Ember','Oak','Silver','Night'];
+ const suffixes=['Warden','Wolf','Seeker','Raven','Sentinel','Knight','Hunter','Keeper','Walker','Blade'];
+ const classes=['Amazon','Assassin','Barbarian','Druid','Necromancer','Paladin','Sorceress','Warlock'];
+ const roster=[];
+ function add(rank,reportsTo,division=null,squad=null){
+  const index=roster.length;
+  const member={id:index+1,name:prefixes[Math.floor(index/10)]+suffixes[index%10],battleTag:prefixes[Math.floor(index/10)]+suffixes[index%10]+'#'+(1842+index*17),rank,reportsTo,division,squad,
+   characterClass:classes[index%classes.length],level:75+(index*7%25),online:index%3!==0};
+  roster.push(member);return member;
+ }
+ const leader=add('Clan Leader',null);
+ add('Deputy Leader',leader.id);
+ for(let i=0;i<3;i++)add('Elder',leader.id);
+ for(let division=1;division<=5;division++){
+  const divisionLeader=add('Division Leader','Senior Leadership',division);
+  for(let squad=1;squad<=2;squad++){
+   const squadLeader=add('Squad Leader',divisionLeader.id,division,squad);
+   for(let i=0;i<10;i++)add('Clan Member',squadLeader.id,division,squad);
+  }
+ }
+ return roster;
+})();
+function filterClanMembers({group='all',squad='all',query='',online=false}){
+ const needle=query.trim().toLowerCase();
+ return clanRoster.filter(member=>
+  (group==='all'||(group==='leadership'?member.division===null:member.division===Number(group)))&&
+  (squad==='all'||member.squad===Number(squad))&&(!online||member.online)&&
+  (!needle||(member.battleTag+' '+member.rank+(member.online?' '+member.characterClass:'')).toLowerCase().includes(needle))
+ );
+}
+function renderClanRoster(){
+ const panel=document.getElementById('clan-panel');panel.replaceChildren();panel.classList.add('clan-browser');
+ const controls=document.createElement('div');controls.className='clan-controls';
+ controls.innerHTML='<header class="clan-heading"><h3>Clan Roster</h3><span>120 members / '+clanRoster.filter(member=>member.online).length+' online</span></header><nav class="clan-navigation" aria-label="Clan groups"></nav><div class="clan-filter-row"><label class="clan-search-label">Find member<input type="search" id="clan-member-search" placeholder="Name, rank, or class"></label><label class="clan-squad-label">Squad<select id="clan-squad-filter"><option value="all">All squads</option><option value="1">Squad 1</option><option value="2">Squad 2</option></select></label></div><label class="clan-online-filter"><input type="checkbox" id="clan-online-only"> Online only</label>';
+ panel.append(controls);
+ const listHeader=document.createElement('div');listHeader.className='clan-list-heading';
+ const title=document.createElement('h4'),count=document.createElement('span');count.setAttribute('role','status');
+ listHeader.append(title,count);panel.append(listHeader);
+ const list=document.createElement('ul');list.className='clan-members';list.setAttribute('aria-label','Clan members');panel.append(list);
+ const empty=document.createElement('p');empty.className='clan-empty';empty.textContent='No members match your filters.';panel.append(empty);
+ const structure=document.createElement('details');structure.className='clan-structure';
+ structure.innerHTML='<summary>Ranks and reporting structure</summary><table><thead><tr><th scope="col">Tier</th><th scope="col">Rank</th><th scope="col">Number</th><th scope="col">Reports to</th></tr></thead><tbody>'+clanRanks.map((rank,index)=>'<tr><td>'+(index+1)+'</td><th scope="row">'+rank.rank+'</th><td>'+rank.count+'</td><td>'+rank.reportsTo+'</td></tr>').join('')+'</tbody><tfoot><tr><th colspan="2" scope="row">Total</th><td>120</td><td></td></tr></tfoot></table>';panel.append(structure);
+ structure.querySelectorAll('tbody tr').forEach((row,index)=>{row.dataset.rank=clanRanks[index].rank;});
+ const state={group:'all',squad:'all',query:'',online:false};
+ const groups=[{id:'leadership',name:'Leadership',count:5},{id:'all',name:'All',count:120},...Array.from({length:5},(_,i)=>({id:String(i+1),name:'Division '+(i+1),count:23}))];
+ const nav=controls.querySelector('.clan-navigation');
+ const search=controls.querySelector('#clan-member-search'),squad=controls.querySelector('#clan-squad-filter'),online=controls.querySelector('#clan-online-only');
+ function update(){
+  nav.querySelectorAll('button').forEach(button=>{const active=button.dataset.group===state.group;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
+  squad.disabled=state.group==='leadership';
+  const matches=filterClanMembers(state);list.replaceChildren();
+  title.textContent=groups.find(group=>group.id===state.group).name+(state.squad==='all'?'':' / Squad '+state.squad);
+  count.textContent=matches.length+' shown';empty.hidden=matches.length!==0;
+  matches.forEach(member=>{
+   const row=document.createElement('li');row.className='clan-member';
+   row.style.setProperty('--clan-rank-depth',clanRanks.findIndex(rank=>rank.rank===member.rank));
+   row.dataset.rank=member.rank;
+   const name=document.createElement('span');name.className='clan-member-name';name.textContent=member.battleTag;
+   if(member.online){
+    const character=document.createElement('span');character.className='clan-member-character';character.textContent=' / Lv. '+member.level+' '+member.characterClass;name.append(character);
+   }
+   const status=document.createElement('span');status.className='clan-member-status clan-member-portrait'+(member.online?' is-online':'');
+   status.setAttribute('role','img');
+   status.setAttribute('aria-label',member.online?'Online — '+member.characterClass:'Offline');
+   status.title=member.online?'Online — '+member.characterClass:'Offline';
+   if(member.online){
+    const portrait=document.createElement('img');portrait.src='img/'+member.characterClass.toLowerCase()+'.png';portrait.alt='';portrait.loading='lazy';status.append(portrait);
+   }else{
+    status.innerHTML='<svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><circle cx="16" cy="11" r="6"/><path d="M5 29v-4a11 11 0 0 1 22 0v4z"/></svg>';
+   }
+   const rank=document.createElement('span');rank.className='clan-member-rank';rank.textContent=member.rank+(member.division?' - Division '+member.division+(member.squad?' / Squad '+member.squad:''):'');
+   const manager=clanRoster.find(person=>person.id===member.reportsTo);
+   row.title='Reports to: '+(manager?manager.battleTag+' ('+manager.rank+')':member.reportsTo||'None');
+   row.append(name,status,rank);list.append(row);
+  });
+ }
+ groups.forEach(group=>{
+  const button=document.createElement('button');button.type='button';button.dataset.group=group.id;
+  button.innerHTML=group.name+' <span>'+group.count+'</span>';
+  button.addEventListener('click',()=>{state.group=group.id;state.squad='all';squad.value='all';update();list.scrollTop=0;});nav.append(button);
+ });
+ search.addEventListener('input',()=>{state.query=search.value;update();list.scrollTop=0;});
+ squad.addEventListener('change',()=>{state.squad=squad.value;update();list.scrollTop=0;});
+ online.addEventListener('change',()=>{state.online=online.checked;update();list.scrollTop=0;});
+ update();
+}
+renderClanRoster();
+
 document.querySelectorAll('.friend-group-title').forEach(button=>button.addEventListener('click',()=>{
  const open=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(open));
  button.nextElementSibling.hidden=!open;button.querySelector('.triangle').textContent=open?'▾':'▸';
@@ -687,6 +785,11 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   button.dataset.item = item.name;
   const preview = () => {if (!lockedShopItem) selectShopItem(item);};
   button.addEventListener('pointerenter', preview);
+  const dismissPreview = () => {
+   if (!lockedShopItem) document.querySelector('.shop-inspection').hidden = true;
+  };
+  button.addEventListener('pointerleave', dismissPreview);
+  button.addEventListener('blur', dismissPreview);
   button.addEventListener('focus', preview);
   button.addEventListener('click', () => {
    lockedShopItem = item;
@@ -696,7 +799,10 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
  dialog.addEventListener('click', event => {
   if (event.target.closest('.shop-item-hotspot, .shop-owned-item, .shop-inspection')) return;
   lockedShopItem = null;
-  if (visiting) selectShopItem(visiting);
+  document.querySelector('.shop-inspection').hidden = true;
+  document.querySelectorAll('.shop-item-hotspot, .shop-owned-item').forEach(button=>{
+   button.classList.remove('selected');button.setAttribute('aria-pressed','false');
+  });
  });
  dialog.addEventListener('close', () => {lockedShopItem = null;});
 
@@ -705,6 +811,7 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   return `background-image:url('img/shop_full.png');background-size:${1108 / w * 100}% ${1430 / h * 100}%;background-position:${x / (1108 - w) * 100}% ${y / (1430 - h) * 100}%;aspect-ratio:${w}/${h}`;
  }
  function selectShopItem(item) {
+  document.querySelector('.shop-inspection').hidden = false;
   visiting = item;
   const isActive = lockedShopItem === item;
   document.getElementById('shop-selected-label').hidden = !isActive;
@@ -980,7 +1087,11 @@ document.getElementById('chat-server').addEventListener('change',event=>{
  welcome.addEventListener('ended',()=>{completedPlays++;if(completedPlays<20&&!connectingStarted){welcome.currentTime=0;welcome.play().catch(()=>{});}});
  connecting.addEventListener('ended',showLobby);
  playServerConnection=callback=>{onConnected=callback;startConnection();};
- document.querySelector('.btn.exit').addEventListener('click',()=>{
+ const exitDialog=document.getElementById('exit-confirm-dialog');
+ document.querySelector('.btn.exit').addEventListener('click',()=>exitDialog.showModal());
+ document.getElementById('exit-confirm-no').addEventListener('click',()=>exitDialog.close());
+ document.getElementById('exit-confirm-yes').addEventListener('click',()=>{
+  exitDialog.close();
   cancelHold();connecting.pause();connecting.currentTime=0;connecting.hidden=true;connectingStarted=false;onConnected=null;
   completedPlays=0;welcome.currentTime=0;welcome.hidden=false;screen.hidden=false;enter.hidden=false;enter.textContent='';status.textContent='';
   lobby.inert=true;document.body.classList.add('intro-active');closePlayerMenu();
@@ -1391,3 +1502,63 @@ for(const activity of ['Farming','Quest','PvP']){
  const game=gamesForCharacter().find(entry=>entry.activity===activity&&!entry.shopItem&&!gameEntryProblem(entry));
  if(game)postGameInvite(game,activity,{character:activity==='Quest'?'ActWalker':activity==='PvP'?'DuelWarden':'ChaosRunner',text:activity==='Quest'?'Working through the acts. Anyone need the quests?':activity==='PvP'?'Got room for a few friendly duels.':'Doing a few runs, still got room.'});
 }
+
+// Show the existing chat filter panel after leaving the gear menu.
+document.getElementById('chat-filter-toggle').addEventListener('click',()=>{
+ const menu=document.getElementById('main-menu-panel');
+ if(menu.matches(':popover-open'))menu.hidePopover();
+});
+
+function closeChatFilters(){
+ chatFilterPanel.classList.remove('open');
+ chatFilterPanel.hidden=true;
+ chatFilterButton.setAttribute('aria-expanded','false');
+ chatFilterButton.setAttribute('aria-pressed','false');
+ const gear=document.getElementById('main-menu-toggle');
+ if(gear.checkVisibility())gear.focus();
+}
+document.getElementById('chat-filter-close').addEventListener('click',closeChatFilters);
+chatFilterPanel.addEventListener('keydown',event=>{
+ if(event.key==='Escape'){event.preventDefault();event.stopPropagation();closeChatFilters();}
+});
+
+// Clan moderation entries are presentation-only placeholders.
+(()=>{
+ const menu=document.createElement('div');
+ menu.id='clan-member-context';menu.hidden=true;menu.setAttribute('role','menu');menu.setAttribute('aria-label','Clan member actions');
+ const heading=document.createElement('div');heading.className='clan-context-name';menu.append(heading);
+ for(const action of ['Promote','Demote','Kick']){
+  const button=document.createElement('button');button.type='button';button.textContent=action;button.setAttribute('role','menuitem');
+  button.dataset.clanAction=action;button.addEventListener('click',close);menu.append(button);
+ }
+ document.body.append(menu);
+ let source=null;
+ function close(){menu.hidden=true;}
+ document.getElementById('clan-panel').addEventListener('contextmenu',event=>{
+  const row=event.target.closest('.clan-member');if(!row)return;
+  event.preventDefault();closePlayerMenu();closeFriendMenu();source=row;
+  heading.textContent=row.querySelector('.clan-member-name').firstChild.textContent;
+  const isLeader=row.dataset.rank==='Clan Leader';
+  menu.querySelectorAll('button').forEach(button=>{
+   button.disabled=isLeader;
+   button.title=isLeader?'Clan Leader cannot be promoted, demoted, or kicked':'';
+  });
+  menu.hidden=false;
+  const bounds=menu.getBoundingClientRect();
+  menu.style.left=Math.max(4,Math.min(event.clientX,innerWidth-bounds.width-4))+'px';
+  menu.style.top=Math.max(4,Math.min(event.clientY,innerHeight-bounds.height-4))+'px';
+  const firstAction=menu.querySelector('button:not(:disabled)');
+  if(firstAction)firstAction.focus({preventScroll:true});
+ });
+ document.addEventListener('pointerdown',event=>{if(!menu.contains(event.target))close();});
+ document.addEventListener('contextmenu',event=>{if(!event.target.closest('.clan-member'))close();});
+ document.addEventListener('keydown',event=>{
+  if(menu.hidden)return;
+  if(event.key==='Escape'){event.preventDefault();close();}
+  if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+   event.preventDefault();const buttons=[...menu.querySelectorAll('button:not(:disabled)')];if(!buttons.length)return;const i=buttons.indexOf(document.activeElement);
+   buttons[(i+(event.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length].focus();
+  }
+ });
+ window.addEventListener('scroll',close,true);window.addEventListener('resize',close);
+})();
