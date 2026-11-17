@@ -169,9 +169,10 @@ let composerChannel='All';
 let lobbyComposerChannel='All';
 const chatLog=document.getElementById('chat');
 const communityNames=['Rushing','Barbarian','Baal Runs','Sorceress','Holy Grail'];
+const communityColors={'Rushing':'#efbd68','Barbarian':'#e88777','Baal Runs':'#91c978','Sorceress':'#ab9bea','Holy Grail':'#e3ce84'};
 let selectedCommunity=communityNames[0];
 const communityPicker=document.getElementById('chat-community');
-communityNames.forEach(name=>{const option=document.createElement('option');option.value=name;option.textContent='['+name+']';communityPicker.append(option);});
+communityNames.forEach(name=>{const option=document.createElement('option');option.value=name;option.textContent='['+name+']';option.style.color=communityColors[name];communityPicker.append(option);});
 communityPicker.addEventListener('change',()=>{selectedCommunity=communityPicker.value;updateComposerChannel();});
 const channelColors={Communities:'#64d6c6',Game:'#e9d09c',All:'#e6e3de',Lobby:'#d5b968',Clan:'#70ce78',Trading:'#d4a3f5',PvP:'#ed7777',Farming:'#e6e3de',Quest:'#69b8ff',Private:'#e69ccc'};
 const channelIcons={Communities:'C',Game:'G',Lobby:'\u25c6',Clan:'\u2663',Trading:'\u2696',PvP:'\u2694',Farming:'\u2660',Quest:'\u2726'};
@@ -190,6 +191,7 @@ function decorateChatMessage(message,channel){
  if(channel==='Communities'){
   if(!message.dataset.community)message.dataset.community=message.querySelector('.chat-self')?selectedCommunity:communityNames[Math.floor(Math.random()*communityNames.length)];
   const community=document.createElement('span');community.className='community-tag';community.textContent='['+message.dataset.community+'] ';
+  community.style.color=communityColors[message.dataset.community]||'#64d6c6';
   const sender=message.querySelector('.player-name,.chat-self');if(sender)sender.before(community);
  }
 
@@ -330,6 +332,7 @@ function updateComposerChannel(){
  const destination=composerChannel==='Private'&&privateRecipient?privateRecipientName:chatChannelLabel(composerChannel);
  document.getElementById('chat-composer-tag').textContent='['+destination+']';
  communityPicker.hidden=composerChannel!=='Communities';communityPicker.value=selectedCommunity;
+ communityPicker.style.color=communityColors[selectedCommunity]||'#64d6c6';
  input.placeholder='';
  input.setAttribute('aria-label','Chat message to '+destination);
  const send=document.getElementById('chat-send');send.disabled=composerChannel==='All'||(composerChannel==='Private'&&!privateRecipient);
@@ -574,6 +577,7 @@ socialTabs.forEach((button,index)=>{
 });
 communityNames.forEach(name=>{
  const row=document.createElement('div');row.className='social-community';row.textContent=name;
+ row.style.color=communityColors[name];
  document.getElementById('social-community-list').append(row);
 });
 // Clan roster: five senior leaders and five divisions of twenty-three.
@@ -630,13 +634,25 @@ function renderClanRoster(){
  structure.innerHTML='<summary>Ranks and reporting structure</summary><table><thead><tr><th scope="col">Tier</th><th scope="col">Rank</th><th scope="col">Number</th><th scope="col">Reports to</th></tr></thead><tbody>'+clanRanks.map((rank,index)=>'<tr><td>'+(index+1)+'</td><th scope="row">'+rank.rank+'</th><td>'+rank.count+'</td><td>'+rank.reportsTo+'</td></tr>').join('')+'</tbody><tfoot><tr><th colspan="2" scope="row">Total</th><td>120</td><td></td></tr></tfoot></table>';panel.append(structure);
  structure.querySelectorAll('tbody tr').forEach((row,index)=>{row.dataset.rank=clanRanks[index].rank;});
  const state={group:'all',squad:'all',query:'',online:false};
+ const collapsed=new Set(clanRoster.filter(member=>member.rank==='Squad Leader').map(member=>member.id));
+ const parentId=member=>member.reportsTo==='Senior Leadership'?clanRoster[0].id:member.reportsTo;
+ function hiddenByParent(member){
+  let parent=parentId(member);
+  while(parent){
+   if(collapsed.has(parent))return true;
+   const manager=clanRoster.find(person=>person.id===parent);
+   parent=manager?parentId(manager):null;
+  }
+  return false;
+ }
  const groups=[{id:'leadership',name:'Leadership',count:5},{id:'all',name:'All',count:120},...Array.from({length:5},(_,i)=>({id:String(i+1),name:'Division '+(i+1),count:23}))];
  const nav=controls.querySelector('.clan-navigation');
  const search=controls.querySelector('#clan-member-search'),squad=controls.querySelector('#clan-squad-filter'),online=controls.querySelector('#clan-online-only');
  function update(){
   nav.querySelectorAll('button').forEach(button=>{const active=button.dataset.group===state.group;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
   squad.disabled=state.group==='leadership';
-  const matches=filterClanMembers(state);list.replaceChildren();
+  const filtered=filterClanMembers(state);
+  const matches=state.group!=='all'||state.query.trim()?filtered:filtered.filter(member=>!hiddenByParent(member));list.replaceChildren();
   title.textContent=groups.find(group=>group.id===state.group).name+(state.squad==='all'?'':' / Squad '+state.squad);
   count.textContent=matches.length+' shown';empty.hidden=matches.length!==0;
   matches.forEach(member=>{
@@ -644,6 +660,21 @@ function renderClanRoster(){
    row.style.setProperty('--clan-rank-depth',clanRanks.findIndex(rank=>rank.rank===member.rank));
    row.dataset.rank=member.rank;
    const name=document.createElement('span');name.className='clan-member-name';name.textContent=member.battleTag;
+   if(state.group==='all'&&clanRoster.some(person=>parentId(person)===member.id)){
+    row.classList.add('clan-collapsible');row.tabIndex=0;row.setAttribute('role','button');
+    row.setAttribute('aria-expanded',String(!collapsed.has(member.id)));
+    function toggleBranch(){
+     if(collapsed.has(member.id))collapsed.delete(member.id);else collapsed.add(member.id);
+     const scroll=list.scrollTop;update();list.scrollTop=scroll;
+     list.querySelector('[data-member-id="'+member.id+'"]').focus({preventScroll:true});
+    }
+    row.addEventListener('click',toggleBranch);
+    row.addEventListener('keydown',event=>{
+     if(event.target!==row)return;
+     if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleBranch();}
+    });
+   }
+   row.dataset.memberId=member.id;
    if(member.online){
     const character=document.createElement('span');character.className='clan-member-character';character.textContent=' / Lv. '+member.level+' '+member.characterClass;name.append(character);
    }
@@ -723,17 +754,21 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
  const wallet = {Ist: 6, Mal: 4};
  const offers = [
   {name: 'Harlequin Crest', stats: '+2 All Skills · 135 Defense · 50% Magic Find', price: 1, rune: 'Ist', symbol: '♜', icon: 'harlequin_crest_shako.png', tooltip: 'item9.png', rect: [86,207,185,185]},
-  {name: 'Tal Rasha’s Guardianship', stats: '910 Defense · 88% Magic Find', price: 2, rune: 'Ist', symbol: '♜', icon: "tal-rasha's_guardianship_lacquered_plate.png", tooltip: 'item2.png', rect: [86,395,185,278]},
-  {name: 'Trang-Oul’s Claws', stats: '20% Faster Cast Rate · Cold Resist +30%', price: 1, rune: 'Mal', symbol: '✧', icon: 'bracers_m.png', tooltip: 'item3.png', rect: [835,675,185,185]},
+  {name: 'Tal Rasha’s Guardianship', itemType: 'set', stats: '910 Defense · 88% Magic Find', price: 2, rune: 'Ist', symbol: '♜', icon: "tal-rasha's_guardianship_lacquered_plate.png", tooltip: 'item2.png', rect: [86,395,185,278]},
+  {name: 'Trang-Oul’s Claws', itemType: 'set', stats: '20% Faster Cast Rate · Cold Resist +30%', price: 1, rune: 'Mal', symbol: '✧', icon: 'bracers_m.png', tooltip: 'item3.png', rect: [835,675,185,185]},
   {name: 'Magefist', stats: '+1 Fire Skills · 20% Faster Cast Rate', price: 1, rune: 'Mal', symbol: '✧', icon: 'light_gauntlets.png', tooltip: 'item4.png', rect: [86,861,185,185]},
   {name: 'Chance Guards', stats: '40% Magic Find · 200% Extra Gold', price: 1, rune: 'Ist', symbol: '✧', icon: 'chance_guard.png', tooltip: 'item5.png', rect: [86,675,185,185]},
   {name: 'Skullder’s Ire', stats: '+1 All Skills · 727 Defense', price: 2, rune: 'Mal', symbol: '♜', icon: 'splint_mail.png', tooltip: 'item6.png', rect: [835,395,185,278]},
-  {name: 'Guillaume’s Face', stats: '35% Crushing Blow · 15% Deadly Strike', price: 1, rune: 'Ist', symbol: '♛', icon: 'great_helm.png', tooltip: 'item1.png', rect: [835,207,185,185]},
+  {name: 'Guillaume’s Face', itemType: 'set', stats: '35% Crushing Blow · 15% Deadly Strike', price: 1, rune: 'Ist', symbol: '♛', icon: 'great_helm.png', tooltip: 'item1.png', rect: [835,207,185,185]},
   {name: 'Frostburn', stats: '+40% Maximum Mana · 49 Defense', price: 1, rune: 'Mal', symbol: '✧', icon: 'gaunlets_h_special.png', tooltip: 'item8.png', rect: [835,861,185,185]}
  ];
  const shopSellers = ['AshenWolf', 'FrostVale', 'BoneMancer', 'EmberFox', 'LuckyHork', 'DuskRaven', 'IronThorn', 'ColdSnap'];
  const tradeDescriptions = ['135 def shako', 'tal armor here', 'trang gloves ft', 'magefist for mal', '40 mf chances', 'skullders ft', 'gface here', 'frostburn for mal'];
- offers.forEach((item, index) => {item.seller = shopSellers[index]; item.server = ['America', 'Europe', 'Asia'][index % 3];});
+ offers.forEach((item, index) => {
+  item.itemType=item.itemType||'unique';
+  item.sellerClass=['Druid','Sorceress','Necromancer','Assassin','Barbarian','Amazon','Paladin','Warlock'][index];
+  item.seller = shopSellers[index]; item.server = ['America', 'Europe', 'Asia'][index % 3];
+ });
  // Sample sellers share the same scene artwork.
  const tradeLabels = ['SHAKO', 'TAL ARMOR', 'TRANG GLOVES', 'MAGEFIST', 'CHANCE GUARDS', 'SKULLDERS', 'GUILLAUMES', 'FROSTBURN'];
  games.filter(game => game.activity === 'Trading').forEach((game, index) => {
@@ -939,7 +974,8 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   offers.filter(item => !item.sold && `${item.name} ${item.seller} ${item.server}`.toLowerCase().includes(query)).forEach(item => {
    const row = document.createElement('article');
    row.className = 'market-item';
-   row.innerHTML = `<div class="market-item-icon" aria-hidden="true">${item.icon ? `<img src="img/${escapeHtml(item.icon)}" alt="" loading="lazy">` : item.symbol}</div><div class="market-item-copy"><h3>${escapeHtml(item.name)}</h3><small>${escapeHtml(item.stats)}</small><p>${item.mine ? 'Your listing' : 'Seller: ' + escapeHtml(item.seller)} <span class="market-server">&#183; ${escapeHtml(item.server)}</span></p><strong>${item.price} ${item.rune}</strong></div>`;
+   row.dataset.itemType=item.itemType||'unique';
+   row.innerHTML = `<div class="market-item-icon" aria-hidden="true">${item.icon ? `<img src="img/${escapeHtml(item.icon)}" alt="" loading="lazy">` : item.symbol}</div><div class="market-item-copy"><h3>${escapeHtml(item.name)}</h3><small>${escapeHtml(item.stats)}</small><strong>${item.price} ${item.rune}</strong></div>`;
    if(item.tooltip){
     const heading=row.querySelector('h3'),nameButton=document.createElement('button');
     nameButton.type='button';nameButton.className='market-name-button';nameButton.textContent=item.name;
@@ -960,7 +996,15 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
     }
     enterShop(item);
    });
-   row.append(action); list.append(row);
+   const seller=document.createElement('div');seller.className='market-seller';
+   const portrait=document.createElement('img');
+   const sellerClass=item.sellerClass||'Barbarian';
+   portrait.src='img/'+sellerClass.toLowerCase()+'.png';portrait.alt=sellerClass;portrait.title=sellerClass;portrait.loading='lazy';
+   const sellerName=document.createElement('span');sellerName.className='market-seller-name';sellerName.textContent=item.mine?'You':item.seller;
+   const server=document.createElement('span');server.className='market-seller-server';server.textContent=item.server;
+   seller.append(portrait,sellerName,server);
+   const sellerActions=document.createElement('div');sellerActions.className='market-seller-actions';sellerActions.append(seller,action);
+   row.append(sellerActions); list.append(row);
   });
   if (!list.children.length) list.textContent = 'No items found.';
   document.getElementById('market-owned-count').textContent = owned.length;

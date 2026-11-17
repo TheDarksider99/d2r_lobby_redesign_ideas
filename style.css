@@ -1126,3 +1126,50 @@ body.intro-active>.screen{visibility:hidden}
   border-color: #554a38;
 }
 #clan-panel :is(.clan-filter-row label, .clan-online-filter, .clan-structure) { color: #b3a176; }
+
+/* Community labels keep distinct colors, including existing message markup. */
+#chat [data-community="Rushing"] .community-tag { color: #efbd68; }
+#chat [data-community="Barbarian"] .community-tag { color: #e88777; }
+#chat [data-community="Baal Runs"] .community-tag { color: #91c978; }
+#chat [data-community="Sorceress"] .community-tag { color: #ab9bea; }
+#chat [data-community="Holy Grail"] .community-tag { color: #e3ce84; }
+
+#clan-panel .clan-branch-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: -3px 4px -3px 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #c6ac67;
+  font: 16px Georgia;
+  cursor: pointer;
+  vertical-align: middle;
+}
+#clan-panel .clan-branch-toggle:hover { color: #fff0c9; }
+#clan-panel .clan-branch-toggle:focus-visible { outline: 1px solid #998052; }
+#clan-panel .clan-collapsible { cursor: pointer; }
+#clan-panel .clan-collapsible:focus-visible { outline: 1px solid #998052; outline-offset: -1px; }
+
+.market-item[data-item-type="set"] h3,
+.market-item[data-item-type="set"] .market-name-button:hover { color: #00c400; }
+.market-item[data-item-type="set"] .market-name-button { text-decoration-color: #3c7030; }
+
+/* Seller identity and shop action share the compact right side of listings. */
+.market-item { padding-top: 6px; padding-bottom: 6px; gap: 7px; }
+.market-item-copy > strong { display: block; margin-top: 3px; }
+.market-seller-actions { display: flex; align-items: center; gap: 7px; flex: none; }
+.market-seller { display: flex; flex-direction: column; align-items: center; width: 76px; min-width: 0; gap: 2px; text-align: center; }
+.market-seller img { display: block; width: 32px; height: 32px; object-fit: cover; border: 1px solid #796b48; }
+.market-seller-name { max-width: 100%; color: #c9bb98; font: 10px Georgia; overflow-wrap: anywhere; }
+.market-seller-server { color: #918978; font: 9px Georgia; }
+@media(max-width:850px) {
+  .market-seller-actions { gap: 4px; }
+  .market-seller { width: 57px; }
+  .market-seller img { width: 26px; height: 26px; }
+  .market-seller-name { font-size: 9px; }
+  .market-seller-server { font-size: 8px; }
+}
