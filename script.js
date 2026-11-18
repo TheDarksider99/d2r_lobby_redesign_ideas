@@ -168,11 +168,32 @@ let selectedChatChannel='All';
 let composerChannel='All';
 let lobbyComposerChannel='All';
 const chatLog=document.getElementById('chat');
-const communityNames=['Rushing','Barbarian','Baal Runs','Sorceress','Holy Grail'];
-const communityColors={'Rushing':'#efbd68','Barbarian':'#e88777','Baal Runs':'#91c978','Sorceress':'#ab9bea','Holy Grail':'#e3ce84'};
-let selectedCommunity=communityNames[0];
+const startingCommunities=['Rushing','Barbarian','Baal Runs','Sorceress','Holy Grail'];
+const communityNames=[...startingCommunities,'Hardcore Sanctuary','Terror Zone Hunters','Uber Hunts'];
+const communityColors={'Rushing':'#efbd68','Barbarian':'#e88777','Baal Runs':'#91c978','Sorceress':'#ab9bea','Holy Grail':'#e3ce84','Hardcore Sanctuary':'#f58b80','Terror Zone Hunters':'#8dd2ce','Uber Hunts':'#caa7e7'};
+const communityMembershipKey='d2r-community-memberships';
+const joinedCommunities=new Set(startingCommunities);
+try{
+ const saved=JSON.parse(localStorage.getItem(communityMembershipKey));
+ if(Array.isArray(saved)){
+  joinedCommunities.clear();
+  communityNames.filter(name=>saved.includes(name)).forEach(name=>joinedCommunities.add(name));
+ }
+}catch{}
+let selectedCommunity=communityNames.find(name=>joinedCommunities.has(name))||'';
 const communityPicker=document.getElementById('chat-community');
-communityNames.forEach(name=>{const option=document.createElement('option');option.value=name;option.textContent='['+name+']';option.style.color=communityColors[name];communityPicker.append(option);});
+function updateCommunityPicker(){
+ communityPicker.replaceChildren();
+ if(!joinedCommunities.has(selectedCommunity))selectedCommunity=communityNames.find(name=>joinedCommunities.has(name))||'';
+ communityNames.filter(name=>joinedCommunities.has(name)).forEach(name=>{
+  const option=new Option('['+name+']',name);
+  option.style.color=communityColors[name];
+  communityPicker.append(option);
+ });
+ if(!selectedCommunity)communityPicker.append(new Option('No joined communities',''));
+ communityPicker.disabled=!selectedCommunity;
+}
+updateCommunityPicker();
 communityPicker.addEventListener('change',()=>{selectedCommunity=communityPicker.value;updateComposerChannel();});
 const channelColors={Communities:'#64d6c6',Game:'#e9d09c',All:'#e6e3de',Lobby:'#d5b968',Clan:'#70ce78',Trading:'#d4a3f5',PvP:'#ed7777',Farming:'#e6e3de',Quest:'#69b8ff',Private:'#e69ccc'};
 const channelIcons={Communities:'C',Game:'G',Lobby:'\u25c6',Clan:'\u2663',Trading:'\u2696',PvP:'\u2694',Farming:'\u2660',Quest:'\u2726'};
@@ -201,16 +222,16 @@ function decorateChatMessage(message,channel){
   if(channel==='Game'||relatedWhisper)message.dataset.game=currentGameChatKey();
  }
  message.style.setProperty('--channel-color',channelColors[channel]);
- const tag=document.createElement('span');tag.className='channel-tag';
+ const tag=document.createElement('button');tag.type='button';tag.className='channel-tag';tag.disabled=true;
  const label=channel==='Private'?'Private message':channel;
- tag.textContent=channelIcons[channel]||'\u2709';tag.title=label;tag.setAttribute('aria-label',label);tag.tabIndex=0;message.prepend(tag);
+ tag.textContent=channelIcons[channel]||'\u2709';tag.title=label;tag.setAttribute('aria-label','Open '+label+' channel');message.prepend(tag);
  const timestamp=document.createElement('time');timestamp.className='chat-timestamp';
  const sentAt=new Date();
  timestamp.dateTime=sentAt.toISOString();
  timestamp.textContent=String(sentAt.getHours()).padStart(2,'0')+':'+String(sentAt.getMinutes()).padStart(2,'0');
  message.prepend(timestamp);
 }
-chatLog.querySelectorAll(':scope > p').forEach(message=>decorateChatMessage(message,'Lobby'));
+chatLog.querySelectorAll(':scope > p').forEach(message=>decorateChatMessage(message,message.dataset.channel||'Lobby'));
 function createCommunitySamples(){
  const samples=[['RushGuide','Normal through Hell rush, two spots open.'],['AxeMaster','Whirlwind or Frenzy for a fresh Barbarian?'],['BaalRunner','Next Baal run starting soon. Need a teleporter.'],['FrostNova','Sharing cold Sorceress leveling tips.'],['GrailHunter','Finally found my first Death?s Fathom!']];
  return samples.map(([name,text],index)=>{
@@ -265,17 +286,18 @@ chatChannel.querySelectorAll('[data-channel]').forEach(tab=>tab.style.setPropert
 function currentGameChatKey(){
  return currentCampGame?(currentCampGame.realm||activeRealm)+'|'+currentCampGame.characterGameMode+'|'+currentCampGame.name:'';
 }
-function chatMessageInCurrentGameScope(message){
+function chatMessageInScope(message){
+ if(message.dataset.channel==='Communities')return joinedCommunities.has(message.dataset.community);
  return message.dataset.channel!=='Game'||(document.getElementById('market-shop').open&&message.dataset.game===currentGameChatKey());
 }
 function chatMessageVisibleInChannel(message,channel){
- if(!chatMessageInCurrentGameScope(message))return false;
+ if(!chatMessageInScope(message))return false;
  if(channel==='Game')return document.getElementById('market-shop').open&&message.dataset.game===currentGameChatKey();
  return channel==='All'||message.dataset.channel===channel;
 }
 function updateChannelBadges(){
  const counts={};
- chatLog.querySelectorAll('p[data-unread="true"]').forEach(message=>{if(!chatMessageInCurrentGameScope(message))return;const channel=message.dataset.channel;counts[channel]=(counts[channel]||0)+1;counts.GameView=(counts.GameView||0)+(message.dataset.game===currentGameChatKey()?1:0);});
+ chatLog.querySelectorAll('p[data-unread="true"]').forEach(message=>{if(!chatMessageInScope(message))return;const channel=message.dataset.channel;counts[channel]=(counts[channel]||0)+1;counts.GameView=(counts.GameView||0)+(message.dataset.game===currentGameChatKey()?1:0);});
  const chatTab=document.querySelector('[data-chat-view="lobby"]');
  let privateBadge=chatTab.querySelector('.chat-private-unread');
  if(!privateBadge){privateBadge=document.createElement('span');privateBadge.className='chat-private-unread';privateBadge.setAttribute('aria-hidden','true');chatTab.append(privateBadge);}
@@ -335,25 +357,44 @@ function updateComposerChannel(){
  communityPicker.style.color=communityColors[selectedCommunity]||'#64d6c6';
  input.placeholder='';
  input.setAttribute('aria-label','Chat message to '+destination);
- const send=document.getElementById('chat-send');send.disabled=composerChannel==='All'||(composerChannel==='Private'&&!privateRecipient);
- send.title=send.disabled?(composerChannel==='Private'?'Ctrl-click a private message or choose Whisper to select a player.':'Choose a channel or Ctrl-click a message to reply.'):'Send to '+destination;
+ const send=document.getElementById('chat-send');send.disabled=!canSendChatMessage();
+ send.title=send.disabled?(composerChannel==='Communities'?'Join a community from Social.':composerChannel==='Private'?'Ctrl-click a private message or choose Whisper to select a player.':'Choose a channel or Ctrl-click a message to reply.'):'Send to '+destination;
+}
+function canSendChatMessage(){
+ return composerChannel!=='All'&&(composerChannel!=='Private'||!!privateRecipient)&&
+  (composerChannel!=='Communities'||joinedCommunities.has(selectedCommunity));
 }
 function applyChatChannel(){
  const channel=selectedChatChannel;
  chatLog.classList.toggle('all-channels',channel==='All'||channel==='Game');
  chatChannel.querySelectorAll('[data-channel]').forEach(tab=>{const selected=tab.dataset.channel===channel;tab.classList.toggle('active',selected);tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;});
  updateComposerChannel();
- chatLog.querySelectorAll(':scope > p').forEach(message=>message.classList.toggle('channel-filtered',!chatMessageVisibleInChannel(message,channel)));
+ const availableChannels=new Set(Array.from(chatChannel.querySelectorAll('[data-channel]:not([hidden])'),tab=>tab.dataset.channel));
+ chatLog.querySelectorAll(':scope > p').forEach(message=>{
+  message.classList.toggle('channel-filtered',!chatMessageVisibleInChannel(message,channel));
+  const tag=message.querySelector('.channel-tag');
+  if(tag)tag.disabled=channel!=='All'||!availableChannels.has(message.dataset.channel);
+ });
  chatScrollPosition=chatLog.scrollTop;
  updateInviteButtons();updateChannelBadges();
 }
 chatChannel.addEventListener('click',event=>{const tab=event.target.closest('[data-channel]');if(!tab)return;selectedChatChannel=tab.dataset.channel;composerChannel=tab.dataset.channel;if(composerChannel==='Private')selectPrivateRecipient(null);applyChatChannel();jumpToLatestChat();if(document.getElementById('market-shop').open)document.getElementById('message').focus({preventScroll:true});});
 chatLog.addEventListener('click',event=>{
+ if(selectedChatChannel!=='All')return;
+ const tag=event.target.closest('.channel-tag:enabled');
+ if(!tag)return;
+ const channel=tag.closest('p').dataset.channel;
+ const tab=chatChannel.querySelector(`[data-channel="${channel}"]:not([hidden])`);
+ if(!tab)return;
+ tab.focus({preventScroll:true});
+ tab.click();
+});
+chatLog.addEventListener('click',event=>{
  if(!event.ctrlKey||!['All','Private'].includes(selectedChatChannel))return;
  const message=event.target.closest('p[data-channel]');if(!message||(selectedChatChannel==='Private'&&message.dataset.channel!=='Private'))return;
  event.preventDefault();event.stopImmediatePropagation();
  composerChannel=message.dataset.channel;
- if(composerChannel==='Communities')selectedCommunity=message.dataset.community||communityNames[0];
+ if(composerChannel==='Communities'&&joinedCommunities.has(message.dataset.community))selectedCommunity=message.dataset.community;
  if(composerChannel==='Private'){const sender=message.querySelector('.player-name');selectPrivateRecipient(message.dataset.recipient||sender?.dataset.battletag,message.dataset.recipientName||sender?.dataset.character);}
  updateComposerChannel();document.getElementById('message').focus();
 },true);
@@ -363,7 +404,7 @@ chatChannel.addEventListener('keydown',event=>{
  event.preventDefault();tabs[next].focus();tabs[next].click();
 });applyChatChannel();
 document.getElementById('chat-form').onsubmit=e=>{
- e.preventDefault();if(composerChannel==='All'||(composerChannel==='Private'&&!privateRecipient))return;const input=document.getElementById('message');let text=input.value.trim();if(!text&&!pendingGameInvite)return;
+ e.preventDefault();if(!canSendChatMessage())return;const input=document.getElementById('message');let text=input.value.trim();if(!text&&!pendingGameInvite)return;
  let channel=composerChannel;
  if(pendingGameInvite){
   const game=currentCampGame;
@@ -553,32 +594,311 @@ document.querySelectorAll('[data-chat-view]').forEach(button=>button.addEventLis
  if(lobby){selectedChatChannel='All';composerChannel='All';applyChatChannel();jumpToLatestChat();}
 }));
 // Social sections retain their contents when switching tabs.
-const socialTabs=[...document.querySelectorAll('[data-social-view]')];
-function selectSocialTab(button){
- socialTabs.forEach(tab=>{
-  const selected=tab===button;
-  tab.classList.toggle('active',selected);
-  tab.setAttribute('aria-selected',String(selected));
-  tab.tabIndex=selected?0:-1;
-  document.getElementById(tab.getAttribute('aria-controls')).hidden=!selected;
+function bindTabs(tabs){
+ function select(button){
+  tabs.forEach(tab=>{
+   const selected=tab===button;
+   tab.classList.toggle('active',selected);
+   tab.setAttribute('aria-selected',String(selected));
+   tab.tabIndex=selected?0:-1;
+   document.getElementById(tab.getAttribute('aria-controls')).hidden=!selected;
+  });
+ }
+ tabs.forEach((button,index)=>{
+  button.addEventListener('click',()=>select(button));
+  button.addEventListener('keydown',event=>{
+   let next;
+   if(event.key==='ArrowRight')next=(index+1)%tabs.length;
+   else if(event.key==='ArrowLeft')next=(index+tabs.length-1)%tabs.length;
+   else if(event.key==='Home')next=0;
+   else if(event.key==='End')next=tabs.length-1;
+   else return;
+   event.preventDefault();select(tabs[next]);tabs[next].focus();
+  });
  });
 }
-socialTabs.forEach((button,index)=>{
- button.addEventListener('click',()=>selectSocialTab(button));
- button.addEventListener('keydown',event=>{
-  let next;
-  if(event.key==='ArrowRight')next=(index+1)%socialTabs.length;
-  else if(event.key==='ArrowLeft')next=(index+socialTabs.length-1)%socialTabs.length;
-  else if(event.key==='Home')next=0;
-  else if(event.key==='End')next=socialTabs.length-1;
-  else return;
-  event.preventDefault();selectSocialTab(socialTabs[next]);socialTabs[next].focus();
- });
+bindTabs([...document.querySelectorAll('[data-social-view]')]);
+const communityOwners=['RushGuide','AxeMaster','BaalRunner','FrostNova','GrailHunter','IronOath','ZoneWatcher','TorchKeeper'];
+const communityDescriptions=[
+ 'Find a group for quest rushes, waypoint unlocks, and difficulty clears.',
+ 'Compare Barbarian builds, share gear tips, and group up for Travincal runs.',
+ 'Find or host Baal runs for leveling and loot across all difficulties.',
+ 'Discuss Sorceress builds, leveling routes, and gear for elemental setups.',
+ 'Track rare finds, share progress, and hunt for the last items on your grail list.',
+ 'Find Hardcore groups for safe leveling, quest help, and endgame runs.',
+ 'Team up for Terror Zones, experience runs, and sunder charm hunts.',
+ 'Organize key farming, Uber Tristram runs, and Hellfire Torch hunts.'
+];
+const communityAnnouncements=[
+ 'Hell rush runs start in Act I. Post your difficulty in community chat to reserve a spot.',
+ 'Share your Barbarian build and gear questions in community chat.',
+ 'Baal run hosts should post the difficulty and game name in community chat.',
+ 'Bring a build or leveling question to the next Sorceress discussion.',
+ 'Share your latest grail find and which item you are hunting next.',
+ 'Post your difficulty and level before joining a Hardcore run.',
+ 'Post the active Terror Zone and difficulty when hosting a run.',
+ 'Check who is bringing keys and who will handle the bosses before opening portals.'
+];
+const communityPlayers=[
+ 'RuneSeeker','JavQueen','ShadowFang','GoldFind','HolyHammer','TravHorker','LightningFury','IronWolf','LuckyCharm','UberKiller',
+ 'KeyRunner','WindArrow','BoneSpirit','NightRaven','MoonWarden','EmberGuard','OakShield','SilverArrow','DawnWalker','StormKeeper',
+ 'FrostVeil','GrimAnchor','CinderWolf','RuneKeeper','ThornVale','IvoryBlade','DustWarden','CopperFang','MistWalker','DuskSentinel'
+];
+const communityModeratorLimit=5;
+const extraOnlinePlayers=['AshenPike','FlintRaven','BriarSpear','HollowOak','CrimsonWard','StoneFalcon','PaleEmber','WinterBough','IronVale','Starbreaker'];
+const communityMemberTotals=[3248,2816,3872,3154,2643,3416,4230,2985];
+const rosterClasses=['Amazon','Assassin','Barbarian','Druid','Necromancer','Paladin','Sorceress','Warlock'];
+const rosterModeKeys=['sc-ld','hc-ld','sc-nl','hc-nl'];
+const rosterMaps=['Lobby','Rogue Encampment','Chaos Sanctuary','Worldstone Keep','Travincal','The Pit','Uber Tristram','Cow Level','Arcane Sanctuary'];
+const rosterEyeIcon='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/><path class="community-eye-slash" d="M3 3l18 18"/></svg>';
+function createRosterLocation({mode,map}){
+ const modes=document.createElement('span');
+ modes.className='community-player-mode';
+ for(const flag of mode.split('-')){
+  if(flag!=='hc'&&flag!=='ld')continue;
+  const icon=document.createElement('img');
+  icon.className='community-mode-icon';
+  icon.src='img/'+flag+'128.png';
+  icon.alt=flag==='hc'?'Hardcore':'Ladder';
+  icon.title=icon.alt;
+  modes.append(icon);
+ }
+ const location=document.createElement('span');
+ location.className='community-player-map';
+ location.textContent=map;
+ return [modes,location];
+}
+function createRosterPortrait({online,characterClass}){
+ const status=document.createElement('span');
+ status.className='clan-member-status clan-member-portrait'+(online?' is-online':'');
+ status.setAttribute('role','img');
+ const label=online?(characterClass?'Online — '+characterClass:'Online'):'Offline';
+ status.setAttribute('aria-label',label);
+ status.title=label;
+ if(online&&characterClass){
+  const portrait=document.createElement('img');
+  portrait.src='img/'+characterClass.toLowerCase()+'.png';portrait.alt='';portrait.loading='lazy';
+  status.append(portrait);
+ }else{
+  status.innerHTML='<svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><circle cx="16" cy="11" r="6"/><path d="M5 29v-4a11 11 0 0 1 22 0v4z"/></svg>';
+ }
+ return status;
+}
+const communityList=document.getElementById('social-community-list');
+const communitiesPanel=document.getElementById('communities-panel');
+const communityDirectory=document.getElementById('community-directory');
+const communitySearch=document.getElementById('community-search');
+const communityNoResults=document.getElementById('community-no-results');
+communitySearch.addEventListener('input',()=>{
+ const query=communitySearch.value.trim().toLowerCase().split(/\s+/);
+ let matches=0;
+ for(const card of communityList.children){
+  card.hidden=!query.every(word=>card.dataset.search.includes(word));
+  if(!card.hidden)matches++;
+ }
+ communityNoResults.hidden=matches>0;
 });
-communityNames.forEach(name=>{
- const row=document.createElement('div');row.className='social-community';row.textContent=name;
- row.style.color=communityColors[name];
- document.getElementById('social-community-list').append(row);
+communityNames.forEach((name,index)=>{
+ const players=communityPlayers.slice(index*3).concat(communityPlayers.slice(0,index*3));
+ const groups=[
+  {label:'Owner',rank:'Owner',players:[communityOwners[index]]},
+  {label:'Moderators',rank:'Moderator',players:players.slice(0,communityModeratorLimit)},
+  {label:'Members',rank:'Member',players:players.slice(communityModeratorLimit,communityModeratorLimit+15+index)}
+ ];
+ groups[2].players.push(...extraOnlinePlayers);
+ const rosterPlayers=new Map(groups.flatMap(group=>group.players).map((player,playerIndex)=>{
+  const sampleIndex=playerIndex+index;
+  const online=extraOnlinePlayers.includes(player)||sampleIndex%3===0;
+  return [player,{online,level:75+(sampleIndex*7%25),characterClass:rosterClasses[sampleIndex%rosterClasses.length],
+   mode:rosterModeKeys[sampleIndex%rosterModeKeys.length],
+   map:online?rosterMaps[sampleIndex%rosterMaps.length]:'—'}];
+ }));
+ const onlineCount=[...rosterPlayers.values()].filter(player=>player.online).length;
+ const entry=document.createElement('button');
+ entry.type='button';
+ entry.className='social-community';
+ entry.dataset.search=(name+' '+communityDescriptions[index]+' '+communityOwners[index]).toLowerCase();
+ entry.style.setProperty('--community-color',communityColors[name]);
+ entry.innerHTML=`
+  <span class="community-card-heading"><span class="community-name"></span><span class="community-membership"></span></span>
+  <span class="community-card-description"></span>
+  <span class="community-card-details"><span class="community-card-owner"></span><span class="community-card-population"></span></span>`;
+ entry.querySelector('.community-name').textContent=name;
+ entry.querySelector('.community-card-description').textContent=communityDescriptions[index];
+ entry.querySelector('.community-card-owner').textContent='Owner · '+communityOwners[index];
+ const membership=entry.querySelector('.community-membership');
+ const population=entry.querySelector('.community-card-population');
+ communityList.append(entry);
+
+ const roster=document.createElement('section');
+ roster.className='community-roster';
+ roster.hidden=true;
+ roster.style.setProperty('--community-color',communityColors[name]);
+ const pageId='community-'+index;
+ roster.innerHTML=`
+  <header class="community-page-heading">
+   <h3 id="${pageId}-title" tabindex="-1"></h3>
+  </header>
+  <div class="community-tabs" role="tablist" aria-label="Community sections">
+   <button type="button" class="btn active" id="${pageId}-roster-tab" role="tab" aria-selected="true" aria-controls="${pageId}-roster">Roster</button>
+   <button type="button" class="btn" id="${pageId}-news-tab" role="tab" aria-selected="false" aria-controls="${pageId}-news" tabindex="-1">News</button>
+   <button type="button" class="btn" id="${pageId}-settings-tab" role="tab" aria-selected="false" aria-controls="${pageId}-settings" tabindex="-1">Settings</button>
+  </div>
+  <div class="community-roster-view" id="${pageId}-roster" role="tabpanel" aria-labelledby="${pageId}-roster-tab" tabindex="0">
+   <div class="community-ranks">
+    <div class="community-roster-columns">
+     <label class="community-member-search">Member<input type="search" aria-label="Search members" placeholder="Search"></label>
+     <img class="community-mode-icon" src="img/ld128.png" alt="Game mode" title="Game mode"><span>Map</span>
+    </div>
+    <div class="community-rank-groups"></div>
+    <p class="community-member-empty social-empty" role="status" hidden>No members match your search.</p>
+   </div>
+  </div>
+  <div class="community-news" id="${pageId}-news" role="tabpanel" aria-labelledby="${pageId}-news-tab" tabindex="0" hidden>
+   <section><h4>News</h4><ul class="community-activity"></ul></section>
+   <section><h4>Announcements</h4><p class="community-announcement"></p><p class="community-announcement-author"></p></section>
+  </div>
+  <div class="community-settings" id="${pageId}-settings" role="tabpanel" aria-labelledby="${pageId}-settings-tab" hidden>
+   <button type="button" class="community-membership-button"></button>
+  </div>
+  <footer class="community-roster-footer">
+   <div class="community-roster-summary">
+    <button type="button" class="mini-control community-visibility" aria-label="Show offline members" aria-pressed="false" title="Show all members">
+     ${rosterEyeIcon}
+    </button>
+    <p class="community-counts" role="status"></p>
+   </div>
+   <button type="button" class="btn community-back">Back</button>
+  </footer>`;
+ const title=roster.querySelector('h3');
+ title.textContent=name;
+ roster.setAttribute('aria-labelledby',title.id);
+ const button=roster.querySelector('.community-membership-button');
+ const counts=roster.querySelector('.community-counts');
+ const ranks=roster.querySelector('.community-ranks');
+ const rankGroups=roster.querySelector('.community-rank-groups');
+ const memberSearch=roster.querySelector('.community-member-search input');
+ const memberEmpty=roster.querySelector('.community-member-empty');
+ memberSearch.addEventListener('input',()=>{
+  ranks.scrollTop=0;
+  updateRoster();
+ });
+ const visibility=roster.querySelector('.community-visibility');
+ let showOffline=false;
+ visibility.addEventListener('click',()=>{
+  showOffline=!showOffline;
+  visibility.setAttribute('aria-pressed',String(showOffline));
+  visibility.title=showOffline?'Hide offline members':'Show all members';
+  updateRoster();
+ });
+ const activity=roster.querySelector('.community-activity');
+ const activityKey='d2r-community-activity-'+name;
+ const activityHistory=[];
+ try{
+  const saved=JSON.parse(localStorage.getItem(activityKey));
+  if(Array.isArray(saved))activityHistory.push(...saved.filter(message=>typeof message==='string').slice(0,20));
+ }catch{}
+ const sampleActivity=[
+  groups[2].players[0]+' joined the community.',
+  groups[1].players[0]+' was promoted to Moderator by '+communityOwners[index]+'.',
+  players.at(-1)+' left the community.',
+  groups[2].players[1]+' joined the community.'
+ ];
+ function updateActivity(){
+  activity.replaceChildren(...activityHistory.concat(sampleActivity).map(message=>{
+   const item=document.createElement('li');
+   item.textContent=message;
+   return item;
+  }));
+ }
+ roster.querySelector('.community-announcement').textContent=communityAnnouncements[index];
+ roster.querySelector('.community-announcement-author').textContent=communityOwners[index]+' · Owner';
+ let directoryScroll=0;
+ entry.addEventListener('click',()=>{
+  updateRoster();
+  directoryScroll=communitiesPanel.scrollTop;
+  communityDirectory.hidden=true;
+  roster.hidden=false;
+  communitiesPanel.scrollTop=0;
+  ranks.scrollTop=0;
+  title.focus({preventScroll:true});
+ });
+ roster.querySelector('.community-back').addEventListener('click',()=>{
+  roster.hidden=true;
+  communityDirectory.hidden=false;
+  communitiesPanel.scrollTop=directoryScroll;
+  entry.focus({preventScroll:true});
+ });
+ function updateRoster(){
+  const joined=joinedCommunities.has(name);
+  const selfCount=Number(joined);
+  const total=(communityMemberTotals[index]+selfCount).toLocaleString('en-US');
+  const online=onlineCount+selfCount;
+  membership.textContent=joined?'Joined':'Available';
+  population.textContent=total+' members · '+online+' online';
+  counts.textContent=online+' of '+total+' members currently online';
+  button.textContent=joined?'Leave community':'Join community';
+  button.setAttribute('aria-label',button.textContent+' '+name);
+  const selectedCharacter=characterData[characterMode].find(character=>character[0]===chosenCharacter);
+  const query=memberSearch.value.trim().toLowerCase();
+  let matches=0;
+  rankGroups.replaceChildren(...groups.map(({label,rank,players},depth)=>{
+   const section=document.createElement('section');
+   section.dataset.rank=rank;
+   section.style.setProperty('--roster-rank-depth',depth);
+   const heading=document.createElement('h4');
+   heading.textContent=label;
+   const list=document.createElement('ul');
+   const members=rank==='Member'&&joined?[...players,'You']:players;
+   const visiblePlayers=members.filter(player=>player.toLowerCase().includes(query)&&
+    (showOffline||player==='You'||rosterPlayers.get(player).online));
+   matches+=visiblePlayers.length;
+   section.hidden=visiblePlayers.length===0;
+   list.append(...visiblePlayers.map(player=>{
+    const member=document.createElement('li');
+    member.className='clan-member';
+    member.dataset.rank=rank;
+    if(player!=='You')member.tabIndex=0;
+    const name=document.createElement('span');
+    name.className='clan-member-name';
+    name.textContent=player;
+    const rankLabel=document.createElement('span');
+    rankLabel.className='clan-member-rank';
+    rankLabel.textContent=rank;
+    const profile=player==='You'?{online:true,level:selectedCharacter?.[1],characterClass:selectedCharacter?.[2],
+     mode:characterMode==='online'&&selectedCharacter?activeCharacterGameMode:'',map:'Lobby'}:rosterPlayers.get(player);
+    if(profile.online&&profile.characterClass){
+     const character=document.createElement('span');
+     character.className='clan-member-character';
+     character.textContent=' / Lv. '+profile.level+' '+profile.characterClass;
+     name.append(character);
+    }
+    member.append(name,...createRosterLocation(profile),createRosterPortrait(profile),rankLabel);
+    return member;
+   }));
+   section.append(heading,list);
+   return section;
+  }));
+  memberEmpty.hidden=matches>0||!query;
+ }
+ button.addEventListener('click',()=>{
+  const left=joinedCommunities.delete(name);
+  if(!left)joinedCommunities.add(name);
+  activityHistory.unshift(left?'You left the community.':'You joined the community.');
+  activityHistory.splice(20);
+  try{
+   localStorage.setItem(communityMembershipKey,JSON.stringify([...joinedCommunities]));
+   localStorage.setItem(activityKey,JSON.stringify(activityHistory));
+  }catch{}
+  updateActivity();
+  updateRoster();
+  updateCommunityPicker();
+  applyChatChannel();
+ });
+ updateRoster();
+ updateActivity();
+ communitiesPanel.append(roster);
+ bindTabs([...roster.querySelectorAll('[role="tab"]')]);
 });
 // Clan roster: five senior leaders and five divisions of twenty-three.
 const clanRanks=[
@@ -592,12 +912,13 @@ const clanRanks=[
 const clanRoster=(()=>{
  const prefixes=['Ash','Frost','Rune','Storm','Iron','Moon','Shadow','Dawn','Ember','Oak','Silver','Night'];
  const suffixes=['Warden','Wolf','Seeker','Raven','Sentinel','Knight','Hunter','Keeper','Walker','Blade'];
- const classes=['Amazon','Assassin','Barbarian','Druid','Necromancer','Paladin','Sorceress','Warlock'];
  const roster=[];
  function add(rank,reportsTo,division=null,squad=null){
   const index=roster.length;
   const member={id:index+1,name:prefixes[Math.floor(index/10)]+suffixes[index%10],battleTag:prefixes[Math.floor(index/10)]+suffixes[index%10]+'#'+(1842+index*17),rank,reportsTo,division,squad,
-   characterClass:classes[index%classes.length],level:75+(index*7%25),online:index%3!==0};
+   characterClass:rosterClasses[index%rosterClasses.length],level:75+(index*7%25),online:index%3!==0,
+   mode:rosterModeKeys[index%rosterModeKeys.length],map:index%3!==0?rosterMaps[index%rosterMaps.length]:'—',
+   clanPoints:Math.max(0,2450-index*17+(index%7)*11)};
   roster.push(member);return member;
  }
  const leader=add('Clan Leader',null);
@@ -612,28 +933,117 @@ const clanRoster=(()=>{
  }
  return roster;
 })();
-function filterClanMembers({group='all',squad='all',query='',online=false}){
+function filterClanMembers({group='all',query='',online=false}){
  const needle=query.trim().toLowerCase();
  return clanRoster.filter(member=>
   (group==='all'||(group==='leadership'?member.division===null:member.division===Number(group)))&&
-  (squad==='all'||member.squad===Number(squad))&&(!online||member.online)&&
+  (!online||member.online)&&
   (!needle||(member.battleTag+' '+member.rank+(member.online?' '+member.characterClass:'')).toLowerCase().includes(needle))
  );
 }
+function renderClanBossQuest(panel){
+ const resources=[
+  {name:'High runes',amount:320,target:600,batch:20},
+  {name:'Perfect gems',amount:970,target:2400,batch:100},
+  {name:'Essences',amount:180,target:480,batch:20}
+ ];
+ const list=panel.querySelector('.clan-quest-materials');
+ const status=panel.querySelector('.clan-quest-status');
+ const spawn=panel.querySelector('.clan-quest-spawn');
+ let spawned=false;
+ const rows=resources.map(resource=>{
+  const row=document.createElement('li');
+  row.innerHTML='<div><strong></strong><span></span><progress></progress></div><button type="button" class="btn"></button>';
+  row.querySelector('strong').textContent=resource.name;
+  const amount=row.querySelector('span');
+  const progress=row.querySelector('progress');
+  progress.max=resource.target;
+  progress.setAttribute('aria-label',resource.name+' contributed');
+  const contribute=row.querySelector('button');
+  contribute.addEventListener('click',()=>{
+   resource.amount=Math.min(resource.target,resource.amount+resource.batch);
+   update();
+  });
+  list.append(row);
+  return {resource,amount,progress,contribute};
+ });
+ function update(){
+  const ready=resources.every(resource=>resource.amount>=resource.target);
+  rows.forEach(({resource,amount,progress,contribute})=>{
+   const batch=Math.min(resource.batch,resource.target-resource.amount);
+   amount.textContent=resource.amount.toLocaleString('en-US')+' / '+resource.target.toLocaleString('en-US');
+   progress.value=resource.amount;
+   contribute.disabled=batch===0;
+   contribute.textContent=batch?'Contribute '+batch:'Complete';
+   contribute.setAttribute('aria-label',batch?'Contribute '+batch+' '+resource.name.toLowerCase():resource.name+' contribution complete');
+  });
+  spawn.disabled=!ready||spawned;
+  status.textContent=spawned?'The Cinder Warden has spawned.':ready?'The ritual is ready.':'Fill all three contribution pools to unlock the ritual.';
+ }
+ spawn.addEventListener('click',()=>{
+  if(spawn.disabled)return;
+  spawned=true;
+  update();
+ });
+ update();
+}
 function renderClanRoster(){
- const panel=document.getElementById('clan-panel');panel.replaceChildren();panel.classList.add('clan-browser');
- const controls=document.createElement('div');controls.className='clan-controls';
- controls.innerHTML='<header class="clan-heading"><h3>Clan Roster</h3><span>120 members / '+clanRoster.filter(member=>member.online).length+' online</span></header><nav class="clan-navigation" aria-label="Clan groups"></nav><div class="clan-filter-row"><label class="clan-search-label">Find member<input type="search" id="clan-member-search" placeholder="Name, rank, or class"></label><label class="clan-squad-label">Squad<select id="clan-squad-filter"><option value="all">All squads</option><option value="1">Squad 1</option><option value="2">Squad 2</option></select></label></div><label class="clan-online-filter"><input type="checkbox" id="clan-online-only"> Online only</label>';
- panel.append(controls);
+ const panel=document.getElementById('clan-panel');
+ panel.classList.add('clan-browser');
+ panel.innerHTML=`
+  <header class="community-page-heading"><h3>Ashen Vanguard</h3></header>
+  <div class="community-tabs clan-tabs" role="tablist" aria-label="Clan sections">
+   <button type="button" class="btn active" id="clan-roster-tab" role="tab" aria-selected="true" aria-controls="clan-roster-view">Roster</button>
+   <button type="button" class="btn" id="clan-news-tab" role="tab" aria-selected="false" aria-controls="clan-news-view" tabindex="-1">News</button>
+   <button type="button" class="btn" id="clan-quests-tab" role="tab" aria-selected="false" aria-controls="clan-quests-view" tabindex="-1">Quests</button>
+   <button type="button" class="btn" id="clan-settings-tab" role="tab" aria-selected="false" aria-controls="clan-settings-view" tabindex="-1">Settings</button>
+  </div>
+  <div id="clan-roster-view" class="community-roster-view clan-roster-view" role="tabpanel" aria-labelledby="clan-roster-tab">
+   <nav class="clan-navigation" aria-label="Clan groups"></nav>
+  </div>
+  <div id="clan-news-view" class="community-news" role="tabpanel" aria-labelledby="clan-news-tab" tabindex="0" hidden>
+   <section><h4>News</h4><ul class="community-activity"><li>${clanRoster.at(-1).battleTag} joined the clan.</li><li>${clanRoster.find(member=>member.rank==='Squad Leader').battleTag} was promoted to Squad Leader.</li></ul></section>
+   <section><h4>Announcements</h4><p class="community-announcement">Check with your division leader before signing up for a clan run.</p></section>
+  </div>
+  <div id="clan-quests-view" class="community-news" role="tabpanel" aria-labelledby="clan-quests-tab" tabindex="0" hidden>
+   <section class="clan-boss-quest">
+    <h4>Summon the Cinder Warden</h4>
+    <p class="community-announcement">Pool runes and materials with your clan to summon the Cinder Warden in Hell difficulty.</p>
+    <ul class="clan-quest-materials"></ul>
+    <p class="clan-quest-status" role="status"></p>
+    <button type="button" class="btn clan-quest-spawn" disabled>Spawn clan boss</button>
+   </section>
+  </div>
+  <div id="clan-settings-view" class="community-settings" role="tabpanel" aria-labelledby="clan-settings-tab" tabindex="0" hidden></div>
+  <footer class="community-roster-footer">
+   <div class="community-roster-summary">
+    <button type="button" class="mini-control community-visibility" aria-label="Show offline members" aria-pressed="false" title="Show all members">${rosterEyeIcon}</button>
+    <p class="community-counts" role="status">${clanRoster.filter(member=>member.online).length} of ${clanRoster.length} members currently online</p>
+   </div>
+   <button type="button" class="btn community-back">Back</button>
+  </footer>`;
+ const controls=panel.querySelector('#clan-roster-view');
+ renderClanBossQuest(panel.querySelector('#clan-quests-view'));
+ const footer=panel.querySelector('.community-roster-footer');
+ const visibility=footer.querySelector('.community-visibility');
+ footer.querySelector('.community-back').addEventListener('click',()=>{
+  const friends=document.getElementById('social-friends-tab');
+  friends.click();
+  friends.focus({preventScroll:true});
+ });
+ bindTabs([...panel.querySelectorAll('[role="tab"]')]);
  const listHeader=document.createElement('div');listHeader.className='clan-list-heading';
  const title=document.createElement('h4'),count=document.createElement('span');count.setAttribute('role','status');
- listHeader.append(title,count);panel.append(listHeader);
- const list=document.createElement('ul');list.className='clan-members';list.setAttribute('aria-label','Clan members');panel.append(list);
- const empty=document.createElement('p');empty.className='clan-empty';empty.textContent='No members match your filters.';panel.append(empty);
+ listHeader.append(title,count);controls.append(listHeader);
+ const columns=document.createElement('div');columns.className='community-roster-columns';
+ columns.innerHTML='<label class="community-member-search">Member<input type="search" id="clan-member-search" aria-label="Search clan members" placeholder="Search"></label><img class="community-mode-icon" src="img/ld128.png" alt="Game mode" title="Game mode"><span>Map</span><span class="clan-point-heading">Clan Point</span>';
+ controls.append(columns);
+ const list=document.createElement('ul');list.className='clan-members';list.setAttribute('aria-label','Clan members');controls.append(list);
+ const empty=document.createElement('p');empty.className='clan-empty';empty.textContent='No members match your filters.';controls.append(empty);
  const structure=document.createElement('details');structure.className='clan-structure';
- structure.innerHTML='<summary>Ranks and reporting structure</summary><table><thead><tr><th scope="col">Tier</th><th scope="col">Rank</th><th scope="col">Number</th><th scope="col">Reports to</th></tr></thead><tbody>'+clanRanks.map((rank,index)=>'<tr><td>'+(index+1)+'</td><th scope="row">'+rank.rank+'</th><td>'+rank.count+'</td><td>'+rank.reportsTo+'</td></tr>').join('')+'</tbody><tfoot><tr><th colspan="2" scope="row">Total</th><td>120</td><td></td></tr></tfoot></table>';panel.append(structure);
+ structure.innerHTML='<summary>Ranks and reporting structure</summary><table><thead><tr><th scope="col">Tier</th><th scope="col">Rank</th><th scope="col">Number</th><th scope="col">Reports to</th></tr></thead><tbody>'+clanRanks.map((rank,index)=>'<tr><td>'+(index+1)+'</td><th scope="row">'+rank.rank+'</th><td>'+rank.count+'</td><td>'+rank.reportsTo+'</td></tr>').join('')+'</tbody><tfoot><tr><th colspan="2" scope="row">Total</th><td>120</td><td></td></tr></tfoot></table>';panel.querySelector('#clan-settings-view').append(structure);
  structure.querySelectorAll('tbody tr').forEach((row,index)=>{row.dataset.rank=clanRanks[index].rank;});
- const state={group:'all',squad:'all',query:'',online:false};
+ const state={group:'all',query:'',online:true};
  const collapsed=new Set(clanRoster.filter(member=>member.rank==='Squad Leader').map(member=>member.id));
  const parentId=member=>member.reportsTo==='Senior Leadership'?clanRoster[0].id:member.reportsTo;
  function hiddenByParent(member){
@@ -647,17 +1057,16 @@ function renderClanRoster(){
  }
  const groups=[{id:'leadership',name:'Leadership',count:5},{id:'all',name:'All',count:120},...Array.from({length:5},(_,i)=>({id:String(i+1),name:'Division '+(i+1),count:23}))];
  const nav=controls.querySelector('.clan-navigation');
- const search=controls.querySelector('#clan-member-search'),squad=controls.querySelector('#clan-squad-filter'),online=controls.querySelector('#clan-online-only');
+ const search=controls.querySelector('#clan-member-search');
  function update(){
   nav.querySelectorAll('button').forEach(button=>{const active=button.dataset.group===state.group;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
-  squad.disabled=state.group==='leadership';
   const filtered=filterClanMembers(state);
   const matches=state.group!=='all'||state.query.trim()?filtered:filtered.filter(member=>!hiddenByParent(member));list.replaceChildren();
-  title.textContent=groups.find(group=>group.id===state.group).name+(state.squad==='all'?'':' / Squad '+state.squad);
+  title.textContent=groups.find(group=>group.id===state.group).name;
   count.textContent=matches.length+' shown';empty.hidden=matches.length!==0;
   matches.forEach(member=>{
    const row=document.createElement('li');row.className='clan-member';
-   row.style.setProperty('--clan-rank-depth',clanRanks.findIndex(rank=>rank.rank===member.rank));
+   row.style.setProperty('--roster-rank-depth',clanRanks.findIndex(rank=>rank.rank===member.rank));
    row.dataset.rank=member.rank;
    const name=document.createElement('span');name.className='clan-member-name';name.textContent=member.battleTag;
    if(state.group==='all'&&clanRoster.some(person=>parentId(person)===member.id)){
@@ -678,29 +1087,26 @@ function renderClanRoster(){
    if(member.online){
     const character=document.createElement('span');character.className='clan-member-character';character.textContent=' / Lv. '+member.level+' '+member.characterClass;name.append(character);
    }
-   const status=document.createElement('span');status.className='clan-member-status clan-member-portrait'+(member.online?' is-online':'');
-   status.setAttribute('role','img');
-   status.setAttribute('aria-label',member.online?'Online — '+member.characterClass:'Offline');
-   status.title=member.online?'Online — '+member.characterClass:'Offline';
-   if(member.online){
-    const portrait=document.createElement('img');portrait.src='img/'+member.characterClass.toLowerCase()+'.png';portrait.alt='';portrait.loading='lazy';status.append(portrait);
-   }else{
-    status.innerHTML='<svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><circle cx="16" cy="11" r="6"/><path d="M5 29v-4a11 11 0 0 1 22 0v4z"/></svg>';
-   }
+   const status=createRosterPortrait(member);
    const rank=document.createElement('span');rank.className='clan-member-rank';rank.textContent=member.rank+(member.division?' - Division '+member.division+(member.squad?' / Squad '+member.squad:''):'');
-   const manager=clanRoster.find(person=>person.id===member.reportsTo);
-   row.title='Reports to: '+(manager?manager.battleTag+' ('+manager.rank+')':member.reportsTo||'None');
-   row.append(name,status,rank);list.append(row);
+   const points=document.createElement('span');
+   points.className='clan-point-value';
+   points.textContent=member.clanPoints.toLocaleString('en-US');
+   row.append(name,...createRosterLocation(member),points,status,rank);list.append(row);
   });
  }
  groups.forEach(group=>{
   const button=document.createElement('button');button.type='button';button.dataset.group=group.id;
   button.innerHTML=group.name+' <span>'+group.count+'</span>';
-  button.addEventListener('click',()=>{state.group=group.id;state.squad='all';squad.value='all';update();list.scrollTop=0;});nav.append(button);
+  button.addEventListener('click',()=>{state.group=group.id;update();list.scrollTop=0;});nav.append(button);
  });
  search.addEventListener('input',()=>{state.query=search.value;update();list.scrollTop=0;});
- squad.addEventListener('change',()=>{state.squad=squad.value;update();list.scrollTop=0;});
- online.addEventListener('change',()=>{state.online=online.checked;update();list.scrollTop=0;});
+ visibility.addEventListener('click',()=>{
+  state.online=!state.online;
+  visibility.setAttribute('aria-pressed',String(!state.online));
+  visibility.title=state.online?'Show all members':'Hide offline members';
+  update();list.scrollTop=0;
+ });
  update();
 }
 renderClanRoster();
@@ -1277,6 +1683,7 @@ function showInGameMessagePreview(message){
  const key=currentGameChatKey();if(preview.dataset.game!==key){preview.replaceChildren();preview.dataset.game=key;}
  const copy=message.cloneNode(true);copy.classList.remove('channel-filtered');copy.removeAttribute('data-unread');
  copy.querySelectorAll('[tabindex]').forEach(node=>node.removeAttribute('tabindex'));
+ const tag=copy.querySelector('.channel-tag');if(tag)tag.disabled=true;
  preview.append(copy);while(preview.children.length>6)preview.firstElementChild.remove();
  preview.hidden=false;preview.scrollTop=preview.scrollHeight;
  clearTimeout(gameMessagePreviewTimer);
@@ -1571,6 +1978,14 @@ chatFilterPanel.addEventListener('keydown',event=>{
  const menu=document.createElement('div');
  menu.id='clan-member-context';menu.hidden=true;menu.setAttribute('role','menu');menu.setAttribute('aria-label','Clan member actions');
  const heading=document.createElement('div');heading.className='clan-context-name';menu.append(heading);
+ const whisper=document.createElement('button');whisper.type='button';whisper.textContent='Whisper';
+ whisper.setAttribute('role','menuitem');menu.append(whisper);
+ whisper.addEventListener('click',()=>{
+  const name=heading.textContent;
+  const sender=[...chatLog.querySelectorAll('.player-name[data-battletag]')].find(player=>player.dataset.character===name);
+  close();
+  beginWhisper(sender?.dataset.battletag||name,name);
+ });
  for(const action of ['Promote','Demote','Kick']){
   const button=document.createElement('button');button.type='button';button.textContent=action;button.setAttribute('role','menuitem');
   button.dataset.clanAction=action;button.addEventListener('click',close);menu.append(button);
@@ -1578,31 +1993,51 @@ chatFilterPanel.addEventListener('keydown',event=>{
  document.body.append(menu);
  let source=null;
  function close(){menu.hidden=true;}
- document.getElementById('clan-panel').addEventListener('contextmenu',event=>{
+ const rosterSelector='#clan-panel .clan-member, #communities-panel .clan-member';
+ function openRosterMenu(event){
   const row=event.target.closest('.clan-member');if(!row)return;
+  const community=event.currentTarget===communitiesPanel;
+  const name=row.querySelector('.clan-member-name').firstChild.textContent;
+  if(community&&name==='You'){close();return;}
   event.preventDefault();closePlayerMenu();closeFriendMenu();source=row;
-  heading.textContent=row.querySelector('.clan-member-name').firstChild.textContent;
-  const isLeader=row.dataset.rank==='Clan Leader';
-  menu.querySelectorAll('button').forEach(button=>{
-   button.disabled=isLeader;
-   button.title=isLeader?'Clan Leader cannot be promoted, demoted, or kicked':'';
+  heading.textContent=name;
+  menu.setAttribute('aria-label',community?'Community member actions':'Clan member actions');
+  whisper.hidden=!community;
+  const protectedRank=community?'Owner':'Clan Leader';
+  const protectedMember=row.dataset.rank===protectedRank;
+  menu.querySelectorAll('[data-clan-action]').forEach(button=>{
+   button.disabled=protectedMember||community;
+   button.title=protectedMember?protectedRank+' cannot be promoted, demoted, or kicked.':
+    community?'Your community role does not allow moderation.':'';
   });
   menu.hidden=false;
   const bounds=menu.getBoundingClientRect();
-  menu.style.left=Math.max(4,Math.min(event.clientX,innerWidth-bounds.width-4))+'px';
-  menu.style.top=Math.max(4,Math.min(event.clientY,innerHeight-bounds.height-4))+'px';
-  const firstAction=menu.querySelector('button:not(:disabled)');
+  const anchor=event.clientX||event.clientY?{left:event.clientX,top:event.clientY}:row.getBoundingClientRect();
+  menu.style.left=Math.max(4,Math.min(anchor.left,innerWidth-bounds.width-4))+'px';
+  menu.style.top=Math.max(4,Math.min(anchor.top,innerHeight-bounds.height-4))+'px';
+  const firstAction=menu.querySelector('button:not(:disabled):not([hidden])');
   if(firstAction)firstAction.focus({preventScroll:true});
- });
+ }
+ document.getElementById('clan-panel').addEventListener('contextmenu',openRosterMenu);
+ communitiesPanel.addEventListener('contextmenu',openRosterMenu);
  document.addEventListener('pointerdown',event=>{if(!menu.contains(event.target))close();});
- document.addEventListener('contextmenu',event=>{if(!event.target.closest('.clan-member'))close();});
+ document.addEventListener('contextmenu',event=>{if(!event.target.closest(rosterSelector))close();});
  document.addEventListener('keydown',event=>{
   if(menu.hidden)return;
-  if(event.key==='Escape'){event.preventDefault();close();}
+  if(event.key==='Escape'){event.preventDefault();close();if(source?.tabIndex>=0)source.focus({preventScroll:true});}
   if(event.key==='ArrowDown'||event.key==='ArrowUp'){
-   event.preventDefault();const buttons=[...menu.querySelectorAll('button:not(:disabled)')];if(!buttons.length)return;const i=buttons.indexOf(document.activeElement);
+   event.preventDefault();const buttons=[...menu.querySelectorAll('button:not(:disabled):not([hidden])')];if(!buttons.length)return;const i=buttons.indexOf(document.activeElement);
    buttons[(i+(event.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length].focus();
   }
  });
  window.addEventListener('scroll',close,true);window.addEventListener('resize',close);
 })();
+
+document.addEventListener('keydown',event=>{
+ if(event.key!=='Escape'||event.defaultPrevented||communitiesPanel.closest('[hidden]')||
+  document.querySelector('dialog[open], :popover-open'))return;
+ const back=communitiesPanel.querySelector('.community-roster:not([hidden]) .community-back');
+ if(!back)return;
+ event.preventDefault();
+ back.click();
+});
