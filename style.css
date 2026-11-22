@@ -956,6 +956,12 @@ body.intro-active>.screen{visibility:hidden}
 
 /* Social hub and its three sections. */
 .social-panel{display:flex;flex-direction:column;flex:1;min-height:0;gap:9px}
+.friends-section{display:flex;flex:1;min-height:0;flex-direction:column;gap:5px}
+.friend-view-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;flex:none;align-self:center;width:max-content;max-width:100%}
+.friend-activity-list{margin:0;padding:0;list-style:none}
+.friend-activity-list li{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 2px;border-bottom:1px solid #454239}
+.friend-activity-list small{display:block;margin-top:3px;color:#b5aa93;overflow-wrap:anywhere}
+.friend-activity-list .btn{flex:none}
 .social-panel[hidden],.social-content[hidden]{display:none!important}
 :is(.social-tabs,.character-tabs){display:flex;gap:3px;flex:none;min-height:32px}
 :is(.social-tab,.character-mode){flex:1;min-width:0;padding:5px 2px;border:2px ridge #4b4538;background:linear-gradient(#252629,#09090a);color:#bfb7a4;font:14px Georgia;cursor:pointer}
@@ -995,7 +1001,8 @@ body.intro-active>.screen{visibility:hidden}
 .community-membership-button{border:1px solid #766340;background:#242016;color:#ead6a6;padding:4px 8px;font:inherit;cursor:pointer}
 .community-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-self:center;width:min(100%,330px);flex:none;gap:5px;margin-top:10px}
 .community-tabs.clan-tabs{grid-template-columns:repeat(4,minmax(0,1fr));width:min(100%,440px)}
-.community-tabs .btn,.community-back.btn{flex:none;padding:4px 9px;letter-spacing:0}
+.community-tabs .btn,.community-back.btn,.friend-view-tabs .btn{flex:none;padding:4px 9px;letter-spacing:0}
+.friend-view-tabs .btn{min-width:0;padding-inline:0;overflow-wrap:anywhere}
 :is(.community-roster,.clan-browser) [role="tabpanel"][hidden]{display:none}
 .community-roster-view{display:flex;flex-direction:column;flex:1;min-height:0;padding:8px 0}
 .community-roster-footer{display:flex;align-items:center;flex:none;gap:8px;margin-top:auto;padding-top:6px;border-top:1px solid #454033}
@@ -1145,10 +1152,26 @@ body.intro-active>.screen{visibility:hidden}
   color: #f1dfb1;
   box-shadow: inset 0 0 8px 2px #000c, inset 0 -1px 0 #b0985e, 0 1px 3px #0009;
 }
-.screen :is(.community-tabs .btn,.clan-navigation button).active {
+.screen :is(.community-tabs .btn,.clan-navigation button,.friend-view-tabs .btn).active {
   color:#f1dfb1;
   box-shadow:inset 0 0 7px #a486476e;
 }
+.screen :is(.friend-view-tabs .btn,.difficulty-button,.community-tabs .btn,.clan-navigation button):not(.active) {
+  position: relative;
+  border-image-source: none;
+  border-color: transparent;
+}
+.screen :is(.friend-view-tabs .btn,.difficulty-button,.community-tabs .btn,.clan-navigation button):not(.active)::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--muted-frame-width, 6px));
+  border: var(--muted-frame-width, 6px) solid transparent;
+  border-image: url('assets/ui/button-frame.png') 12 / var(--muted-frame-width, 6px) / var(--muted-frame-outset, 0) stretch;
+  filter: saturate(.5);
+  pointer-events: none;
+}
+.screen :is(.difficulty-button,.clan-navigation button) { --muted-frame-width: 4px; }
+.screen .fields .difficulty-button { --muted-frame-outset: 2px 0; }
 .screen .mini-control[data-mode='non-tz'] {
   background-image: radial-gradient(ellipse at center, #6085a94d 0%, #0005 45%, #000c 100%), url('assets/ui/button-face.png');
 }

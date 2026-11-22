@@ -13,6 +13,21 @@ let lobbyChatChannel='All';
 const gameChatSeen=new Set();
 const gameSystemStates=new Map();
 const chatInvites=new Map();
+const blockedSocialPlayers=new Map([
+ ['grimledger#2184',{character:'GrimLedger',battletag:'GrimLedger#2184'}],
+ ['ashwhisper#3721',{character:'AshWhisper',battletag:'AshWhisper#3721'}]
+]);
+const pendingFriendInvitations=new Map([
+ ['emberwatch#1946',{character:'EmberWatch',battletag:'EmberWatch#1946'}],
+ ['runekeeper#2840',{character:'RuneKeeper',battletag:'RuneKeeper#2840'}],
+ ['duskwarden#1365',{character:'DuskWarden',battletag:'DuskWarden#1365'}]
+]);
+const recentlyPlayedPlayers=new Map([
+ ['AshRunner',{character:'AshRunner',game:'ACT 2 WALK'}],
+ ['GraveBloom',{character:'GraveBloom',game:'TZ COWS-21'}],
+ ['SilverAegis',{character:'SilverAegis',game:'CHAOS RUN-08'}],
+ ['Moonweaver',{character:'Moonweaver',game:'BAAL XP-42'}]
+]);
 let nextInviteId=0;
 const lobbyGem=document.getElementById('lobby-gem');
 const names=['BØBECOW-15','7 PC8MB 4 LØ','DEADLYBAAL-30','ALL ACTS 96TZ-5','TZ ALL ID ALL','BRG 2 JAY GLØVE','BAALOS FOR GUL','BAALZI','PØØNBAALI','DUELS','PHØENIX MØN FT','NEEDTALSET','STAT RUN Ø2','96TZ ALL-Ø1'];
@@ -386,6 +401,8 @@ function currentGameChatKey(){
  return currentCampGame?(currentCampGame.realm||activeRealm)+'|'+currentCampGame.characterGameMode+'|'+currentCampGame.name:'';
 }
 function chatMessageInScope(message){
+ const sender=message.querySelector('.player-name')?.dataset.battletag;
+ if(sender&&blockedSocialPlayers.has(sender.toLowerCase()))return false;
  if(message.dataset.channel==='Communities')return joinedCommunities.has(message.dataset.community);
  return message.dataset.channel!=='Game'||(document.getElementById('market-shop').open&&message.dataset.game===currentGameChatKey());
 }
@@ -558,6 +575,10 @@ playerMenu.addEventListener('click',event=>{
  const action=button.dataset.playerAction;
  if(action==='Whisper'){
   beginWhisper(contextPlayer.battletag,contextPlayer.character);
+ }else if(action==='Add Friend'){
+  addFriendActivity('invitations',contextPlayer);
+ }else if(action==='Block'){
+  addFriendActivity('blocked',contextPlayer);
  }else{
   // UI mock only: no Battle.net actions are performed.
   alert(action+' — '+contextPlayer.character+' ('+contextPlayer.battletag+')\nPrototype action only.');
@@ -865,6 +886,7 @@ function bindTabs(tabs){
  });
 }
 bindTabs([...document.querySelectorAll('[data-social-view]')]);
+bindTabs([...document.querySelectorAll('[data-friend-view]')]);
 const communityOwners=['RushGuide','AxeMaster','BaalRunner','FrostNova','GrailHunter','IronOath','ZoneWatcher','TorchKeeper'];
 const communityDescriptions=[
  'Find a group for quest rushes, waypoint unlocks, and difficulty clears.',
@@ -1364,6 +1386,56 @@ document.querySelectorAll('.friend-group-title').forEach(button=>button.addEvent
 }));
 
 // Friend actions are local UI prototype behaviors; no Battle.net requests are sent.
+const friendActivityLists={
+ 'recent':{entries:recentlyPlayedPlayers,empty:'No recently played players.'},
+ 'blocked':{entries:blockedSocialPlayers,empty:'No blocked players.',action:'Unblock'},
+ 'invitations':{entries:pendingFriendInvitations,empty:'No pending friend invitations.',action:'Cancel'}
+};
+function renderFriendActivity(kind){
+ const panel=document.getElementById(`friend-${kind}`);
+ const {entries,empty,action}=friendActivityLists[kind];
+ if(!entries.size){
+  const message=document.createElement('p');message.className='social-empty';message.textContent=empty;
+  panel.replaceChildren(message);
+  return;
+ }
+ const list=document.createElement('ul');list.className='friend-activity-list';
+ for(const [key,player] of kind==='recent'?[...entries].reverse():entries){
+  const row=document.createElement('li');
+  const identity=document.createElement('div');
+  const name=document.createElement('strong');name.textContent=player.character;
+  const detail=document.createElement('small');detail.textContent=player.game||player.battletag;
+  identity.append(name,detail);row.append(identity);
+  if(action){
+   const button=document.createElement('button');button.type='button';button.className='btn';button.textContent=action;
+   button.setAttribute('aria-label',`${action} ${player.character}`);
+   button.addEventListener('click',()=>{
+    entries.delete(key);renderFriendActivity(kind);
+    panel.querySelector('button')?.focus();
+    if(!entries.size)document.getElementById(panel.getAttribute('aria-labelledby')).focus();
+    if(kind==='blocked')applyChatChannel();
+   });
+   row.append(button);
+  }
+  list.append(row);
+ }
+ panel.replaceChildren(list);
+}
+function addFriendActivity(kind,player){
+ const key=player.battletag.toLowerCase();
+ friendActivityLists[kind].entries.set(key,player);
+ renderFriendActivity(kind);
+ if(kind==='blocked')applyChatChannel();
+}
+function recordRecentlyPlayed(game){
+ if(characterMode!=='online')return;
+ for(const [character] of mockLobbyPlayers.slice(0,Math.max(0,(game.players??1)-1))){
+  recentlyPlayedPlayers.delete(character);
+  recentlyPlayedPlayers.set(character,{character,game:game.name});
+ }
+ renderFriendActivity('recent');
+}
+Object.keys(friendActivityLists).forEach(renderFriendActivity);
 const friendMenu=document.getElementById('friend-context');let activeFriend=null;
 function closeFriendMenu(){friendMenu.classList.remove('open');activeFriend=null;}
 function friendName(el){return el.querySelector('.friend-name')?.childNodes[0]?.textContent.trim()||'Friend';}
@@ -1379,6 +1451,9 @@ friendMenu.addEventListener('click',e=>{
  const btn=e.target.closest('[data-friend-action]');if(!btn||!activeFriend)return;
  const action=btn.dataset.friendAction;const name=friendName(activeFriend);const row=activeFriend;
  if(action==='Whisper'){beginWhisper(row.querySelector('.friend-name')?.dataset.battletag||name,name);}
+ else if(action==='Block Player'){
+  addFriendActivity('blocked',{character:name,battletag:row.querySelector('.friend-name')?.dataset.battletag||name});
+ }
  else if(action==='Add to Favorites'){
   const groups=document.querySelectorAll('.friend-group');const isFav=row.closest('.friend-group')===groups[0];const target=groups[isFav?1:0].querySelector('.friend-items');target.appendChild(row);
   const star=row.querySelector('.favorite-star');if(isFav){star?.remove();}else if(!star){const span=document.createElement('span');span.className='favorite-star';span.textContent=' ★';row.querySelector('.friend-name').appendChild(span);}
@@ -2105,6 +2180,7 @@ document.getElementById('market-shop').addEventListener('close',()=>{
 
 // Regular games and chat invitations share the existing camp scene.
 function showRegularCamp(game){
+ recordRecentlyPlayed(game);
  currentCampGame={...game,realm:game.realm||activeRealm};
  const dialog=document.getElementById('market-shop');
  dialog.classList.add('regular-game');
