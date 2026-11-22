@@ -665,6 +665,13 @@ lobbyPlayers.replaceChildren(...Array.from({length:100},(_,index)=>{
 let lobbyDrag=null;
 let lobbyDragged=false;
 let previewedLobbyPlayer=null;
+lobbyPlayers.addEventListener('wheel',event=>{
+ if(event.ctrlKey||!event.deltaY||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
+ const previous=lobbyPlayers.scrollLeft;
+ const unit=event.deltaMode===1?16:event.deltaMode===2?lobbyPlayers.clientWidth:1;
+ lobbyPlayers.scrollLeft+=event.deltaY*unit;
+ if(lobbyPlayers.scrollLeft!==previous)event.preventDefault();
+},{passive:false});
 document.addEventListener('pointerdown',event=>{
  if(event.button!==0)return;
  lobbyDragged=false;
@@ -1715,6 +1722,10 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
    const chest = document.createElement('button');
    chest.type = 'button';
    chest.className = 'shop-stash-hotspot';
+   const artwork = document.createElement('span');
+   artwork.className = 'shop-chest-art';
+   artwork.setAttribute('aria-hidden', 'true');
+   chest.append(artwork);
    chest.style.left = `${left}%`;
    chest.style.top = `${top}%`;
    chest.dataset.shopName = `${shop.seller}’s Shop`;

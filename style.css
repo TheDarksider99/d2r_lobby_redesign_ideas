@@ -140,10 +140,12 @@ body.offline-character .right .game-settings-group label:has(#terrorized) {point
 .shop-game-header time{text-transform:uppercase}
 .shop-game-header #camp-terror-zone:not([hidden]){color:#a44dff}
 .shop-game-header button{pointer-events:auto}
-#market-shop .shop-stash-hotspot{position:absolute;translate:-50% -50%;width:2.87%;height:5.2%;padding:0;border:0;border-image:none;background:transparent url('img/chest.png') center / contain no-repeat;box-shadow:none;cursor:pointer}
+#market-shop .shop-stash-hotspot{position:absolute;translate:-50% -50%;width:2.87%;height:5.2%;padding:0;border:0;border-image:none;background:transparent;box-shadow:none;cursor:pointer}
 .shop-game-stage:has(> .shop-trade-view:not([hidden])) > #camp-shop-chests{display:none}
-#market-shop .shop-stash-hotspot{filter:saturate(.6) brightness(.85)}
-#market-shop .shop-stash-hotspot:hover{filter:saturate(.6) brightness(1.02)}
+.shop-stash-hotspot::before{content:'';position:absolute;inset:auto 4% -9% -85%;height:50%;transform:skewX(-25deg);background:radial-gradient(ellipse,#000b 15%,#0006 47%,transparent 72%);pointer-events:none}
+.shop-chest-art{position:absolute;inset:0;background:url('img/chest.png') center / contain no-repeat;filter:saturate(.6) brightness(var(--chest-brightness,.85));pointer-events:none}
+#camp-shop-chests > .shop-stash-hotspot:nth-child(n+6){--chest-brightness:.45}
+.shop-stash-hotspot:is(:hover,:focus-visible) .shop-chest-art{filter:saturate(.6) brightness(1.55)}
 #market-shop .shop-stash-hotspot:focus-visible{outline:2px solid #e4c580;outline-offset:2px}
 #market-shop .shop-stash-hotspot:is(:hover,:focus-visible){z-index:2}
 #market-shop .shop-stash-hotspot:is(:hover,:focus-visible)::after{content:attr(data-shop-name);position:absolute;bottom:calc(100% + 4px);left:0;padding:4px 7px;background:#090909ed;color:#e4c580;font:small-caps clamp(10px,1vw,16px) Georgia;white-space:nowrap;pointer-events:none}
@@ -455,7 +457,7 @@ body.offline-character .right .game-settings-group label:has(#terrorized) {point
 }
 .lobby-player-caption {
   position: absolute;
-  inset: auto 0 0;
+  inset: auto -3px 0;
   padding: 8px 2px 0;
   background: linear-gradient(transparent, #000c);
   line-height: 1;
@@ -650,7 +652,8 @@ body.intro-active>.screen{visibility:hidden}
 .chat-channel-tabs,.chat-channel-tab{overflow:visible}
 
 .chat-section-tab[data-chat-view="lobby"]{display:flex;align-items:center;justify-content:center;gap:6px}
-.chat-private-unread{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 4px;border-radius:10px;background:#b93030;color:#fff;border:1px solid #e39275;font:bold 10px Arial;letter-spacing:0}
+.chat-private-unread,.request-count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 4px;border-radius:10px;color:#fff;border:1px solid;font:bold 10px Arial;letter-spacing:0}
+.chat-private-unread{background:#8f3b76;border-color:#e69ccc}
 .chat-private-unread[hidden]{display:none}
 
 /* Online character mode icons, anchored to the roster card. */
@@ -973,8 +976,8 @@ body.intro-active>.screen{visibility:hidden}
 .screen button:has(> .request-count-badges){display:flex;align-items:center;justify-content:center;gap:6px}
 .request-count-badges{display:flex;flex:none;gap:2px;pointer-events:none}
 .request-count-badges:not(:has(> :not([hidden]))){display:none}
-.request-count-badge{display:grid;place-items:center;min-width:1.25em;padding:1px 3px;border-radius:8px;background:#285c94;color:#fff;font-size:clamp(9px,.75vw,12px);line-height:1.05;letter-spacing:0}
-.request-count-badge[data-request-kind='clan']{background:#356c40}
+.request-count-badge{background:#285c94;border-color:#6799cc}
+.request-count-badge[data-request-kind='clan']{background:#356c40;border-color:#79a77e}
 #friend-list:not([hidden]){display:flex;flex-direction:column;overflow:hidden;gap:8px}
 .friend-list-scroll{flex:1;min-height:0;overflow:auto}
 .friend-list-actions{flex:none}
