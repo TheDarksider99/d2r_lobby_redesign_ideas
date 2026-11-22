@@ -1436,6 +1436,30 @@ function recordRecentlyPlayed(game){
  renderFriendActivity('recent');
 }
 Object.keys(friendActivityLists).forEach(renderFriendActivity);
+const addFriendDialog=document.getElementById('add-friend-dialog');
+const addFriendRecipient=document.getElementById('add-friend-recipient');
+document.getElementById('add-friend-open').addEventListener('click',()=>{
+ addFriendRecipient.value='';
+ addFriendRecipient.setCustomValidity('');
+ addFriendDialog.showModal();
+ addFriendRecipient.focus();
+});
+document.getElementById('add-friend-cancel').addEventListener('click',()=>addFriendDialog.close());
+addFriendRecipient.addEventListener('input',()=>addFriendRecipient.setCustomValidity(''));
+document.getElementById('add-friend-form').addEventListener('submit',event=>{
+ event.preventDefault();
+ const recipient=addFriendRecipient.value.trim();
+ if(!/^[^\s#@]+#\d+$|^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)){
+  addFriendRecipient.setCustomValidity('Enter a BattleTag or email address.');
+  addFriendRecipient.reportValidity();
+  return;
+ }
+ addFriendActivity('invitations',{character:recipient.split(/[#@]/)[0],battletag:recipient});
+ addFriendDialog.close();
+ const invitationsTab=document.getElementById('friend-view-invitations');
+ invitationsTab.click();
+ invitationsTab.focus();
+});
 const friendMenu=document.getElementById('friend-context');let activeFriend=null;
 function closeFriendMenu(){friendMenu.classList.remove('open');activeFriend=null;}
 function friendName(el){return el.querySelector('.friend-name')?.childNodes[0]?.textContent.trim()||'Friend';}

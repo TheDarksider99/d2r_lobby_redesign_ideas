@@ -962,6 +962,54 @@ body.intro-active>.screen{visibility:hidden}
 .friend-activity-list li{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 2px;border-bottom:1px solid #454239}
 .friend-activity-list small{display:block;margin-top:3px;color:#b5aa93;overflow-wrap:anywhere}
 .friend-activity-list .btn{flex:none}
+#friend-list:not([hidden]){display:flex;flex-direction:column;overflow:hidden;gap:8px}
+.friend-list-scroll{flex:1;min-height:0;overflow:auto}
+.friend-list-actions{flex:none}
+.friend-list-actions .btn{width:100%}
+#add-friend-dialog {
+  width: min(590px, calc(100vw - 24px));
+  aspect-ratio: 1181 / 485;
+  padding: 0;
+  border: 0;
+  background: url('img/friend-button.png') center / 100% 100% no-repeat;
+}
+#add-friend-form { position: absolute; inset: 0; }
+#add-friend-form :is(h3, label) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+#add-friend-form input {
+  position: absolute;
+  inset: 44.5% auto auto 22.8%;
+  width: 55.4%;
+  height: 13.6%;
+  margin: 0;
+  padding: 0 5px;
+  border: 0;
+  background: transparent;
+  color: #f6e8c5;
+  font-size: clamp(12px, 2.5vw, 18px);
+}
+#add-friend-form .delete-buttons { display: contents; }
+#add-friend-form .delete-buttons button {
+  position: absolute;
+  top: 71.7%;
+  width: 43%;
+  height: 20%;
+  padding: 0;
+  border: 0;
+  border-image: none;
+  background: transparent;
+  box-shadow: none;
+  color: transparent;
+  text-shadow: none;
+}
+#add-friend-form button[type='submit'] { left: 5.8%; }
+#add-friend-cancel { left: 50.2%; }
+#add-friend-form .delete-buttons button:hover { background: #ffe2a515; }
 .social-panel[hidden],.social-content[hidden]{display:none!important}
 :is(.social-tabs,.character-tabs){display:flex;gap:3px;flex:none;min-height:32px}
 :is(.social-tab,.character-mode){flex:1;min-width:0;padding:5px 2px;border:2px ridge #4b4538;background:linear-gradient(#252629,#09090a);color:#bfb7a4;font:14px Georgia;cursor:pointer}
