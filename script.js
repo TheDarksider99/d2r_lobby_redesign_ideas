@@ -17,16 +17,11 @@ const blockedSocialPlayers=new Map([
  ['grimledger#2184',{character:'GrimLedger',battletag:'GrimLedger#2184'}],
  ['ashwhisper#3721',{character:'AshWhisper',battletag:'AshWhisper#3721'}]
 ]);
-const pendingFriendInvitations=new Map([
- ['emberwatch#1946',{character:'EmberWatch',battletag:'EmberWatch#1946'}],
- ['runekeeper#2840',{character:'RuneKeeper',battletag:'RuneKeeper#2840'}],
- ['duskwarden#1365',{character:'DuskWarden',battletag:'DuskWarden#1365'}]
-]);
 const recentlyPlayedPlayers=new Map([
- ['AshRunner',{character:'AshRunner',game:'ACT 2 WALK'}],
- ['GraveBloom',{character:'GraveBloom',game:'TZ COWS-21'}],
- ['SilverAegis',{character:'SilverAegis',game:'CHAOS RUN-08'}],
- ['Moonweaver',{character:'Moonweaver',game:'BAAL XP-42'}]
+ ['AshRunner',{character:'AshRunner',game:'ACT 2 WALK',online:false}],
+ ['GraveBloom',{character:'GraveBloom',game:'TZ COWS-21',online:true}],
+ ['SilverAegis',{character:'SilverAegis',game:'CHAOS RUN-08',online:false}],
+ ['Moonweaver',{character:'Moonweaver',game:'BAAL XP-42',online:true}]
 ]);
 let nextInviteId=0;
 const lobbyGem=document.getElementById('lobby-gem');
@@ -575,8 +570,6 @@ playerMenu.addEventListener('click',event=>{
  const action=button.dataset.playerAction;
  if(action==='Whisper'){
   beginWhisper(contextPlayer.battletag,contextPlayer.character);
- }else if(action==='Add Friend'){
-  addFriendActivity('invitations',contextPlayer);
  }else if(action==='Block'){
   addFriendActivity('blocked',contextPlayer);
  }else{
@@ -1265,7 +1258,7 @@ function renderClanRoster(){
    <button type="button" class="btn active" id="clan-roster-tab" role="tab" aria-selected="true" aria-controls="clan-roster-view">Roster</button>
    <button type="button" class="btn" id="clan-news-tab" role="tab" aria-selected="false" aria-controls="clan-news-view" tabindex="-1">News</button>
    <button type="button" class="btn" id="clan-quests-tab" role="tab" aria-selected="false" aria-controls="clan-quests-view" tabindex="-1">Quests</button>
-   <button type="button" class="btn" id="clan-settings-tab" role="tab" aria-selected="false" aria-controls="clan-settings-view" tabindex="-1">Settings</button>
+   <button type="button" class="btn" id="clan-settings-tab" role="tab" aria-selected="false" aria-controls="clan-settings-view" tabindex="-1">Settings<span class="request-count-badges" aria-hidden="true"><span class="request-count-badge" data-request-kind="clan" hidden></span></span></button>
   </div>
   <div id="clan-roster-view" class="community-roster-view clan-roster-view" role="tabpanel" aria-labelledby="clan-roster-tab">
    <nav class="clan-navigation" aria-label="Clan groups"></nav>
@@ -1283,7 +1276,9 @@ function renderClanRoster(){
     <button type="button" class="btn clan-quest-spawn" disabled>Spawn clan boss</button>
    </section>
   </div>
-  <div id="clan-settings-view" class="community-settings" role="tabpanel" aria-labelledby="clan-settings-tab" tabindex="0" hidden></div>
+  <div id="clan-settings-view" class="community-settings" role="tabpanel" aria-labelledby="clan-settings-tab" tabindex="0" hidden>
+   <section id="clan-requests-section" aria-labelledby="clan-requests-heading" hidden><h4 id="clan-requests-heading">Join Requests</h4><ul id="clan-requests" class="friend-activity-list"></ul></section>
+  </div>
   <footer class="community-roster-footer">
    <div class="community-roster-summary">
     <button type="button" class="mini-control community-visibility" aria-label="Show offline members" aria-pressed="false" title="Show all members">${rosterEyeIcon}</button>
@@ -1324,7 +1319,7 @@ function renderClanRoster(){
   }
   return false;
  }
- const groups=[{id:'leadership',name:'Leadership',count:5},{id:'all',name:'All',count:120},...Array.from({length:5},(_,i)=>({id:String(i+1),name:'Division '+(i+1),count:23}))];
+ const groups=[{id:'leadership',name:'Leadership'},{id:'all',name:'All'},...Array.from({length:5},(_,i)=>({id:String(i+1),name:'Division '+(i+1)}))];
  const nav=controls.querySelector('.clan-navigation');
  const search=controls.querySelector('#clan-member-search');
  function update(){
@@ -1366,7 +1361,7 @@ function renderClanRoster(){
  }
  groups.forEach(group=>{
   const button=document.createElement('button');button.type='button';button.dataset.group=group.id;
-  button.innerHTML=group.name+' <span>'+group.count+'</span>';
+  button.innerHTML=group.name+' <span>'+filterClanMembers({group:group.id}).length+'</span>';
   button.addEventListener('click',()=>{state.group=group.id;update();list.scrollTop=0;});nav.append(button);
  });
  search.addEventListener('input',()=>{state.query=search.value;update();list.scrollTop=0;});
@@ -1375,6 +1370,17 @@ function renderClanRoster(){
   visibility.setAttribute('aria-pressed',String(!state.online));
   visibility.title=state.online?'Show all members':'Hide offline members';
   update();list.scrollTop=0;
+ });
+ panel.addEventListener('clan-roster-updated',()=>{
+  nav.querySelectorAll('button').forEach(button=>{
+   button.querySelector('span').textContent=String(filterClanMembers({group:button.dataset.group}).length);
+  });
+  structure.querySelectorAll('tbody tr').forEach(row=>{
+   row.cells[2].textContent=String(clanRoster.filter(member=>member.rank===row.dataset.rank).length);
+  });
+  structure.querySelector('tfoot td').textContent=String(clanRoster.length);
+  footer.querySelector('.community-counts').textContent=`${clanRoster.filter(member=>member.online).length} of ${clanRoster.length} members currently online`;
+  update();
  });
  update();
 }
@@ -1388,8 +1394,7 @@ document.querySelectorAll('.friend-group-title').forEach(button=>button.addEvent
 // Friend actions are local UI prototype behaviors; no Battle.net requests are sent.
 const friendActivityLists={
  'recent':{entries:recentlyPlayedPlayers,empty:'No recently played players.'},
- 'blocked':{entries:blockedSocialPlayers,empty:'No blocked players.',action:'Unblock'},
- 'invitations':{entries:pendingFriendInvitations,empty:'No pending friend invitations.',action:'Cancel'}
+ 'blocked':{entries:blockedSocialPlayers,empty:'No blocked players.',action:'Unblock'}
 };
 function renderFriendActivity(kind){
  const panel=document.getElementById(`friend-${kind}`);
@@ -1406,6 +1411,13 @@ function renderFriendActivity(kind){
   const name=document.createElement('strong');name.textContent=player.character;
   const detail=document.createElement('small');detail.textContent=player.game||player.battletag;
   identity.append(name,detail);row.append(identity);
+  if(kind==='recent'){
+   const presence=document.createElement('span');presence.className='online recent-player-presence';
+   presence.dataset.online=String(player.online);
+   presence.setAttribute('role','img');
+   presence.setAttribute('aria-label',player.online?'Online':'Offline');
+   row.append(presence);
+  }
   if(action){
    const button=document.createElement('button');button.type='button';button.className='btn';button.textContent=action;
    button.setAttribute('aria-label',`${action} ${player.character}`);
@@ -1431,11 +1443,134 @@ function recordRecentlyPlayed(game){
  if(characterMode!=='online')return;
  for(const [character] of mockLobbyPlayers.slice(0,Math.max(0,(game.players??1)-1))){
   recentlyPlayedPlayers.delete(character);
-  recentlyPlayedPlayers.set(character,{character,game:game.name});
+  recentlyPlayedPlayers.set(character,{character,game:game.name,online:true});
  }
  renderFriendActivity('recent');
 }
-Object.keys(friendActivityLists).forEach(renderFriendActivity);
+const friendRequestsSection=document.querySelector('.friend-requests');
+const friendRequestsList=document.getElementById('friend-requests');
+const socialRequestLifetime=5*60*1000;
+const sampleFriendRequestSenders=[
+ {character:'EmberWatch',battletag:'EmberWatch#1946'},
+ {character:'RuneKeeper',battletag:'RuneKeeper#2840'},
+ {character:'DuskWarden',battletag:'DuskWarden#1365'}
+];
+const incomingFriendRequests=[];
+const sampleClanApplicants=['Ashforge#3182','SilverPike#2716'];
+const incomingClanRequests=[];
+let socialRequestSimulationStarted=false;
+let friendRequestTimer;
+let clanRequestTimer;
+function scheduleSocialRequestSimulation(){
+ if(socialRequestSimulationStarted)return;
+ socialRequestSimulationStarted=true;
+ sampleFriendRequestSenders.forEach((player,index)=>setTimeout(()=>{
+  incomingFriendRequests.push({...player,expiresAt:Date.now()+socialRequestLifetime});
+  renderFriendRequests();
+ },10000*(2*index+1)));
+ sampleClanApplicants.forEach((battleTag,index)=>setTimeout(()=>{
+  incomingClanRequests.push({battleTag,expiresAt:Date.now()+socialRequestLifetime});
+  renderClanRequests();
+ },10000*(2*index+2)));
+}
+function updateRequestBadges(kind,count){
+ for(const badge of document.querySelectorAll(`[data-request-kind="${kind}"]`)){
+  badge.hidden=!count;
+  badge.textContent=String(count);
+  const tab=badge.closest('button');
+  const counts=[...tab.querySelectorAll('[data-request-kind]:not([hidden])')].map(item=>{
+   const number=Number(item.textContent);
+   return `${number} pending ${item.dataset.requestKind} ${number===1?'request':'requests'}`;
+  });
+  if(counts.length)tab.setAttribute('aria-label',[tab.firstChild.textContent.trim(),...counts].join(', '));
+  else tab.removeAttribute('aria-label');
+ }
+}
+function acceptClanRequest(request){
+ if(clanRoster.some(member=>member.battleTag.toLowerCase()===request.battleTag.toLowerCase()))return;
+ const squadLeader=clanRoster.find(member=>member.rank==='Squad Leader');
+ clanRoster.push({
+  id:Math.max(...clanRoster.map(member=>member.id))+1,
+  name:request.battleTag.split('#')[0],battleTag:request.battleTag,rank:'Clan Member',
+  reportsTo:squadLeader.id,division:squadLeader.division,squad:squadLeader.squad,
+  online:false,map:'—',clanPoints:0
+ });
+ document.getElementById('clan-panel').dispatchEvent(new Event('clan-roster-updated'));
+}
+function renderClanRequests(){
+ clearTimeout(clanRequestTimer);
+ const now=Date.now();
+ const pending=incomingClanRequests.filter(request=>!request.resolved&&request.expiresAt>now);
+ const section=document.getElementById('clan-requests-section');
+ section.hidden=!pending.length;
+ updateRequestBadges('clan',pending.length);
+ const list=document.getElementById('clan-requests');
+ list.replaceChildren(...pending.map(request=>{
+  const row=document.createElement('li');
+  const name=document.createElement('span');name.textContent=request.battleTag;
+  const actions=document.createElement('div');actions.className='clan-request-actions';
+  for(const action of ['Accept','Deny']){
+   const button=document.createElement('button');button.type='button';button.className='btn';button.textContent=action;
+   button.setAttribute('aria-label',`${action} clan request from ${request.battleTag}`);
+   button.addEventListener('click',()=>{
+    if(!request.resolved&&request.expiresAt>Date.now()){
+     request.resolved=true;
+     if(action==='Accept')acceptClanRequest(request);
+    }
+    renderClanRequests();
+    (list.querySelector('button')||document.getElementById('clan-settings-tab')).focus();
+   });
+   actions.append(button);
+  }
+  row.append(name,actions);
+  return row;
+ }));
+ if(pending.length)clanRequestTimer=setTimeout(renderClanRequests,Math.min(...pending.map(request=>request.expiresAt))-now);
+}
+function acceptFriendRequest(player){
+ const existing=[...document.querySelectorAll('#friend-list .friend-name[data-battletag]')];
+ if(existing.some(friend=>friend.dataset.battletag.toLowerCase()===player.battletag.toLowerCase()))return;
+ const row=document.createElement('div');row.className='friend';
+ const avatar=document.createElement('span');avatar.className='avatar';avatar.textContent='♟';avatar.setAttribute('aria-hidden','true');
+ const info=document.createElement('div');
+ const name=document.createElement('div');name.className='friend-name';name.dataset.battletag=player.battletag;name.textContent=player.character;
+ const detail=document.createElement('small');detail.textContent=player.battletag;
+ info.append(name,detail);row.append(avatar,info);
+ document.querySelector('#friend-list .friend-group:last-child .friend-items').append(row);
+ updateFriendGroups();
+ if(friendsOnly)render();
+}
+function renderFriendRequests(){
+ clearTimeout(friendRequestTimer);
+ const now=Date.now();
+ const pending=incomingFriendRequests.filter(player=>!player.accepted&&player.expiresAt>now);
+ document.getElementById('friend-requests-count').textContent=String(pending.length);
+ updateRequestBadges('friend',pending.length);
+ friendRequestsSection.hidden=!pending.length;
+ if(!pending.length){friendRequestsList.replaceChildren();return;}
+ const list=document.createElement('ul');list.className='friend-activity-list';
+ for(const player of pending){
+  const row=document.createElement('li');
+  const identity=document.createElement('div');
+  const name=document.createElement('strong');name.textContent=player.character;
+  const detail=document.createElement('small');detail.textContent=player.battletag;
+  const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Accept';
+  button.setAttribute('aria-label',`Accept friend request from ${player.character}`);
+  button.addEventListener('click',()=>{
+   if(!player.accepted&&player.expiresAt>Date.now()){
+    player.accepted=true;
+    acceptFriendRequest(player);
+   }
+   renderFriendRequests();
+   (friendRequestsList.querySelector('button')||document.getElementById('friend-view-list')).focus();
+  });
+  identity.append(name,detail);row.append(identity,button);list.append(row);
+ }
+ friendRequestsList.replaceChildren(list);
+ friendRequestTimer=setTimeout(renderFriendRequests,Math.min(...pending.map(player=>player.expiresAt))-now);
+}
+renderFriendActivity('recent');
+renderFriendActivity('blocked');
 const addFriendDialog=document.getElementById('add-friend-dialog');
 const addFriendRecipient=document.getElementById('add-friend-recipient');
 document.getElementById('add-friend-open').addEventListener('click',()=>{
@@ -1454,11 +1589,8 @@ document.getElementById('add-friend-form').addEventListener('submit',event=>{
   addFriendRecipient.reportValidity();
   return;
  }
- addFriendActivity('invitations',{character:recipient.split(/[#@]/)[0],battletag:recipient});
  addFriendDialog.close();
- const invitationsTab=document.getElementById('friend-view-invitations');
- invitationsTab.click();
- invitationsTab.focus();
+ alert(`Add Friend — ${recipient}\nPrototype action only.`);
 });
 const friendMenu=document.getElementById('friend-context');let activeFriend=null;
 function closeFriendMenu(){friendMenu.classList.remove('open');activeFriend=null;}
@@ -1467,7 +1599,7 @@ function updateFriendGroups(){document.querySelectorAll('.friend-group').forEach
 document.getElementById('friends-panel').addEventListener('contextmenu',e=>{
  const row=e.target.closest('.friend');if(!row)return;e.preventDefault();closePlayerMenu();activeFriend=row;
  const name=friendName(row);document.getElementById('friend-context-name').textContent=row.querySelector('.friend-name')?.dataset.battletag||name;
- const favorite=!!row.closest('.friend-group:first-child') && row.closest('.friend-group')===document.querySelector('.friend-group');
+ const favorite=row.closest('.friend-group')===document.querySelector('.friend-group');
  const favButton=friendMenu.querySelector('[data-friend-action="Add to Favorites"]');favButton.textContent=favorite?'Remove from Favorites':'Add to Favorites';
  friendMenu.classList.add('open');const r=friendMenu.getBoundingClientRect();friendMenu.style.left=Math.max(4,Math.min(e.clientX,innerWidth-r.width-4))+'px';friendMenu.style.top=Math.max(4,Math.min(e.clientY,innerHeight-r.height-4))+'px';
 });
@@ -1923,7 +2055,7 @@ document.getElementById('chat-server').addEventListener('change',event=>{
  const lobby=document.querySelector('main.screen');
  let completedPlays=0,connectingStarted=false,holdStart=null,holdFrame=null,onConnected=null;
  function cancelHold(){holdStart=null;cancelAnimationFrame(holdFrame);enter.style.setProperty('--hold-progress','0%');}
- function showLobby(){cancelHold();welcome.pause();connecting.pause();const complete=onConnected;onConnected=null;if(complete)complete();connectingStarted=false;screen.hidden=true;lobby.inert=false;document.body.classList.remove('intro-active');document.getElementById('game-name').focus();}
+ function showLobby(){cancelHold();welcome.pause();connecting.pause();const complete=onConnected;onConnected=null;if(complete)complete();connectingStarted=false;screen.hidden=true;lobby.inert=false;document.body.classList.remove('intro-active');scheduleSocialRequestSimulation();document.getElementById('game-name').focus();}
  function startConnection(){
   if(connectingStarted)return;connectingStarted=true;cancelHold();screen.hidden=false;lobby.inert=true;document.body.classList.add('intro-active');welcome.pause();welcome.hidden=true;connecting.hidden=false;connecting.currentTime=0;enter.hidden=true;status.textContent='';
   connecting.play().catch(()=>{enter.hidden=false;enter.textContent='Play connecting video';});

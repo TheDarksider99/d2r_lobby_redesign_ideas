@@ -240,7 +240,7 @@ body.offline-character .right .game-settings-group label:has(#terrorized) {point
   grid-template-areas: 'art info' 'art title' 'art badges';
   gap: 3px 6px;
   margin: 0;
-  padding: 7px 8px;
+  padding: 7px 8px 7px 1px;
 }
 .screen .character-roster[data-view='grid'] .character-entry:not(.selected) {
   border-color: transparent;
@@ -274,6 +274,9 @@ body.offline-character .right .game-settings-group label:has(#terrorized) {point
   grid-area: badges;
   position: static;
   align-self: start;
+}
+.character-roster[data-view='grid'] :is(.character-info, .character-title, .character-icons) {
+  translate: -7px 0;
 }
 @media(max-width:500px) {
   .character-roster[data-view='grid'] { grid-template-columns: minmax(0, 1fr); }
@@ -957,11 +960,21 @@ body.intro-active>.screen{visibility:hidden}
 /* Social hub and its three sections. */
 .social-panel{display:flex;flex-direction:column;flex:1;min-height:0;gap:9px}
 .friends-section{display:flex;flex:1;min-height:0;flex-direction:column;gap:5px}
-.friend-view-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;flex:none;align-self:center;width:max-content;max-width:100%}
+.friend-view-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;flex:none;align-self:center;width:max-content;max-width:100%}
 .friend-activity-list{margin:0;padding:0;list-style:none}
 .friend-activity-list li{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 2px;border-bottom:1px solid #454239}
 .friend-activity-list small{display:block;margin-top:3px;color:#b5aa93;overflow-wrap:anywhere}
+.recent-player-presence[data-online='false']{background:transparent;border:1px solid #a6a4a0}
 .friend-activity-list .btn{flex:none}
+.friend-requests{margin-bottom:15px}
+#clan-requests-heading{margin:0;color:#a0c999}
+.clan-request-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px}
+.clan-request-actions .btn{padding:3px 6px;letter-spacing:0}
+.screen button:has(> .request-count-badges){display:flex;align-items:center;justify-content:center;gap:6px}
+.request-count-badges{display:flex;flex:none;gap:2px;pointer-events:none}
+.request-count-badges:not(:has(> :not([hidden]))){display:none}
+.request-count-badge{display:grid;place-items:center;min-width:1.25em;padding:1px 3px;border-radius:8px;background:#285c94;color:#fff;font-size:clamp(9px,.75vw,12px);line-height:1.05;letter-spacing:0}
+.request-count-badge[data-request-kind='clan']{background:#356c40}
 #friend-list:not([hidden]){display:flex;flex-direction:column;overflow:hidden;gap:8px}
 .friend-list-scroll{flex:1;min-height:0;overflow:auto}
 .friend-list-actions{flex:none}
