@@ -4,6 +4,7 @@ document.addEventListener('contextmenu', event => {
 }, {capture:true, passive:false});
 
 let openTradingShop = null;
+let renderCampShops;
 let currentCampGame = null;
 let pendingGameInvite=null;
 let gameChatMount=null;
@@ -13,24 +14,25 @@ const gameChatSeen=new Set();
 const gameSystemStates=new Map();
 const chatInvites=new Map();
 let nextInviteId=0;
+const lobbyGem=document.getElementById('lobby-gem');
 const names=['BØBECOW-15','7 PC8MB 4 LØ','DEADLYBAAL-30','ALL ACTS 96TZ-5','TZ ALL ID ALL','BRG 2 JAY GLØVE','BAALOS FOR GUL','BAALZI','PØØNBAALI','DUELS','PHØENIX MØN FT','NEEDTALSET','STAT RUN Ø2','96TZ ALL-Ø1'];
-const descriptions=['Cow runs, stay together','Ist for Java skiller','Baal runs, throne open','Tomb reserved for host','96 TZ rotations, all welcome','Bring 2 Jah for gloves','Baal runs for Gul','Questing, need help with Act 2','Open Baal runs','PvP duels, no potions','Looking for Phoenix Monarch','Trade Tal set for runes','Act 5 quests, help welcome','TZ farm, split MF'];
+const descriptions=['Cow runs, stay together','Ist for Java skiller','Baal runs, throne open','Tomb reserved for host','96 TZ rotations, all welcome','Bring 2 Jah for gloves','Baal runs for Gul','Baal runs for XP. Wait in town for the portal.','Open Baal runs','PvP duels, no potions','Looking for Phoenix Monarch','Trade Tal set for runes','Act 5 quests, help welcome','TZ farm, split MF'];
 let games=names.map((name,i)=>({name,description:descriptions[i],players:i%3+1,maxPlayers:2+(i*3)%7,elapsedSeconds:[3900,45,7320,540,4500,28,8460,120,2700,10200,420,5940,360,7860][i],demoShortTime:[1,5].includes(i),tz:/TZ/i.test(name)||[2,7,11].includes(i),ping:i%5===0?'green':'gold',activity:['Farming','Trading','Farming','Quest','Farming','Trading','Farming','Quest','Farming','PvP','Trading','Trading','Quest','Farming'][i]}));
 // Additional mock lobby entries for layout, scrolling, filtering, and sorting previews.
 const extraGames=[
- ['CHAOS RUN-08','Farming',5,8,1920,false,'green','Chaos sanctuary runs'],
+ ['CHAOS RUN-08','Farming',5,8,1920,false,'green','Chaos Sanctuary runs. Stay behind the seal opener.'],
  ['ACT 2 WALK','Quest',2,5,4380,false,'gold','Act 2 progression, all welcome'],
- ['ISO SHAKO','Trading',1,4,900,false,'green','Offer Ist + Mal for Shako'],
+ ['ISO SHAKO','Trading',1,4,900,false,'green','Offering Ist and Mal for a Shako. Meet in Act I town.'],
  ['TZ COWS-21','Farming',7,8,3600,true,'gold','Terror Zone cow runs'],
- ['GM DUELS 4','PvP',6,6,4680,false,'green','GM duels, no potions'],
+ ['GM DUELS 4','PvP',6,6,4680,false,'green','Friendly duels in Blood Moor. No potions or shrines.'],
  ['FREE ITEMS 7','Trading',3,8,120,false,'green','Free items in town'],
- ['ANCIENTS HELP','Quest',4,8,2700,false,'gold','Need help with Ancients'],
+ ['ANCIENTS HELP','Quest',4,8,2700,false,'gold','Need help with the Ancients. Meet at the summit.'],
  ['BAAL XP-42','Farming',8,8,5400,false,'green','Fast Baal experience runs'],
  ['TZ TOMB RUN','Farming',3,7,8100,true,'gold','Split tomb farming'],
  ['SELLING TORCH','Trading',2,3,660,false,'green','Paladin torch for runes'],
  ['LOW LVL DUEL','PvP',2,8,4020,false,'gold','Low level PvP'],
  ['ACT 5 QUEST','Quest',1,6,7500,false,'green','Need rescue and Anya quests'],
- ['KEY FARM 12','Farming',4,4,2160,false,'gold','Keys from all three bosses'],
+ ['KEY FARM 12','Farming',4,4,2160,false,'gold','Split key runs. Call your boss before leaving town.'],
  ['TZ CHAOS 9','Farming',5,8,300,true,'green','Terror Zone Chaos runs'],
  ['RUNE TRADE','Trading',1,8,9600,false,'gold','Trading runes for gear'],
  ['NORM ACT 1','Quest',3,8,210,false,'green','Fresh start, quest together'],
@@ -41,17 +43,17 @@ extraGames.forEach(([name,activity,players,maxPlayers,elapsedSeconds,tz,ping,des
 // v1.23: The difficulty buttons control which mock games appear in the browser.
 // Preserve existing Hell games; provide separate Normal and Nightmare quest/Baal samples.
 const lowerDifficultyGames = [
- ['NORMAL ACT 1 WALK','Normal','Quest',3,8,185,false,'green','Fresh characters, start at Den of Evil'],
- ['NORM ANDARIEL','Normal','Quest',5,8,1540,false,'gold','Act I boss quest, all welcome'],
+ ['NORMAL ACT 1 WALK','Normal','Quest',3,8,185,false,'green','Fresh characters welcome. Start at the Den of Evil.'],
+ ['NORM ANDARIEL','Normal','Quest',5,8,1540,false,'gold','Andariel quest run. Meet at the Catacombs waypoint.'],
  ['NORMAL TOMB RUN','Normal','Quest',6,8,3180,false,'green','Act II tomb quests and Duriel'],
  ['NORM ACT 3 HELP','Normal','Quest',2,6,4650,false,'gold','Collecting Khalim parts'],
- ['NORMAL BAAL-07','Normal','Farming',7,8,42,false,'green','Normal Baal experience runs'],
+ ['NORMAL BAAL-07','Normal','Farming',7,8,42,false,'green','Normal Baal XP runs. Wait for the Throne Room portal.'],
  ['NORM BAAL XP 8','Normal','Farming',8,8,3720,false,'gold','Fast Baal runs, game is full'],
  ['NM ACT 1 START','Nightmare','Quest',2,8,225,false,'green','Nightmare progression from Act I'],
- ['NM ACT 2 WALK','Nightmare','Quest',4,8,2700,false,'gold','Quest through the desert'],
+ ['NM ACT 2 WALK','Nightmare','Quest',4,8,2700,false,'gold','Walking Act II together. Start at the desert gates.'],
  ['NM ANCIENTS','Nightmare','Quest',3,6,5610,false,'green','Help with Ancients quest'],
- ['NM ACT 5 QUEST','Nightmare','Quest',5,8,1920,false,'gold','Rescue Anya and reach Baal'],
- ['NM BAAL RUN-12','Nightmare','Farming',6,8,53,false,'green','Nightmare Baal XP runs'],
+ ['NM ACT 5 QUEST','Nightmare','Quest',5,8,1920,false,'gold','Rescue Anya first, then clear the way to Baal together.'],
+ ['NM BAAL RUN-12','Nightmare','Farming',6,8,53,false,'green','Nightmare Baal XP runs. Wait in town for the portal.'],
  ['NM BAAL XP-09','Nightmare','Farming',8,8,4200,false,'gold','Full Nightmare Baal game']
 ];
 lowerDifficultyGames.forEach(([name,difficulty,activity,players,maxPlayers,elapsedSeconds,tz,ping,description])=>games.push({name,difficulty,activity,players,maxPlayers,elapsedSeconds,tz,ping,description,demoShortTime:elapsedSeconds<60}));
@@ -60,38 +62,123 @@ games.forEach(g=>{g.difficulty ||= 'Hell';g.players=Math.min(g.players,g.maxPlay
 games[2].maxPlayers=8;games[2].players=8;games[7].maxPlayers=6;games[7].players=6;games[11].maxPlayers=4;games[11].players=4;
 // Sample separate mode populations from the existing demo pool, once per realm.
 let activeCharacterGameMode='hc-ld';
+function shuffleGames(entries){
+ for(let i=entries.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [entries[i],entries[j]]=[entries[j],entries[i]];
+ }
+}
 function assignGameModes(pool){
+ for(const game of pool){
+  if(/kill[\s_-]+ba(?:al|ll)\b|baal[\s_-]+quest\b/i.test(game.name))game.activity='Quest';
+  else if(/baal|\ubc14\uc54c/i.test(game.name))game.activity='Farming';
+ }
  const modes=['hc-ld','sc-ld','hc-nl','sc-nl'];
  for(const difficulty of ['Normal','Nightmare','Hell']){
   const entries=pool.filter(game=>game.difficulty===difficulty);
-  for(let i=entries.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[entries[i],entries[j]]=[entries[j],entries[i]];}
+  shuffleGames(entries);
   entries.forEach((game,index)=>{game.characterGameMode=modes[index%modes.length];});
   // Standard (Softcore) Ladder is the busiest demo population.
   const ladderCount=entries.filter(game=>game.characterGameMode==='sc-ld').length;
+  const questAndFarming=entries.filter(game=>game.activity==='Quest'||game.activity==='Farming');
+  const additionalGames=questAndFarming.length?(difficulty==='Hell'?60:20):0;
   const usedNames=new Set(pool.map(game=>game.name));
-  for(let i=ladderCount;entries.length&&i<30;i++){
-   const source=entries[(i-ladderCount)%entries.length];
+  for(let i=ladderCount;entries.length&&i<30+additionalGames;i++){
+   const extra=i>=30;
+   const source=extra?questAndFarming[(i-30)%questAndFarming.length]:entries[(i-ladderCount)%entries.length];
    let suffix=i+1,name=`${source.name}-${suffix}`;
    while(usedNames.has(name)){name=`${source.name}-${++suffix}`;}
    usedNames.add(name);
-   pool.push({...source,name,characterGameMode:'sc-ld',shopItem:undefined});
+   const sample={...source,name,characterGameMode:'sc-ld',shopItem:undefined};
+   if(extra){
+    sample.players=1+(i*3)%sample.maxPlayers;
+    sample.elapsedSeconds=source.elapsedSeconds+(i-29)*31;
+    sample.demoShortTime=sample.elapsedSeconds<60;
+   }
+   pool.push(sample);
+  }
+  const ladderGames=pool.filter(game=>game.difficulty===difficulty&&game.characterGameMode==='sc-ld');
+  shuffleGames(ladderGames);
+  ladderGames.forEach((game,index)=>{game.ladderListOrder=index;});
+  const tradingCounts=[1,1,2,1,1,2,1,3];
+  for(const mode of modes){
+   const modeGames=pool.filter(game=>game.difficulty===difficulty&&game.characterGameMode===mode);
+   const smallGameCount=Math.round(modeGames.length*.1);
+   modeGames.filter(game=>game.maxPlayers<8).slice(smallGameCount).forEach(game=>{game.maxPlayers=8;});
+   modeGames.filter(game=>game.activity==='Trading').forEach((game,index)=>{
+    game.players=Math.min(game.maxPlayers,tradingCounts[index%tradingCounts.length]);
+   });
   }
  }
 }
+function assignMockFriendHosts(pool){
+ const friendGames=[
+  ['AshenBlade#1200','Hell','hc-ld'],
+  ['MoonWarden#1317','Hell','sc-ld'],
+  ['NightArrow#1902','Hell','sc-nl'],
+  ['StormCaller#1668','Nightmare','hc-nl'],
+  ['MoonWarden#1317','Hell','hc-ld'],
+  ['NightArrow#1902','Hell','hc-ld'],
+  ['AshenBlade#1200','Hell','sc-ld'],
+  ['StormCaller#1668','Nightmare','hc-ld']
+ ];
+ for(const [battletag,difficulty,mode] of friendGames){
+  const game=pool.find(entry=>entry.difficulty===difficulty&&entry.characterGameMode===mode&&!entry.hostBattletag);
+  if(game)game.hostBattletag=battletag;
+ }
+}
 function gamesForCharacter(){return games.filter(game=>game.characterGameMode===activeCharacterGameMode);}
+function addLegacyGames(pool){
+ const samples=[
+  ['lod','LOD BAAL RUN','Farming',4,210,'Baal experience runs. Portal opens after the waves.'],
+  ['lod','LOD ACT 5 HELP','Quest',2,620,'Rescuing Anya and unlocking the Ancients.'],
+  ['lod','LOD RUNE TRADE','Trading',1,840,'Trading runes in Act I town.'],
+  ['classic','CLASSIC CHAOS','Farming',5,145,'Chaos Sanctuary runs in Classic.'],
+  ['classic','CLASSIC ACT 2 WALK','Quest',3,430,'Meet in Lut Gholein for an Act II walk.'],
+  ['classic','CLASSIC RARE TRADE','Trading',1,760,'Trading rare weapons and armor in town.']
+ ];
+ pool.push(...samples.map(([expansion,name,activity,players,elapsedSeconds,description])=>({
+  name,activity,players,elapsedSeconds,description,characterGameMode:`sc-nl-${expansion}`,
+  difficulty:'Hell',maxPlayers:8,tz:false,ping:'green'
+ })));
+}
 assignGameModes(games);
-const list=document.getElementById('game-list');const search=document.getElementById('search');const tzToggle=document.getElementById('tz-toggle');const activityFilter=document.getElementById('activity-filter');let selectedActivity='all';let selectedName=names[0];let sortKey=null;let sortAsc=true;let playersSortMode=0;let tzMode='all';let lastRefresh=Date.now();const ageFilterToggle=document.getElementById('age-filter-toggle');const ageFilterPanel=document.getElementById('age-filter-panel');const ageFilterValue=document.getElementById('age-filter-value');const ageFilterUnit=document.getElementById('age-filter-unit');const ageFilterEnabled=document.getElementById('age-filter-enabled');
+assignMockFriendHosts(games);
+addLegacyGames(games);
+const friendsFilterToggle=document.getElementById('friends-filter-toggle');
+let friendsOnly=false;
+const list=document.getElementById('game-list');const search=document.getElementById('search');const tzToggle=document.getElementById('tz-toggle');const activityFilter=document.getElementById('activity-filter');let selectedActivity='all';let selectedName=null;let sortKey=null;let sortAsc=true;let playersSortMode=0;let tzMode='all';let lastRefresh=Date.now();const ageFilterToggle=document.getElementById('age-filter-toggle');const ageFilterPanel=document.getElementById('age-filter-panel');const ageFilterValue=document.getElementById('age-filter-value');const ageFilterUnit=document.getElementById('age-filter-unit');const ageFilterEnabled=document.getElementById('age-filter-enabled');
 function formatTime(seconds){if(seconds<60)return `${seconds}s`;const h=Math.floor(seconds/3600),m=Math.floor(seconds%3600/60);return `${h}:${String(m).padStart(2,'0')}`}
 function formatDetailedTime(seconds){const h=Math.floor(seconds/3600),m=Math.floor(seconds%3600/60),sec=seconds%60;return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`}
 function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function renderDetails(){
- const game=gamesForCharacter().find(entry=>entry.name===selectedName);
+function renderDetails(game){
  const details=document.getElementById('game-details');
  if(!game){details.textContent='Select a game';return;}
- details.innerHTML=`<p>Elapsed Time</p><strong>${formatDetailedTime(game.elapsedSeconds)}</strong><p>Level Restrictions</p><strong>Any</strong><p>Description</p><strong>${escapeHtml(game.description||'—')}</strong><p>Players (${game.players}/${game.maxPlayers})</p><ul class="game-detail-players">${Array.from({length:game.players},(_,index)=>`<li>${index===0?'Host':`Player ${index+1}`}</li>`).join('')}</ul>`;
+ details.innerHTML=`<div class="game-detail-summary"><p>Level <strong>Any</strong></p><p>Time <strong>${formatDetailedTime(game.elapsedSeconds)}</strong></p></div><p>Description</p><strong>${escapeHtml(game.description||'—')}</strong><p>Players (${game.players}/${game.maxPlayers})</p><ul class="game-detail-players">${Array.from({length:game.players},(_,index)=>`<li>${index===0?'Host':`Player ${index+1}`}</li>`).join('')}</ul>`;
 }
 document.querySelectorAll('.game-header [data-sort]').forEach(h=>h.addEventListener('click',()=>{const key=h.dataset.sort;if(key==='players'){playersSortMode=sortKey==='players'?(playersSortMode+1)%3:0;sortKey=key;sortAsc=playersSortMode!==1}else{if(sortKey===key){sortAsc=!sortAsc}else{sortKey=key;sortAsc=true}}render()}));
-function render(){const q=search.value.toLowerCase();list.innerHTML='';if(document.body.classList.contains('offline-character')){document.getElementById('game-details').innerHTML='';return;}document.querySelectorAll('.game-header [data-sort]').forEach(h=>{h.classList.toggle('sorted',h.dataset.sort===sortKey);h.title=h.dataset.sort===sortKey?(sortKey==='players'&&playersSortMode===2?'Ascending ▲ (full games last)':sortAsc?'Ascending ▲':'Descending ▼'):'Click to sort'});let visible=gamesForCharacter().filter(g=>g.difficulty===selectedDifficulty&&g.name.toLowerCase().includes(q)&&(selectedActivity==='all'||g.activity===selectedActivity)&&(tzMode==='all'||(tzMode==='tz'&&g.tz)||(tzMode==='non-tz'&&!g.tz))&&(!ageFilterEnabled.checked||g.elapsedSeconds<Math.max(1,Number(ageFilterValue.value)||1)*(ageFilterUnit.value==='hours'?3600:60)));if(sortKey){visible.sort((a,b)=>{if(sortKey==='players'&&playersSortMode===2){const af=a.players>=a.maxPlayers,bf=b.players>=b.maxPlayers;if(af!==bf)return af?1:-1;}let av=a[sortKey],bv=b[sortKey];if(typeof av==='string'){return (sortAsc?1:-1)*av.localeCompare(bv)}return (sortAsc?1:-1)*(av-bv)})}visible.forEach(g=>{const row=document.createElement('div');row.className='game'+(g.name===selectedName?' selected':'')+(g.players>=g.maxPlayers?' full-game':'');row.innerHTML=`<span class="activity-${g.activity.toLowerCase()}">${g.name}</span><span class="activity-${g.activity.toLowerCase()}">${g.activity}</span><span class="${g.players>=g.maxPlayers?'full-players':'gold'}">${g.players}/${g.maxPlayers}</span><span>${formatTime(g.elapsedSeconds)}</span><span title="${g.tz?'Terror Zone':'Normal game'}" class="${g.tz?'gold':''}">${g.tz?'✦':''}</span><span title="Ping indicator" class="${g.ping}">●</span>`;row.onclick=()=>{selectedName=g.name;document.querySelector('.fields input').value=g.name;render()};list.appendChild(row)});renderDetails()}
+const visibleGameCount=document.getElementById('visible-game-count');
+function render(){updateJoinGameButton();const q=search.value.toLowerCase();list.innerHTML='';if(document.body.classList.contains('offline-character')){visibleGameCount.value='0';document.getElementById('game-details').innerHTML='';return;}document.querySelectorAll('.game-header [data-sort]').forEach(h=>{h.classList.toggle('sorted',h.dataset.sort===sortKey);h.title=h.dataset.sort===sortKey?(sortKey==='players'&&playersSortMode===2?'Ascending ▲ (full games last)':sortAsc?'Ascending ▲':'Descending ▼'):'Click to sort'});
+ const friendBattletags=friendsOnly?new Set(Array.from(
+  document.querySelectorAll('#friends-panel .friend-name[data-battletag]'),
+  friend=>friend.dataset.battletag
+ )):null;
+ let visible=gamesForCharacter().filter(g=>(!friendBattletags||friendBattletags.has(g.hostBattletag))&&g.difficulty===selectedDifficulty&&g.name.toLowerCase().includes(q)&&(selectedActivity==='all'||g.activity===selectedActivity)&&(tzMode==='all'||(tzMode==='tz'&&g.tz)||(tzMode==='non-tz'&&!g.tz))&&(!ageFilterEnabled.checked||g.elapsedSeconds<Math.max(1,Number(ageFilterValue.value)||1)*(ageFilterUnit.value==='hours'?3600:60)));visibleGameCount.value=String(visible.length);if(!sortKey&&activeCharacterGameMode==='sc-ld')visible.sort((a,b)=>(a.ladderListOrder??-1)-(b.ladderListOrder??-1));if(sortKey){visible.sort((a,b)=>{if(sortKey==='players'&&playersSortMode===2){const af=a.players>=a.maxPlayers,bf=b.players>=b.maxPlayers;if(af!==bf)return af?1:-1;}let av=a[sortKey],bv=b[sortKey];if(typeof av==='string'){return (sortAsc?1:-1)*av.localeCompare(bv)}return (sortAsc?1:-1)*(av-bv)})}visible.forEach(g=>{const row=document.createElement('div');row.className='game'+(g.name===selectedName?' selected':'')+(g.players>=g.maxPlayers?' full-game':'');row.innerHTML=`<span class="activity-${g.activity.toLowerCase()}">${g.name}</span><span class="activity-${g.activity.toLowerCase()}">${g.activity}</span><span class="${g.players>=g.maxPlayers?'full-players':'gold'}">${g.players}/${g.maxPlayers}</span><span>${formatTime(g.elapsedSeconds)}</span><span title="${g.tz?'Terror Zone':'Normal game'}" class="game-tz">${g.tz?'<img src="img/tz.png" alt="Terror Zone">':''}</span><span title="Ping indicator" class="${g.ping}">●</span>`;row.onclick=()=>{selectedName=g.name;document.querySelector('.fields input').value=g.name;render()};list.appendChild(row)});
+ if(friendsOnly&&!visible.length){
+  const empty=document.createElement('p');
+  empty.className='friends-filter-empty';
+  empty.setAttribute('role','status');
+  empty.textContent='No friends? games match your filters.';
+  list.appendChild(empty);
+ }
+ const detailGames=friendsOnly?visible:gamesForCharacter();
+ renderDetails(detailGames.find(game=>game.name===selectedName));
+}
+friendsFilterToggle.addEventListener('click',()=>{
+ friendsOnly=!friendsOnly;
+ friendsFilterToggle.setAttribute('aria-pressed',String(friendsOnly));
+ render();
+});
 search.addEventListener('input',render);
 activityFilter.addEventListener('click',event=>{
  const tab=event.target.closest('[data-activity]');if(!tab)return;
@@ -130,26 +217,38 @@ document.addEventListener('click',event=>{if(!event.target.closest('.age-filter-
 document.getElementById('refresh').addEventListener('click',()=>{
  games=realmDefaultGames[activeRealm].map(game=>({...game}));
  realmStates[activeRealm].games=games;
- if(!gamesForCharacter().some(game=>game.name===selectedName&&game.difficulty===selectedDifficulty))selectedName=gamesForCharacter().find(game=>game.difficulty===selectedDifficulty)?.name||null;
+ if(!gamesForCharacter().some(game=>game.name===selectedName&&game.difficulty===selectedDifficulty))selectedName=null;
  lastRefresh=Date.now();render();updateInviteButtons();const button=document.getElementById('refresh');button.textContent='\u2713';setTimeout(()=>button.textContent='\u27f3',550);
 });
 document.getElementById('level-difference').addEventListener('change',e=>{document.getElementById('level-difference-value').disabled=!e.target.checked;});
 let selectedDifficulty='Hell';
-document.querySelectorAll('.difficulty-button').forEach(button=>button.addEventListener('click',()=>{selectedDifficulty=button.dataset.difficulty;document.querySelectorAll('.difficulty-button').forEach(b=>b.classList.toggle('active',b===button));selectedName=gamesForCharacter().find(g=>g.difficulty===selectedDifficulty)?.name||null;render();}));
+document.querySelectorAll('.difficulty-button').forEach(button=>button.addEventListener('click',()=>{selectedDifficulty=button.dataset.difficulty;document.querySelectorAll('.difficulty-button').forEach(b=>b.classList.toggle('active',b===button));selectedName=null;render();}));
+let nextAutomaticGameNumber=1;
 document.getElementById('create-game').addEventListener('click',()=>{
- const name=document.getElementById('game-name').value.trim();if(!name){alert('Enter a game name first.');return;}
- if(gamesForCharacter().some(game=>game.name.toLowerCase()===name.toLowerCase())){alert('That game name already exists in the mock list.');return;}
+ let name=document.getElementById('game-name').value.trim();
+ const nameExists=candidate=>gamesForCharacter().some(game=>game.name.toLowerCase()===candidate.toLowerCase());
+ if(!name){
+  do {
+   name='Game '+nextAutomaticGameNumber++;
+  } while(nameExists(name));
+ }
+ if(nameExists(name)){alert('That game name already exists in the mock list.');return;}
  const game={name,description:document.getElementById('game-description').value.trim(),characterGameMode:activeCharacterGameMode,realm:activeRealm,isPrivate:document.getElementById('game-password').value.length>0,levelDifference:document.getElementById('level-difference').checked?Number(document.getElementById('level-difference-value').value):null,friendsJoining:document.getElementById('friends-joining').checked,itemSpacing:document.getElementById('item-spacing').checked,players:1,maxPlayers:Math.max(2,Math.min(8,Number(document.getElementById('max-players').value)||8)),elapsedSeconds:0,demoShortTime:true,tz:document.getElementById('terrorized').checked,ping:'green',activity:document.getElementById('create-activity').value,difficulty:selectedDifficulty};
  playJoinGameLoading(()=>{
   if(characterMode==='online'&&!game.isPrivate)games.unshift(game);
   selectedName=name;render();showRegularCamp(game);
  });
 });
-document.getElementById('join-game').addEventListener('click',()=>{
- const name=document.getElementById('game-name').value.trim()||selectedName;
+const gameNameInput=document.getElementById('game-name');
+const joinGameButton=document.getElementById('join-game');
+function getJoinGameName(){return gameNameInput.value.trim()||selectedName;}
+function updateJoinGameButton(){joinGameButton.disabled=!getJoinGameName();}
+gameNameInput.addEventListener('input',updateJoinGameButton);
+joinGameButton.addEventListener('click',()=>{
+ const name=getJoinGameName();
+ if(!name)return;
  const game=gamesForCharacter().find(entry=>entry.name.toLowerCase()===name?.toLowerCase());
  if(game){joinLobbyGame(game);return;}
- if(!name){alert('Select a game to join.');return;}
  // Named/password games can still enter the shared camp scene.
  playJoinGameLoading(()=>showRegularCamp({name,realm:activeRealm,characterGameMode:activeCharacterGameMode,difficulty:selectedDifficulty,activity:'Quest',isPrivate:document.getElementById('game-password').value.length>0}));
 });
@@ -364,8 +463,27 @@ function canSendChatMessage(){
  return composerChannel!=='All'&&(composerChannel!=='Private'||!!privateRecipient)&&
   (composerChannel!=='Communities'||joinedCommunities.has(selectedCommunity));
 }
+const channelPlayerCount=document.getElementById('channel-player-count');
+const publicChannelPlayerCounts={Lobby:1842,Communities:1268,Trading:1576,PvP:742,Farming:1154,Quest:638};
+function updateChannelPlayerCount(channel){
+ channelPlayerCount.hidden=channel==='All'||channel==='Private';
+ if(channelPlayerCount.hidden)return;
+ let count=publicChannelPlayerCounts[channel]??(channel==='Game'?currentCampGame?.players:undefined);
+ if(count===undefined){
+  const players=new Set();
+  for(const message of chatLog.querySelectorAll(':scope > p')){
+   if(message.dataset.channel!==channel||!chatMessageInScope(message))continue;
+   const sender=message.querySelector('.player-name,.chat-self');
+   if(sender)players.add(sender.classList.contains('chat-self')?'self':(sender.dataset.battletag||sender.textContent.trim()).toLowerCase());
+  }
+  count=players.size;
+ }
+ if(channelPlayerCount.value!==String(count))channelPlayerCount.value=String(count);
+ channelPlayerCount.setAttribute('aria-label',`${channel} players`);
+}
 function applyChatChannel(){
  const channel=selectedChatChannel;
+ updateChannelPlayerCount(channel);
  chatLog.classList.toggle('all-channels',channel==='All'||channel==='Game');
  chatChannel.querySelectorAll('[data-channel]').forEach(tab=>{const selected=tab.dataset.channel===channel;tab.classList.toggle('active',selected);tab.setAttribute('aria-selected',String(selected));tab.tabIndex=selected?0:-1;});
  updateComposerChannel();
@@ -454,40 +572,152 @@ window.addEventListener('scroll',closePlayerMenu,true);
 // v1.30: Sort characters by name, level or class; drag handles allow custom order.
 const characterData={online:[['Malachar','99','Warlock'],['Aldric','91','Barbarian'],['Seraphine','88','Sorceress'],['Kaelen','82','Paladin'],['Nyx','76','Assassin'],['Thorn','70','Druid'],['Elowen','65','Amazon'],['Mordren','58','Necromancer'],['Briar','42','Druid'],['Valen','29','Paladin']],offline:[['Ronan','73','Barbarian'],['Mira','61','Sorceress'],['Sylas','35','Necromancer']]};
 const characterIcons={Malachar:['ld'],Aldric:['ld','hc'],Seraphine:['ld'],Kaelen:['hc'],Nyx:['ld','hc'],Elowen:['ld']};
+const legacyCharacterExpansions={Briar:'lod',Valen:'classic'};
+const characterBadges={
+ ld:['ld128.png','Ladder'], hc:['hc128.png','Hardcore'],
+ lod:['lod.png','Lord of Destruction'], classic:['classic.png','Classic']
+};
+const convertCharacterButton=document.getElementById('convert-character');
 const recentDeleted={online:[],offline:[]};
 let characterMode='online',chosenCharacter='Malachar',characterSort='custom',characterSortAscending=true,draggedCharacter=null;
-const classSymbols={Barbarian:'⚔',Sorceress:'✧',Paladin:'🛡',Assassin:'⚒',Druid:'🐺',Amazon:'🏹',Necromancer:'☠',Warlock:'✦'};
 function syncCharacterGames(){
  updateInviteButtons();
  if(characterMode!=='online'){render();return;}
  const icons=characterIcons[chosenCharacter]||[];
- const mode=(icons.includes('hc')?'hc':'sc')+'-'+(icons.includes('ld')?'ld':'nl');
+ const expansion=legacyCharacterExpansions[chosenCharacter];
+ const baseMode=(icons.includes('hc')?'hc':'sc')+'-'+(icons.includes('ld')?'ld':'nl');
+ const mode=expansion?`${baseMode}-${expansion}`:baseMode;
  if(mode!==activeCharacterGameMode){
   activeCharacterGameMode=mode;
   updateInviteButtons();
-  selectedName=gamesForCharacter().find(game=>game.difficulty===selectedDifficulty)?.name||null;
+  selectedName=null;
   document.getElementById('game-name').value='';document.getElementById('game-password').value='';
  }
  render();
 }
-function characterClassWithTitle(level,cls){
+function characterClassWithTitle(name,level,cls){
  const value=Number(level);
+ if(characterIcons[name]?.includes('hc')){
+  const title=value>=70?'Guardian':value>=40?'Conqueror':value>=25?'Destroyer':'';
+  return title?`${cls} ${title}`:cls;
+ }
  const title=value>=70?(['Sorceress','Amazon','Assassin'].includes(cls)?'Matriarch':'Patriarch'):value>=40?'Champion':value>=25?'Slayer':'';
  return title?`${cls} ${title}`:cls;
 }
+// Top and bottom of each visible silhouette, followed by the PNG canvas height.
+const classArtBounds={
+ Amazon:[8,1643,1649], Assassin:[16,1677,1694], Barbarian:[8,1627,1630],
+ Druid:[4,1497,1505], Necromancer:[10,1757,1769], Paladin:[10,1581,1591],
+ Sorceress:[10,1539,1549], Warlock:[6,1365,1376]
+};
+function classArtSource(characterClass){
+ const imageName=characterClass==='Assassin'?'assasin':characterClass.toLowerCase();
+ return `img/${imageName}-2.png`;
+}
+
+const lobbyPlayers=document.getElementById('lobby-players');
+const lobbyPlayerPreviews=new WeakMap();
+const mockLobbyPlayers=[
+ ['RuneSeeker','Necromancer','Patriarch',99], ['HolyHammer','Paladin','Guardian',94],
+ ['FrostNova','Sorceress','Matriarch',88], ['JavQueen','Amazon','Champion',64],
+ ['WolfFury','Druid','Conqueror',58], ['ShadowFang','Assassin','Matriarch',83],
+ ['ChaosLord','Barbarian','Destroyer',35], ['LootFind','Warlock','Slayer',32]
+];
+lobbyPlayers.replaceChildren(...Array.from({length:100},(_,index)=>{
+ const [name,characterClass,characterTitle,level]=mockLobbyPlayers[index%mockLobbyPlayers.length];
+ const playerName=index<mockLobbyPlayers.length?name:`${name}${Math.floor(index/mockLobbyPlayers.length)+1}`;
+ const player=document.createElement('li');
+ const hardcore=['Destroyer','Conqueror','Guardian'].includes(characterTitle);
+ lobbyPlayerPreviews.set(player,{character:[playerName,level,characterClass],hardcore});
+ player.classList.toggle('level-99-art',level===99);
+ const image=document.createElement('img');
+ image.src=classArtSource(characterClass);
+ image.alt='';
+ image.draggable=false;
+ image.classList.toggle('hardcore-art',hardcore);
+ const levelLabel=document.createElement('span');
+ levelLabel.className='lobby-player-level';
+ levelLabel.textContent=`Level ${level}`;
+ const caption=document.createElement('div');
+ caption.className='lobby-player-caption';
+ const label=document.createElement('span');
+ label.textContent=playerName;
+ const title=document.createElement('small');
+ title.textContent=characterTitle;
+ caption.append(label,title);
+ player.append(image,caption,levelLabel);
+ return player;
+}));
+let lobbyDrag=null;
+let lobbyDragged=false;
+let previewedLobbyPlayer=null;
+document.addEventListener('pointerdown',event=>{
+ if(event.button!==0)return;
+ lobbyDragged=false;
+ if(event.pointerType==='mouse'&&lobbyPlayers.contains(event.target)){
+  lobbyDrag={id:event.pointerId,x:event.clientX,scroll:lobbyPlayers.scrollLeft};
+ }
+});
+document.addEventListener('pointermove',event=>{
+ if(lobbyDrag?.id!==event.pointerId)return;
+ const distance=lobbyDrag.x-event.clientX;
+ if(!lobbyDragged){
+  if(Math.abs(distance)<5)return;
+  lobbyDragged=true;
+  lobbyPlayers.setPointerCapture(event.pointerId);
+ }
+ lobbyPlayers.scrollLeft=lobbyDrag.scroll+distance;
+});
+function finishLobbyDrag(event){
+ if(lobbyDrag?.id===event.pointerId)lobbyDrag=null;
+}
+document.addEventListener('pointerup',finishLobbyDrag);
+document.addEventListener('pointercancel',finishLobbyDrag);
+document.addEventListener('click',event=>{
+ if(lobbyDragged&&lobbyPlayers.contains(event.target))return;
+ const player=event.target.closest('#lobby-players > li');
+ const preview=lobbyPlayerPreviews.get(player);
+ if(preview){
+  previewedLobbyPlayer=player;
+  renderCenterCharacter(preview.character,preview.hardcore);
+ }else if(previewedLobbyPlayer){
+  previewedLobbyPlayer=null;
+  renderCenterCharacter();
+ }
+});
 function updateCenterCharacter(){
  syncCharacterGames();
  const character=characterData[characterMode].find(c=>c[0]===chosenCharacter);
- if(!character){document.querySelector('.middle .char-name').textContent='No Character';document.querySelector('.middle .silhouette').textContent='—';return;}
- const [name,level,cls]=character;
+ previewedLobbyPlayer=null;
+ lobbyPlayers.hidden=characterMode!=='online'||!character;
+ renderCenterCharacter(character);
+}
+function renderCenterCharacter(character=characterData[characterMode].find(c=>c[0]===chosenCharacter),hardcore=characterIcons[character?.[0]]?.includes('hc')??false){
  const display=document.querySelector('.middle .char-name');
+ const artwork=document.getElementById('center-character-art');
+ artwork.parentElement.classList.toggle('level-99-art',Number(character?.[1])===99);
+ artwork.hidden=!character;
+ if(!character){display.textContent='No Character';return;}
+ const [name,level,cls]=character;
+ artwork.dataset.characterClass=cls;
+ artwork.classList.toggle('hardcore-art',hardcore);
+ const [top,bottom,height]=classArtBounds[cls];
+ artwork.style.setProperty('--art-height-scale',height/(bottom-top));
+ artwork.style.setProperty('--art-bottom-padding',`${100*(height-bottom)/height}%`);
+ artwork.src=classArtSource(cls);
  display.replaceChildren(document.createTextNode(name));
- const subtitle=document.createElement('small');subtitle.textContent=`LEVEL ${level} ${characterClassWithTitle(level,cls).toUpperCase()}`;display.appendChild(subtitle);
- const figure=document.querySelector('.middle .silhouette');figure.textContent=classSymbols[cls]||'⚔';
- figure.setAttribute('aria-label',`${cls} character placeholder`);
- figure.title=`${name} — Level ${level} ${cls}`;
+ const subtitle=document.createElement('small');subtitle.textContent=`Level ${level} ${cls}`;display.appendChild(subtitle);
 }
 const characterSortSelect=document.getElementById('character-sort'),characterSortDirection=document.getElementById('character-sort-direction');
+const characterViewToggle=document.getElementById('character-view-toggle');
+characterViewToggle.addEventListener('click',()=>{
+ const roster=document.getElementById('character-roster');
+ const grid=roster.dataset.view!=='grid';
+ roster.dataset.view=grid?'grid':'list';
+ characterViewToggle.firstElementChild.textContent=grid?'☰':'▦';
+ characterViewToggle.title=grid?'Switch to list view':'Switch to grid view';
+ characterViewToggle.setAttribute('aria-label',characterViewToggle.title);
+});
 function getSortedCharacters(){const entries=[...characterData[characterMode]];if(characterSort!=='custom'){const index={name:0,level:1,class:2}[characterSort];entries.sort((a,b)=>{const result=characterSort==='level'?Number(a[index])-Number(b[index]):a[index].localeCompare(b[index]);return (characterSortAscending?1:-1)*result});}return entries;}
 function renderRecentDeleted(){
  const section=document.getElementById('recent-deleted');
@@ -499,7 +729,7 @@ function renderRecentDeleted(){
  for(const [name,level,cls] of entries){
   const row=document.createElement('div');row.className='deleted-character-entry';
   const nameEl=document.createElement('span');nameEl.textContent=name;
-  const detail=document.createElement('small');detail.textContent=`Level ${level} ${characterClassWithTitle(level,cls)}`;
+  const detail=document.createElement('small');detail.textContent=`Level ${level} ${characterClassWithTitle(name,level,cls)}`;
   const info=document.createElement('div');info.className='deleted-info';info.append(nameEl,detail);
   const restore=document.createElement('button');restore.type='button';restore.className='restore-character';restore.textContent='Restore';restore.title=`Restore ${name}`;
   restore.addEventListener('click',()=>{
@@ -515,8 +745,15 @@ function renderRecentDeleted(){
 }
 function renderCharacters(){const root=document.getElementById('character-roster');root.replaceChildren();for(const [index,[name,level,cls]] of getSortedCharacters().entries()){
  const button=document.createElement('button');button.type='button';button.className='character-entry'+(chosenCharacter===name?' selected':'');button.dataset.character=name;if(Number(level)===99)button.classList.add('level-99');
- const handle=document.createElement('span');handle.className='character-drag';handle.textContent='⠿';handle.title='Drag to reorder';handle.setAttribute('aria-label','Drag '+name+' to reorder');handle.draggable=true;
- const label=document.createElement('span');if(characterMode==='online'&&characterIcons[name]?.includes('hc'))label.className='hardcore-character-name';label.textContent=`${index+1}. ${name}`;const sub=document.createElement('small');sub.textContent=`Level ${level} ${cls}`;const portrait=document.createElement('img');portrait.className='character-portrait';portrait.src='img/'+cls.toLowerCase()+'.png';portrait.alt='';portrait.width=44;portrait.height=44;const info=document.createElement('span');info.className='character-info';info.append(label,sub);
+ button.draggable=true;
+ const label=document.createElement('span');if(characterMode==='online'&&characterIcons[name]?.includes('hc'))label.className='hardcore-character-name';const number=document.createElement('span');number.className='character-index';number.textContent=`${index+1}. `;label.append(number,document.createTextNode(name));const sub=document.createElement('small');sub.textContent=`Level ${level} ${cls}`;const portrait=document.createElement('img');portrait.className='character-portrait';portrait.src='img/'+cls.toLowerCase()+'.png';portrait.alt='';portrait.width=44;portrait.height=44;const info=document.createElement('span');info.className='character-info';info.append(label,sub);
+ const gridArtwork=document.createElement('img');
+ gridArtwork.className='character-grid-art';
+ gridArtwork.src=classArtSource(cls);
+ gridArtwork.alt='';
+ gridArtwork.loading='lazy';
+ gridArtwork.draggable=false;
+ portrait.draggable=false;
  if(Number(level)===99){
   label.classList.add('level-99-name');
   sub.className='level-99-honors';sub.replaceChildren();
@@ -524,26 +761,37 @@ function renderCharacters(){const root=document.getElementById('character-roster
    const badge=document.createElement('span');badge.className='level-99-honor level-99-honor-'+kind;badge.textContent=text;
    sub.append(badge);
   }
-  const portraitFrame=document.createElement('span');portraitFrame.className='level-99-portrait';portraitFrame.append(portrait);button.append(handle,portraitFrame,info);
- }else{button.append(handle,portrait,info);}
- const titleText=characterClassWithTitle(level,cls).slice(cls.length).trim();
+  const portraitFrame=document.createElement('span');portraitFrame.className='level-99-portrait';portraitFrame.append(portrait);button.append(portraitFrame,info);
+ }else{button.append(portrait,info);}
+ info.before(gridArtwork);
+ const titleText=characterClassWithTitle(name,level,cls).slice(cls.length).trim();
  if(titleText){const title=document.createElement('small');title.className='character-title';title.textContent=titleText;button.append(title);}
- if(characterMode==='online'&&characterIcons[name]){
+ const badgeKinds=characterMode==='online'?[...(characterIcons[name]||[])]:[];
+ const expansion=legacyCharacterExpansions[name];
+ if(expansion){
+  button.dataset.expansion=expansion;
+  badgeKinds.push(expansion);
+ }
+ if(badgeKinds.length){
   const icons=document.createElement('span');icons.className='character-icons';
-  for(const kind of characterIcons[name]){
-   const icon=document.createElement('img');icon.src=`img/${kind}128.png`;icon.alt=kind==='hc'?'Hardcore':'Ladder';icon.title=icon.alt;icon.width=24;icon.height=24;icons.append(icon);
+  for(const kind of badgeKinds){
+   const [file,label]=characterBadges[kind];
+   const icon=document.createElement('img');icon.src=`img/${file}`;icon.alt=label;icon.title=label;icon.width=24;icon.height=24;icons.append(icon);
   }
   button.classList.add('has-character-icons');button.append(icons);
  }
  button.addEventListener('click',()=>{chosenCharacter=name;renderCharacters();updateCenterCharacter()});
- handle.addEventListener('dragstart',e=>{draggedCharacter=name;button.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',name);});
- handle.addEventListener('dragend',()=>{draggedCharacter=null;root.querySelectorAll('.character-entry').forEach(el=>el.classList.remove('dragging','drag-over'));});
+ button.addEventListener('dragstart',e=>{draggedCharacter=name;button.classList.add('dragging');e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',name);});
+ button.addEventListener('dragend',()=>{draggedCharacter=null;root.querySelectorAll('.character-entry').forEach(el=>el.classList.remove('dragging','drag-over'));});
  button.addEventListener('dragover',e=>{if(draggedCharacter&&draggedCharacter!==name){e.preventDefault();e.dataTransfer.dropEffect='move';button.classList.add('drag-over');}});
  button.addEventListener('dragleave',()=>button.classList.remove('drag-over'));
  button.addEventListener('drop',e=>{e.preventDefault();button.classList.remove('drag-over');if(!draggedCharacter||draggedCharacter===name)return;
  const order=getSortedCharacters();const from=order.findIndex(c=>c[0]===draggedCharacter),to=order.findIndex(c=>c[0]===name);const [moved]=order.splice(from,1);order.splice(to,0,moved);characterData[characterMode]=order;characterSort='custom';characterSortSelect.value='custom';renderCharacters();});
  root.append(button);
-}renderRecentDeleted();}
+}
+ convertCharacterButton.disabled=!legacyCharacterExpansions[chosenCharacter];
+ renderRecentDeleted();
+}
 characterSortSelect.addEventListener('change',()=>{characterSort=characterSortSelect.value;renderCharacters()});
 characterSortDirection.addEventListener('click',()=>{characterSortAscending=!characterSortAscending;characterSortDirection.textContent=characterSortAscending?'↑':'↓';if(characterSort==='custom'){characterData[characterMode].reverse()}renderCharacters()});
 document.querySelectorAll('[data-char-mode]').forEach(button=>button.addEventListener('click',()=>{characterMode=button.dataset.charMode;document.body.classList.toggle('offline-character',characterMode==='offline');render();chosenCharacter=characterData[characterMode][0]?.[0]||null;document.querySelectorAll('[data-char-mode]').forEach(b=>b.classList.toggle('active',b===button));renderCharacters();updateCenterCharacter()}));
@@ -572,10 +820,9 @@ deleteSubmit.addEventListener('click',()=>{
  renderCharacters();updateCenterCharacter();
  window.alert('UI/UX prototype: Character moved to Recent Delete. Reopen or refresh this page to reset the demo.');
 });
-document.getElementById('convert-character').addEventListener('click',()=>{
- const selected=characterData[characterMode].find(c=>c[0]===chosenCharacter);
- if(!selected)return;
- alert(`Convert Character — ${selected[0]}\nClassic / Expansion conversion — visual prototype only.`);
+convertCharacterButton.addEventListener('click',()=>{
+ if(convertCharacterButton.disabled)return;
+ alert(`Convert Character — ${chosenCharacter}\nExpansion conversion — visual prototype only.`);
 });
 renderCharacters();
 updateCenterCharacter();
@@ -1139,7 +1386,7 @@ friendMenu.addEventListener('click',e=>{
  }else if(action==='Set Note'){
   const existing=row.querySelector('.friend-note');const note=prompt('Note for '+name+':',existing?.textContent||'');if(note!==null){if(note.trim()){const el=existing||document.createElement('small');el.className='friend-note';el.textContent=note.trim();if(!existing)row.querySelector('div:not(.friend-name)').appendChild(el);}else existing?.remove();}
  }else if(action==='Remove Friend'){
-  if(confirm('Remove '+name+' from friends?')){row.remove();updateFriendGroups();}
+  if(confirm('Remove '+name+' from friends?')){row.remove();updateFriendGroups();if(friendsOnly)render();}
  }else{alert(action+' — '+name+'\nPrototype action only.');}
  closeFriendMenu();
 });
@@ -1177,7 +1424,7 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
  });
  // Sample sellers share the same scene artwork.
  const tradeLabels = ['SHAKO', 'TAL ARMOR', 'TRANG GLOVES', 'MAGEFIST', 'CHANCE GUARDS', 'SKULLDERS', 'GUILLAUMES', 'FROSTBURN'];
- games.filter(game => game.activity === 'Trading').forEach((game, index) => {
+ games.filter(game => game.activity === 'Trading' && !/-(lod|classic)$/.test(game.characterGameMode)).forEach((game, index) => {
   const item = offers[index % offers.length];
   game.name = `${tradeLabels[index % offers.length]} 4 ${item.price} ${item.rune.toUpperCase()}`;
   game.description = tradeDescriptions[index % offers.length];
@@ -1193,8 +1440,67 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
  const buy = document.getElementById('market-buy');
  const status = document.getElementById('market-status');
  const owned = [];
+ const campChests = document.getElementById('camp-shop-chests');
+ const tradeView = document.getElementById('shop-trade-view');
+ const shopImage = document.getElementById('shop-stock-image');
+ const campShopsByGame = new Map();
+ const shopItemButtons = new WeakMap();
+ const sampleShopArtwork = {src:'img/shop_full.png',width:1108,height:1430};
+ const shopDefinitions = offers.map(offer=>({
+  seller:offer.seller, featuredItem:offer.name, artwork:sampleShopArtwork, stock:[...offers]
+ }));
+ const chestPositions = [
+  [32.755,61.628], [28.741,66.309], [23.475,72.014], [17.349,81.18],
+  [14.012,71.624], [9.294,67.479], [4.627,62.604], [2,70.5]
+ ];
  let visiting = null;
  let lockedShopItem = null;
+ let activeChest = null;
+ let activeShop = null;
+
+ function shopsForCamp(game) {
+  const key = currentGameChatKey();
+  if (!campShopsByGame.has(key)) {
+   const featured = shopDefinitions.find(shop=>shop.featuredItem===game.shopItem);
+   const ordered = featured ? [featured, ...shopDefinitions.filter(shop=>shop!==featured)] : shopDefinitions;
+   campShopsByGame.set(key, ordered.map(definition=>{
+    const listing = definition===featured ? offers.find(offer=>!offer.mine&&offer.name===game.shopItem) : null;
+    const items = definition.stock.map(item=>({
+     ...item, seller:definition.seller, artwork:definition.artwork, sold:item===listing&&!!listing.sold
+    }));
+    return {...definition, items, listing};
+   }));
+  }
+  return campShopsByGame.get(key);
+ }
+
+ renderCampShops = game => {
+  const shops = shopsForCamp(game);
+  activeChest = null;
+  activeShop = null;
+  tradeView.hidden = true;
+  campChests.replaceChildren(...chestPositions.slice(0, game.players).map(([left, top], index) => {
+   const shop = shops[index];
+   const chest = document.createElement('button');
+   chest.type = 'button';
+   chest.className = 'shop-stash-hotspot';
+   chest.style.left = `${left}%`;
+   chest.style.top = `${top}%`;
+   chest.dataset.shopName = `${shop.seller}’s Shop`;
+   chest.setAttribute('aria-label', `Open ${chest.dataset.shopName}`);
+   chest.addEventListener('click', () => {
+    activeChest = chest;
+    activeShop = shop;
+    lockedShopItem = null;
+    closeInGameChat();
+    tradeView.hidden = false;
+    renderGameShop();
+    selectShopItem(shop.items.find(item=>item.name===shop.featuredItem));
+    tradeView.querySelector('[data-close-trade]').focus();
+   });
+   return chest;
+  }));
+ };
 
  function enterShop(item) {
   playJoinGameLoading(()=>showShop(item));
@@ -1202,20 +1508,12 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
  function showShop(item) {
   dialog.classList.remove('regular-game');
   currentCampGame=null;
-  document.getElementById('shop-open-stash').hidden=false;
-  document.getElementById('shop-arrival').textContent='You have arrived. Click the seller\'s shop to browse their items.';
-  lockedShopItem = null;
-  visiting = item;
-  document.getElementById('market-shop-title').textContent = `${item.seller}’s Shop`;
-  document.getElementById('shop-trade-view').hidden = true;
-  document.getElementById('shop-arrival').hidden = false;
-  renderGameShop(); selectShopItem(item);
   if(!dialog.open)dialog.showModal();
   const existing=gamesForCharacter().find(game=>game.shopItem===item.name);
   const shopGame=existing||{name:item.seller+' Shop',characterGameMode:activeCharacterGameMode,realm:activeRealm,players:1,maxPlayers:8,difficulty:selectedDifficulty,activity:'Trading',shopItem:item.name};
   if(!existing)games.push(shopGame);
   mountInGameChat(shopGame);
-  document.getElementById('shop-open-stash').focus();
+  campChests.querySelector('button')?.focus();
  }
  openTradingShop = itemName => {
   const item = offers.find(offer => !offer.mine && offer.name === itemName);
@@ -1223,7 +1521,7 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
  };
 
  function bindShopItem(button, item) {
-  button.dataset.item = item.name;
+  shopItemButtons.set(button,item);
   const preview = () => {if (!lockedShopItem) selectShopItem(item);};
   button.addEventListener('pointerenter', preview);
   const dismissPreview = () => {
@@ -1238,7 +1536,7 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   });
  }
  dialog.addEventListener('click', event => {
-  if (event.target.closest('.shop-item-hotspot, .shop-owned-item, .shop-inspection')) return;
+  if (event.target.closest('.shop-stash-hotspot, .shop-item-hotspot, .shop-owned-item, .shop-inspection')) return;
   lockedShopItem = null;
   document.querySelector('.shop-inspection').hidden = true;
   document.querySelectorAll('.shop-item-hotspot, .shop-owned-item').forEach(button=>{
@@ -1249,7 +1547,8 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
 
  function itemSprite(item) {
   const [x, y, w, h] = item.rect;
-  return `background-image:url('img/shop_full.png');background-size:${1108 / w * 100}% ${1430 / h * 100}%;background-position:${x / (1108 - w) * 100}% ${y / (1430 - h) * 100}%;aspect-ratio:${w}/${h}`;
+  const {src,width,height}=item.artwork;
+  return `background-image:url('${src}');background-size:${width / w * 100}% ${height / h * 100}%;background-position:${x / (width - w) * 100}% ${y / (height - h) * 100}%;aspect-ratio:${w}/${h}`;
  }
  function selectShopItem(item) {
   document.querySelector('.shop-inspection').hidden = false;
@@ -1267,19 +1566,23 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   buy.disabled = wallet[item.rune] < item.price;
   buy.textContent = buy.disabled ? `Not enough ${item.rune}` : 'Buy Item';
   document.querySelectorAll('.shop-item-hotspot, .shop-owned-item').forEach(button => {
-   const active = button.dataset.item === lockedShopItem?.name;
+   const active = shopItemButtons.get(button) === lockedShopItem;
    button.classList.toggle('selected', active);
    button.setAttribute('aria-pressed', String(active));
   });
  }
  function renderGameShop() {
+  const {src,width,height}=activeShop.artwork;
+  shopImage.src=src;
+  shopImage.alt=`${activeShop.seller}’s stocked shop`;
+  document.getElementById('shop-owner-name').textContent=`${activeShop.seller}’s Shop`;
+  shopImage.parentElement.style.aspectRatio=`${width} / ${height}`;
   const hotspots = document.getElementById('shop-item-hotspots'); hotspots.replaceChildren();
-  offers.filter(item => !item.mine).forEach(item => {
+  activeShop.items.forEach(item => {
    const [x, y, w, h] = item.rect;
    const button = document.createElement('button'); button.type = 'button';
    button.className = 'shop-item-hotspot' + (item.sold ? ' sold' : '') + (item === lockedShopItem ? ' selected' : '');
-   button.dataset.item = item.name;
-   button.style.cssText = `left:${x/1108*100}%;top:${y/1430*100}%;width:${w/1108*100}%;height:${h/1430*100}%`;
+   button.style.cssText = `left:${x/width*100}%;top:${y/height*100}%;width:${w/width*100}%;height:${h/height*100}%`;
    button.title = `${item.name}${item.sold ? ' · Purchased' : ''}`;
    button.setAttribute('aria-label', button.title);
    button.textContent = item.sold ? 'Sold' : '';
@@ -1316,18 +1619,10 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
    inventory.append(icon);
   });
  }
- document.getElementById('shop-open-stash').addEventListener('click', () => {
-  lockedShopItem = null;
-  closeInGameChat();
-  document.getElementById('shop-trade-view').hidden = false;
-  document.getElementById('shop-arrival').hidden = true;
-  renderGameShop(); selectShopItem(visiting);
- });
  document.querySelectorAll('[data-close-trade]').forEach(button => button.addEventListener('click', () => {
   lockedShopItem = null;
-  document.getElementById('shop-trade-view').hidden = true;
-  document.getElementById('shop-arrival').hidden = false;
-  document.getElementById('shop-open-stash').focus();
+  tradeView.hidden = true;
+  activeChest?.focus();
  }));
  dialog.addEventListener('cancel', event => {
   event.preventDefault();
@@ -1421,8 +1716,9 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
  search.addEventListener('input', renderMarket);
 
  buy.addEventListener('click', () => {
-  if (!visiting || lockedShopItem !== visiting || visiting.sold || wallet[visiting.rune] < visiting.price) return;
+  if (!visiting || lockedShopItem !== visiting || !activeShop?.items.includes(visiting) || visiting.sold || wallet[visiting.rune] < visiting.price) return;
   wallet[visiting.rune] -= visiting.price; visiting.sold = true; owned.push(visiting);
+  if (activeShop.listing?.name === visiting.name) activeShop.listing.sold = true;
   document.getElementById('market-purchase-status').textContent = `${visiting.name} added to your inventory. ${visiting.price} ${visiting.rune} transferred to ${visiting.seller}.`;
   status.textContent = `Purchased ${visiting.name}. Find it in Your purchased items.`;
   buy.hidden = true; renderMarket(); renderGameShop();
@@ -1483,7 +1779,7 @@ const realmDefaultGames={America:games.map(game=>({...game}))};
 const realmStates={America:{games, messages:Array.from(chatLog.children)}};
 function buildRealm(server){
  const realmNames=realmGameNames[server];
- const realmGames=realmDefaultGames.America.slice(0,32).map((game,index)=>({...game,name:realmNames[index%realmNames.length]+(index>=realmNames.length?' '+(Math.floor(index/realmNames.length)+1):''),description:server==='Europe'?'Europe community runs, all welcome':'Asia community runs, all welcome',shopItem:undefined}));
+ const realmGames=realmDefaultGames.America.slice(0,32).map((game,index)=>({...game,name:realmNames[index%realmNames.length]+(index>=realmNames.length?' '+(Math.floor(index/realmNames.length)+1):''),description:server==='Europe'?'Europe community runs, all welcome':'Asia community runs, all welcome',shopItem:undefined,hostBattletag:undefined}));
  ['Normal','Nightmare'].forEach(difficulty=>realmGames.push(...realmGames.slice(0,6).map(game=>({...game,name:difficulty+' '+game.name,difficulty}))));
  const samples=realmChatSamples[server];
  const messages=samples.map(([channel,character,text],index)=>{
@@ -1495,6 +1791,8 @@ function buildRealm(server){
   return message;
  });
  assignGameModes(realmGames);
+ assignMockFriendHosts(realmGames);
+ addLegacyGames(realmGames);
  realmDefaultGames[server]=realmGames.map(game=>({...game}));
  return {games:realmGames,messages:[...messages,...createCommunitySamples()]};
 }
@@ -1503,9 +1801,12 @@ let playServerConnection=null;
 function switchRealm(server){
  realmStates[activeRealm]={games,messages:Array.from(chatLog.children)};
  activeRealm=server;
+ lobbyGem.dataset.server=server;
+ lobbyGem.title=`Settings (${server} server)`;
+ lobbyGem.setAttribute('aria-label',lobbyGem.title);
  const state=realmStates[activeRealm]||(realmStates[activeRealm]=buildRealm(activeRealm));
  games=state.games;chatLog.replaceChildren(...state.messages);
- selectedName=gamesForCharacter().find(game=>game.difficulty===selectedDifficulty)?.name||null;
+ selectedName=null;
  document.getElementById('game-name').value='';document.getElementById('game-password').value='';
  lastRefresh=Date.now();closePlayerMenu();applyChatChannel();applyChatWordFilter();render();chatLog.scrollTop=0;
 }
@@ -1513,6 +1814,7 @@ document.getElementById('chat-server').addEventListener('change',event=>{
  const requestedRealm=event.target.value;
  event.target.value=activeRealm;
  if(requestedRealm===activeRealm)return;
+ event.target.closest('[popover]').hidePopover();
  playServerConnection(()=>{switchRealm(requestedRealm);event.target.value=requestedRealm;});
 });
 
@@ -1597,7 +1899,8 @@ document.getElementById('chat-server').addEventListener('change',event=>{
  document.addEventListener('change',event=>{if(event.target.matches('select'))playButtonSound(2);},true);
 })();
 
-function postGameSystemNotice(kind,{character='',zone='Tal Rasha’s Tombs',unread=true}={}){
+const campTerrorZoneName='Tal Rasha’s Tombs';
+function postGameSystemNotice(kind,{character='',zone=campTerrorZoneName,unread=true}={}){
  if(!currentCampGame||!document.getElementById('market-shop').open)return;
  const message=document.createElement('p');message.className='system-notice';message.dataset.notice=kind;
  if(kind==='joined'||kind==='left'){
@@ -1624,7 +1927,22 @@ function nextGameSystemNotice(){
 }
 
 // Reparent the same chat controls so both surfaces use one message history and unread state.
+const campClock=document.getElementById('camp-clock');
+const campClockFormat=new Intl.DateTimeFormat(undefined,{hour:'numeric',minute:'2-digit',hour12:true});
+const campTerrorZone=document.getElementById('camp-terror-zone');
+let campClockTimer;
+function updateCampClock(){
+ const now=new Date();
+ campClock.dateTime=now.toISOString();
+ campClock.textContent=campClockFormat.format(now);
+}
 function mountInGameChat(game){
+ document.getElementById('market-shop-title').textContent=`Game: ${game.name}`;
+ campTerrorZone.hidden=!game.tz;
+ campTerrorZone.textContent=game.tz?campTerrorZoneName:'';
+ updateCampClock();
+ clearInterval(campClockTimer);
+ campClockTimer=setInterval(updateCampClock,1000);
  clearGameInviteDraft();hideInGameMessagePreview();
  const nodes=[document.querySelector('.chat-actions'),document.getElementById('chat-filter-panel'),chatLog,document.getElementById('chat-form'),playerMenu,document.getElementById('system-toggle'),document.getElementById('chat-filter-toggle')];
  if(!gameChatMount){
@@ -1632,6 +1950,7 @@ function mountInGameChat(game){
   gameChatMount=nodes.map(node=>{const anchor=document.createComment('lobby-chat-position');node.before(anchor);return {node,anchor,hidden:node.hidden};});
  }
  currentCampGame={players:1,maxPlayers:8,...game,realm:game.realm||activeRealm};
+ renderCampShops(currentCampGame);
  if(characterMode==='online'&&!currentCampGame.isPrivate&&!games.some(entry=>entry.name===game.name&&entry.characterGameMode===game.characterGameMode))games.push(currentCampGame);
  const host=document.getElementById('in-game-chat-content');nodes.forEach(node=>{host.append(node);node.hidden=false;});
  const settingsButton=document.getElementById('in-game-chat-settings');
@@ -1657,6 +1976,7 @@ function mountInGameChat(game){
  applyChatChannel();
 }
 function unmountInGameChat(){
+ clearInterval(campClockTimer);
  if(!gameChatMount)return;
  clearGameInviteDraft();
  closeInGameChat(false);
@@ -1779,6 +2099,7 @@ document.getElementById('game-save-exit').addEventListener('click',()=>{
 document.getElementById('market-shop').addEventListener('close',()=>{
  const menu=document.getElementById('game-escape-menu');if(menu.open)menu.close();gameMenuReturnFocus=null;
  unmountInGameChat();currentCampGame=null;
+ if(document.getElementById('market-shop').classList.contains('regular-game')){selectedName=null;render();}
  document.getElementById('game-name').focus({preventScroll:true});
 });
 
@@ -1787,11 +2108,6 @@ function showRegularCamp(game){
  currentCampGame={...game,realm:game.realm||activeRealm};
  const dialog=document.getElementById('market-shop');
  dialog.classList.add('regular-game');
- document.getElementById('market-shop-title').textContent=game.name;
- document.getElementById('shop-trade-view').hidden=true;
- document.getElementById('shop-open-stash').hidden=true;
- const arrival=document.getElementById('shop-arrival');arrival.hidden=true;
- arrival.textContent=game.difficulty+' - '+game.activity+' - Welcome to the Rogue Encampment.';
  if(!dialog.open)dialog.showModal();
  mountInGameChat(game);
  dialog.focus();
@@ -1799,7 +2115,7 @@ function showRegularCamp(game){
 function gameEntryProblem(game,realm=activeRealm){
  if(realm!==activeRealm)return 'This invitation is for a different server.';
  if(characterMode!=='online')return 'Select an Online character to join.';
- if(game.characterGameMode!==activeCharacterGameMode)return 'Select a character with matching Hardcore and Ladder settings.';
+ if(game.characterGameMode!==activeCharacterGameMode)return 'Select a character with matching expansion, Hardcore, and Ladder settings.';
  if(game.isPrivate)return 'Open invitations are available for public games only.';
  if(game.players>=game.maxPlayers)return 'This game is full.';
  return '';
@@ -1954,7 +2270,7 @@ for(const activity of ['Farming','Quest','PvP']){
  if(game)postGameInvite(game,activity,{character:activity==='Quest'?'ActWalker':activity==='PvP'?'DuelWarden':'ChaosRunner',text:activity==='Quest'?'Working through the acts. Anyone need the quests?':activity==='PvP'?'Got room for a few friendly duels.':'Doing a few runs, still got room.'});
 }
 
-// Show the existing chat filter panel after leaving the gear menu.
+// Show the existing chat filter panel after leaving the main menu.
 document.getElementById('chat-filter-toggle').addEventListener('click',()=>{
  const menu=document.getElementById('main-menu-panel');
  if(menu.matches(':popover-open'))menu.hidePopover();
@@ -1965,8 +2281,7 @@ function closeChatFilters(){
  chatFilterPanel.hidden=true;
  chatFilterButton.setAttribute('aria-expanded','false');
  chatFilterButton.setAttribute('aria-pressed','false');
- const gear=document.getElementById('main-menu-toggle');
- if(gear.checkVisibility())gear.focus();
+ if(lobbyGem.checkVisibility())lobbyGem.focus();
 }
 document.getElementById('chat-filter-close').addEventListener('click',closeChatFilters);
 chatFilterPanel.addEventListener('keydown',event=>{
