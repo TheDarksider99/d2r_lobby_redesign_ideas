@@ -77,6 +77,10 @@ body.offline-character .right .game-settings-group label:has(#terrorized) {point
 .delete-dialog .delete-buttons{display:flex;justify-content:flex-end;gap:10px}
 .delete-dialog button{padding:8px 14px;background:#2c2a28;border:1px solid #766747;color:#e5d5b3;cursor:pointer}
 .delete-dialog button:disabled{opacity:.35;cursor:not-allowed}
+#lobby-credits{width:min(680px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
+#lobby-credits-list{margin:0 0 16px;padding-inline-start:1.25em;line-height:1.45}
+#lobby-credits-list li+li{margin-top:.5em}
+#lobby-credits-list strong{color:#efd18a}
 /* v1.38: Compact main-menu actions on the server toolbar. */
 .server-row{justify-content:space-between;flex-wrap:wrap}
 .server-menu-actions{display:flex;align-items:center;gap:4px;min-width:0}
@@ -126,7 +130,31 @@ body.offline-character .right .game-settings-group label:has(#terrorized) {point
 /* v1.45: Screenshot-based game scene, interactive shop, and inventory. */
 #market-shop{width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;padding:0;border:0;background:#030303;color:#e4d5b5;overflow:auto}
 #market-shop[open]{display:grid;place-items:center}
-.shop-game-stage{position:relative;width:min(100vw,186.97dvh);aspect-ratio:3831/2049;isolation:isolate;overflow:hidden;background:#080909}
+#player-context button[hidden]{display:none}
+#player-inspect{--inspect-panel-width:min(560px,57vw,104dvh);width:var(--inspect-panel-width);max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:0;border:0;overflow:visible;background:transparent;color:#e4d5b5}
+#player-inspect::backdrop{background:#000b}
+.inspect-view{position:relative}
+.inspect-panel{position:relative;width:100%;aspect-ratio:1106/850;background:url('img/personal_inventory.png') top center / 100% auto no-repeat}
+.inspect-heading{position:absolute;top:calc(4.2% + 5px);left:10%;right:10%;height:10.4%;display:grid;align-content:center;gap:2px;text-align:center}
+.inspect-heading h2,.inspect-heading p{margin:0;line-height:1.1}
+.inspect-heading h2{color:#efd18a;font-size:clamp(12px,1.7vw,24px)}
+.inspect-heading p{font-size:clamp(9px,1vw,15px)}
+.inspect-panel .shop-image-close{right:1%;top:1.1%;width:5.4%;height:6.5%}
+.inspect-item,#player-inspect .inspect-item{position:absolute;display:grid;place-items:center;padding:0;border:0;background:transparent;cursor:pointer}
+.inspect-item img{display:block;height:100%;max-height:100%;object-fit:contain;pointer-events:none}
+.inspect-item:is(:hover,:focus-visible){outline:1px solid #e4c580;outline-offset:-1px}
+#inspect-tooltip{--tooltip-height-limit:calc(100dvh - 24px);position:absolute;left:min(calc(100% + 8px),calc((100vw + var(--inspect-panel-width)) / 2 - var(--tooltip-fit-width) - 12px));top:50%;translate:0 -50%;width:var(--tooltip-fit-width);max-width:calc(100vw - 24px);pointer-events:none;z-index:1}
+#inspect-tooltip img{display:block;width:100%;height:auto}
+@media(max-width:600px){#player-inspect{--inspect-panel-width:min(90vw,59dvh)}#inspect-tooltip{--tooltip-height-limit:calc(50dvh - var(--inspect-panel-width) * 850 / 2212 - 18px);top:calc(100% + 6px);left:50%;translate:-50% 0}}
+#center-character-art.inspectable{pointer-events:auto;cursor:pointer}
+/* Match the full inventory frame before showing only its upper equipment section. */
+#player-inspect.docked-inspect{position:absolute;inset:var(--inventory-center) auto auto 1.5%;translate:0 -50%;width:calc(97% * .33);aspect-ratio:1106/1435;margin:0;z-index:7;max-width:none;max-height:none;pointer-events:none}
+#player-inspect.docked-inspect .inspect-panel{pointer-events:auto}
+#player-inspect.docked-inspect #inspect-tooltip,#camp-inventory-tooltip{--tooltip-height-limit:65dvh;position:absolute;top:50%;width:min(var(--tooltip-fit-width),92%);translate:0 -50%;pointer-events:none}
+#player-inspect.docked-inspect #inspect-tooltip{left:calc(100% + 8px);right:auto}
+#camp-inventory-tooltip{right:calc(33% + 8px);width:min(var(--tooltip-fit-width),30%)}
+#camp-inventory-tooltip img{display:block;width:100%;height:auto}
+.shop-game-stage{--inventory-offset:-144px;--inventory-center:calc(53.5% + var(--inventory-offset));position:relative;width:min(100vw,186.97dvh);aspect-ratio:3831/2049;isolation:isolate;overflow:hidden;background:#080909}
 .shop-area-image{display:block;width:100%;height:100%;object-fit:contain}
 @font-face{font-family:Exocet;src:url('assets/ui/exocet-light.woff') format('woff');font-weight:400;font-display:swap}
 @font-face{font-family:Exocet;src:url('assets/ui/exocet-heavy.woff') format('woff');font-weight:700;font-display:swap}
@@ -141,38 +169,74 @@ body.offline-character .right .game-settings-group label:has(#terrorized) {point
 .shop-game-header #camp-terror-zone:not([hidden]){color:#a44dff}
 .shop-game-header button{pointer-events:auto}
 #market-shop .shop-stash-hotspot{position:absolute;translate:-50% -50%;width:2.87%;height:5.2%;padding:0;border:0;border-image:none;background:transparent;box-shadow:none;cursor:pointer}
-.shop-game-stage:has(> .shop-trade-view:not([hidden])) > #camp-shop-chests{display:none}
+.shop-game-stage:has(> .shop-trade-view:not([hidden])) > :is(#camp-shop-chests,#camp-visitors){display:none}
+#camp-visitors{position:absolute;inset:0;pointer-events:none}
+#market-shop .camp-visitor{position:absolute;translate:-50% -100%;height:12.5%;width:auto;display:block;overflow:visible;padding:0;border:0;background:none;pointer-events:auto;cursor:context-menu}
+.camp-visitor img{position:relative;display:block;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(2px 3px 2px #0009)}
+.camp-visitor .camp-visitor-shadow{position:absolute;inset:0;opacity:.85;filter:brightness(0);transform-origin:50% 99%;transform:skewX(73deg) scaleY(.30)}
+.camp-visitor:is(:hover,:focus-visible)::after{content:attr(data-visitor-name);position:absolute;left:50%;bottom:100%;translate:-50% 0;padding:2px 5px;color:#e4c580;font-size:clamp(9px,1vw,15px);text-shadow:0 1px 3px #000;white-space:nowrap;pointer-events:none}
 .shop-stash-hotspot::before{content:'';position:absolute;inset:auto 4% -9% -85%;height:50%;transform:skewX(-25deg);background:radial-gradient(ellipse,#000b 15%,#0006 47%,transparent 72%);pointer-events:none}
 .shop-chest-art{position:absolute;inset:0;background:url('img/chest.png') center / contain no-repeat;filter:saturate(.6) brightness(var(--chest-brightness,.85));pointer-events:none}
 #camp-shop-chests > .shop-stash-hotspot:nth-child(n+6){--chest-brightness:.45}
 .shop-stash-hotspot:is(:hover,:focus-visible) .shop-chest-art{filter:saturate(.6) brightness(1.55)}
 #market-shop .shop-stash-hotspot:focus-visible{outline:2px solid #e4c580;outline-offset:2px}
 #market-shop .shop-stash-hotspot:is(:hover,:focus-visible){z-index:2}
-#market-shop .shop-stash-hotspot:is(:hover,:focus-visible)::after{content:attr(data-shop-name);position:absolute;bottom:calc(100% + 4px);left:0;padding:4px 7px;background:#090909ed;color:#e4c580;font:small-caps clamp(10px,1vw,16px) Georgia;white-space:nowrap;pointer-events:none}
-.shop-trade-view{position:absolute;z-index:3;inset:12% 1.5% 5%;translate:0 -144px;display:flex;justify-content:space-between;align-items:center;gap:1%;background:transparent}
-.shop-image-panel{position:relative;flex:none;width:33%;max-height:100%;aspect-ratio:1108/1430;align-self:center}
+#market-shop .shop-stash-hotspot:is(:hover,:focus-visible)::after{content:attr(data-shop-name);position:absolute;bottom:calc(100% + 4px);left:0;padding:4px 7px;color:#e4c580;font:small-caps clamp(10px,1vw,16px) Georgia;text-shadow:0 1px 3px #000;white-space:nowrap;pointer-events:none}
+:is(.shop-trade-view,#camp-inventory){position:absolute;inset:12% 1.5% 5%;translate:0 var(--inventory-offset);align-items:center;background:transparent}
+.shop-trade-view{z-index:3;display:flex;justify-content:space-between;gap:1%}
+#camp-inventory:not([hidden]){z-index:7;display:flex;justify-content:flex-end;pointer-events:none}
+#camp-inventory .shop-inventory-panel{pointer-events:auto}
+.shop-image-panel{position:relative;flex:none;width:33%;max-height:100%;aspect-ratio:1101/1435;align-self:center}
 .shop-image-panel>img{display:block;width:100%;height:auto;pointer-events:none}
 .shop-game-header :is(time,h3,.market-location,#camp-terror-zone):not([hidden]){font-variant:normal}
 #market-shop .shop-stash-hotspot::after{font-family:Exocet,Georgia,serif;font-variant:normal}
-.shop-image-panel .shop-owner-name{position:absolute;top:6.1%;left:13%;right:13%;translate:0 -50%;margin:0;padding:1px 0;background:linear-gradient(90deg,transparent,#151514 22% 78%,transparent);color:#d6be7a;text-align:center;text-shadow:0 1px 2px #000;font:small-caps clamp(10px,1.3vw,24px)/1.2 Georgia;letter-spacing:.09em;pointer-events:none}
-.shop-image-panel .shop-owner-name{font-variant:normal;font-weight:700}
-.shop-inventory-panel{aspect-ratio:1096/1468}
+.shop-image-panel :is(.shop-owner-name,.shop-inventory-name){position:absolute;top:6.1%;left:13%;right:13%;translate:0 -50%;margin:0;padding:1px 0;color:#d6be7a;text-align:center;text-shadow:0 1px 2px #000;font:700 clamp(10px,1.3vw,24px)/1.2 Georgia;letter-spacing:.09em;pointer-events:none}
+.shop-inventory-panel{aspect-ratio:1106/1435}
+:is(#shop-inventory-gold,#shop-stock-gold){position:absolute;left:41.7%;top:89.8%;width:22%;height:2.7%;display:flex;align-items:center;justify-content:center;color:#f5df9a;font:700 clamp(9px,1.2vw,18px) Georgia;white-space:nowrap}
+#shop-stock-gold{left:41%;top:90.5%}
+#shop-stock-tabs{position:absolute;inset:9.96% 8.7% auto 6.9%;height:3.8%;display:grid;grid-template-columns:repeat(5,1fr);gap:.4%}
+#shop-stock-tabs button,#market-shop .shop-page-arrow{border:0;background:transparent;padding:0;cursor:pointer}
+#shop-stock-tabs button:first-child{position:relative}
+#shop-stock-tabs button:first-child::before{content:'';position:absolute;inset:2px 2px -12%;background:#0002;backdrop-filter:brightness(.8) saturate(.3);pointer-events:none}
+#shop-stock-tabs button:is([aria-pressed='true'],:focus-visible,:hover),.shop-page-arrow:focus-visible{outline:1px solid #d6be7a;outline-offset:-2px;background:#e4c58018}
+.shop-page-arrow{position:absolute;top:81.6%;width:5.8%;height:4.3%}
+#market-shop .shop-page-arrow:disabled{cursor:default;background:#08080860}
+#shop-page-prev{left:33.7%}
+#shop-page-next{left:60.1%}
+#shop-stock-page{position:absolute;inset:82.1% 40.05% auto 40.05%;height:3.1%;display:grid;place-items:center;background:#171614;color:#d6be7a;font:small-caps clamp(8px,1vw,18px) Georgia;white-space:nowrap}
 .shop-game-stage:has(> .shop-trade-view:not([hidden])) > .shop-game-header{z-index:2}
 .shop-image-close{position:absolute;right:1%;top:.7%;width:5%;height:3.5%;padding:0!important;background:transparent!important;border:0!important;color:transparent!important;cursor:pointer}
 .shop-image-close:hover,.shop-image-close:focus-visible{outline:2px solid #e4c580;background:#f3c87133!important}
 .shop-inspection{display:flex;flex-direction:column;align-items:stretch;gap:7px;width:29%;max-height:100%;overflow:auto;padding:10px;background:#090909ed;border:2px ridge #6b5a3a;box-shadow:0 5px 25px #000;text-align:center}
-.shop-inspection .market-stash-title{margin:0!important;font-size:12px;letter-spacing:2px}
-.shop-inspection #market-offer{padding:8px}.shop-inspection #market-offer h4{font-size:clamp(12px,1.1vw,19px)}
-#shop-item-tooltip{display:block;width:100%;max-height:40vh;object-fit:contain;background:#060606}
+.shop-inspection #shop-selected-label{margin:0!important;font-size:clamp(15px,1.35vw,22px);letter-spacing:2px}
+.shop-inspection #market-offer:not([hidden]){display:grid;justify-items:center;gap:2px}
+#market-offer .shop-payment-row{position:relative;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;width:min(100%,180px);padding:2px 8px;border:1px solid transparent;color:#e4c580;font-size:clamp(13px,1.2vw,19px);white-space:nowrap}
+#market-offer .shop-payment-row span:first-of-type{text-align:right}
+#market-offer .shop-payment-row span:nth-of-type(3){text-align:left}
+#market-offer:has(.shop-payment-or){padding-inline:32px}
+.shop-payment-or{position:absolute;left:calc(100% + 5px);top:50%;translate:0 -50%;color:#fff}
+#market-offer label{cursor:pointer}
+#market-offer label:has(input:checked){border-color:#e4c580;background:#e4c5801a}
+#market-offer input{position:absolute;width:1px;height:1px;margin:0;opacity:0}
+#market-offer label:has(input:focus-visible){outline:1px solid #e4c580;outline-offset:1px}
+#shop-tooltip-price:empty,#market-purchase-status:empty{display:none}
+#shop-item-tooltip{display:block;width:100%;height:auto;background:#060606}
 .shop-tooltip{margin:0;background:#060606;border:1px solid #645638}.shop-tooltip figcaption{padding:9px;color:#dfc57b;font-size:clamp(11px,1vw,16px)}
-.shop-inventory-rune{position:absolute;object-fit:contain;padding:2px;filter:drop-shadow(0 2px 2px #000)}
+.shop-inspection{--tooltip-height-limit:58dvh;position:absolute;left:34%;top:50%;translate:0 -50%;width:min(calc(var(--tooltip-fit-width) + 24px),64%);z-index:1}
+.shop-inspection.owned-item-inspection{left:auto;right:34%}
+.shop-inventory-rune{position:absolute;padding:2px}
+.shop-inventory-rune img{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 2px #000)}
+.shop-rune-quantity{position:absolute;right:1px;bottom:1px;min-width:1.35em;padding:.08em .21em;color:#f5df9a;font:700 clamp(14px,1.3vw,21px)/1.15 Georgia;text-align:center;text-shadow:0 1px 2px #000,0 0 3px #000}
 .shop-inspection #market-purchase-status{min-height:0;margin:0;font-size:clamp(10px,.85vw,14px);line-height:1.4}
 .shop-inspection .btn{font-size:clamp(10px,1vw,16px);letter-spacing:1px}
 .shop-item-hotspot{position:absolute;background:transparent!important;border:1px solid transparent!important;display:flex;align-items:end;justify-content:center;padding:2px!important;font:clamp(8px,.8vw,13px) Georgia;color:#f5df9a!important;text-shadow:0 1px 3px #000,1px 0 3px #000;cursor:pointer}
 .shop-item-hotspot:hover,.shop-item-hotspot.selected,.shop-item-hotspot:focus-visible{border-color:#dfc57b!important;background:#d7b94d22!important;box-shadow:inset 0 0 12px #e5c97144}
-.shop-item-hotspot.sold{background:#090909eb!important;color:#888!important}
-.shop-owned-item{position:absolute;background-repeat:no-repeat;border:1px solid #bfa463!important;padding:0!important;cursor:pointer}
-.shop-owned-item:hover,.shop-owned-item:focus-visible,.shop-owned-item.selected{outline:2px solid #f0d37e}
+.shop-item-hotspot img,.shop-owned-item img{display:block;width:100%;height:100%;object-fit:contain;pointer-events:none}
+#market-shop .shop-owned-item{position:absolute;background:transparent;border:0;padding:0;cursor:pointer}
+.shop-owned-item:is(:hover,:focus-visible,.selected){outline:none;filter:brightness(1.25)}
+.shop-inspection.owned-item-inspection,
+.owned-item-inspection .shop-tooltip,
+.owned-item-inspection #shop-item-tooltip{background:transparent;border:0;box-shadow:none}
 .shop-game-wallet{position:absolute;left:9%;right:9%;bottom:8%;background:#090909ed;border:1px solid #66573a;text-align:center;color:#e0c47e;font-size:clamp(8px,.85vw,14px);padding:4px}
 @media(max-width:850px){.shop-game-header>div{padding:5px}.shop-game-header .market-location{font-size:7px;letter-spacing:1px}.shop-game-header button{font-size:9px;padding:5px}.shop-inspection{padding:5px;gap:4px}.shop-inspection #market-offer{padding:4px}.shop-inspection #market-offer strong{font-size:10px}.shop-inspection .market-stash-title{font-size:9px}.shop-inspection .mini-control{font-size:9px}.shop-game-wallet{padding:1px}}
 
@@ -253,7 +317,6 @@ body.offline-character .right .game-settings-group label:has(#terrorized) {point
   align-self: end;
   align-items: flex-start;
   text-align: left;
-  overflow-wrap: anywhere;
 }
 .character-roster[data-view='grid'] .character-index { display: none; }
 .character-grid-art { display: none; }
@@ -265,8 +328,11 @@ body.offline-character .right .game-settings-group label:has(#terrorized) {point
   width: 100%;
   height: clamp(72px, 9vw, 124px);
   object-fit: contain;
-  object-position: center bottom;
+  object-position: left bottom;
   pointer-events: none;
+}
+.character-roster[data-view='grid'] .character-grid-art:not([data-character-class='Warlock']) {
+  translate: 20px 0;
 }
 .character-roster[data-view='grid'] .character-entry .character-title {
   grid-area: title;
@@ -278,7 +344,11 @@ body.offline-character .right .game-settings-group label:has(#terrorized) {point
   align-self: start;
 }
 .character-roster[data-view='grid'] :is(.character-info, .character-title, .character-icons) {
-  translate: -7px 0;
+  translate: -30px 0;
+  white-space: nowrap;
+}
+.character-roster[data-view='grid'] .character-icons {
+  flex-wrap: nowrap;
 }
 @media(max-width:500px) {
   .character-roster[data-view='grid'] { grid-template-columns: minmax(0, 1fr); }
@@ -391,12 +461,15 @@ body.offline-character .right .game-settings-group label:has(#terrorized) {point
 #center-character-art {
   position: relative;
   width: auto;
-  height: calc(100cqh * var(--art-height-scale, 1));
+  height: calc(var(--center-art-height, 90cqh) * var(--art-height-scale, 1));
   transform: translateY(var(--art-bottom-padding, 0%));
 }
 #center-character-art[data-character-class='Warlock'] {
+  --center-art-height: 95cqh;
   translate: -30px 0;
 }
+#center-selected-thumbnail{position:absolute;right:calc(57% + .5in + var(--thumbnail-extra-offset,0px));bottom:0;width:auto;transform:translateY(var(--art-bottom-padding,0%));transform-origin:top left;z-index:1;pointer-events:none}
+#center-character-art[data-character-class='Warlock'] + #center-selected-thumbnail{--thumbnail-extra-offset:30px}
 .hardcore-art {
   filter: drop-shadow(0 0 3px #f33) drop-shadow(0 0 7px #c41919);
 }
@@ -605,9 +678,10 @@ body.intro-active>.screen{visibility:hidden}
 .market-name-button{padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:#75633c;text-underline-offset:3px}
 .market-name-button:hover{color:#ffe3a0}
 .market-name-button:focus-visible{outline:1px solid #dfc57b;outline-offset:3px}
-#market-item-preview{position:fixed;inset:auto;margin:0;width:min(360px,calc(100vw - 16px));max-width:none;max-height:calc(100vh - 16px);padding:6px;background:#080808;border:2px ridge #a48a50;overflow:auto;z-index:1000;box-shadow:0 4px 16px #0009}
+#market-item-preview{--tooltip-height-limit:calc(100dvh - 32px);position:fixed;inset:auto;margin:0;width:min(calc(var(--tooltip-fit-width) + 16px),calc(100vw - 16px));max-width:none;padding:6px;background:#080808;border:2px ridge #a48a50;z-index:1000;box-shadow:0 4px 16px #0009}
 #market-item-preview::backdrop{background:transparent}
-#market-item-preview img{display:block;max-width:100%;max-height:calc(100vh - 80px);object-fit:contain;margin:auto}
+#market-item-preview img{display:block;width:100%;height:auto}
+:is(#market-item-preview,#inspect-tooltip,#camp-inventory-tooltip,.shop-inspection){--tooltip-fit-width:min(var(--tooltip-width),calc(var(--tooltip-height-limit) * var(--tooltip-aspect)),calc(100vw - 24px))}
 
 
 /* Class portraits in online and offline character lists. */
@@ -664,6 +738,13 @@ body.intro-active>.screen{visibility:hidden}
 .character-info .hardcore-character-name{color:#ff3333}
 
 .market-search-controls{display:flex;align-items:stretch;gap:6px}.market-search-controls input{flex:1}.market-search-controls .mini-control{flex:none;height:auto}
+.market-search-controls input{min-width:0}
+#market-sort{position:relative;display:flex;flex:none}
+#market-sort summary{display:grid;place-items:center;height:100%;list-style:none}
+#market-sort summary::-webkit-details-marker{display:none}
+.market-sort-options{position:absolute;z-index:5;top:calc(100% + 4px);right:0;min-width:90px;padding:3px;background:#151310;border:1px solid #645638}
+.market-sort-options button{display:block;width:100%;padding:4px 8px;border:0;background:transparent;color:#e4c580;text-align:left;cursor:pointer}
+.market-sort-options button:is(:hover,:focus-visible,[aria-pressed='true']){background:#43351f}
 
 
 
@@ -733,7 +814,7 @@ body.intro-active>.screen{visibility:hidden}
 .activity-filter-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;min-width:0}
 .filterline{container-type:inline-size}
 .filterline .difficulty-controls{position:relative;--filter-control-gap:5px}
-#visible-game-count{position:absolute;right:calc(4 * (var(--game-filter-height) + var(--filter-control-gap)));bottom:0;pointer-events:none}
+#visible-game-count{position:absolute;right:calc(4 * (var(--game-filter-height) + var(--filter-control-gap)));bottom:0;width:max-content;min-width:var(--game-filter-height);padding-inline:5px;white-space:nowrap;pointer-events:none}
 @container (max-width:440px){
  #visible-game-count{right:0;bottom:calc(var(--game-filter-height) + var(--filter-control-gap))}
 }
@@ -790,14 +871,18 @@ body.intro-active>.screen{visibility:hidden}
 #in-game-chat .chat-channel-tab{font-size:12px;padding:5px 1px}
 #in-game-chat #chat{flex:1;min-height:0;margin:0;padding:6px;border:0;background:#0002;box-shadow:none;font:17px/1.65 Arial;overflow:auto}
 #in-game-chat #chat p{margin:0 0 4px}
-#in-game-chat .chat-input{display:flex;height:32px;gap:4px;flex:none}
-#in-game-chat .chat-input input{flex:1;min-width:0;width:auto;height:100%;margin:0;padding:4px 6px;font:17px Arial;border:1px solid #69583b;background:#080808;color:#ddd}
+#in-game-chat .chat-input{display:flex;height:auto;min-height:32px;gap:4px;flex:none}
 #in-game-chat .chat-input .btn{padding:3px 6px;font:11px Georgia;letter-spacing:0;border-width:1px;white-space:nowrap}
+#in-game-actions:not([hidden]){position:relative;display:flex;flex:none}
+#in-game-actions summary{display:grid;place-items:center;list-style:none}
+#in-game-actions summary::-webkit-details-marker{display:none}
+.in-game-action-options{position:absolute;left:0;bottom:calc(100% + 4px);z-index:2;min-width:max-content;padding:3px;background:#151310;border:1px solid #645638}
+.in-game-action-options .btn{display:block;width:100%;text-align:left}
 #in-game-chat .chat-filter-panel{padding:6px;flex:none}
 #in-game-chat .chat-filter-panel textarea{min-height:38px;max-height:65px}
 #in-game-chat #chat .chat-invite-line{font:inherit}
 #in-game-chat .chat-channel-tab[data-channel="Game"]{--channel-color:#e9d09c}
-@media(max-width:850px){#in-game-chat{width:70%;height:52%;min-height:145px;padding:4px}#in-game-chat .chat-actions{grid-template-columns:minmax(0,1fr);min-height:22px}#in-game-chat .chat-channel-tab{font-size:10px;padding:4px 0}#in-game-chat #chat{font-size:14px}#in-game-chat .chat-input{height:26px}#in-game-chat .chat-input input{font-size:14px}#in-game-chat .chat-input .btn{font-size:9px;padding:2px 4px}.in-game-chat-heading{margin-bottom:4px}}
+@media(max-width:850px){#in-game-chat{width:70%;height:52%;min-height:145px;padding:4px}#in-game-chat .chat-actions{grid-template-columns:minmax(0,1fr);min-height:22px}#in-game-chat .chat-channel-tab{font-size:10px;padding:4px 0}#in-game-chat #chat{font-size:14px}#in-game-chat .chat-input{min-height:26px}#in-game-chat .chat-input .btn{font-size:9px;padding:2px 4px}.in-game-chat-heading{margin-bottom:4px}}
 
 #chat .player-connection-notice{color:var(--gold)}
 
@@ -808,11 +893,15 @@ body.intro-active>.screen{visibility:hidden}
 #in-game-chat-preview .player-connection-notice{color:var(--gold)}
 #in-game-chat-preview .channel-tag{display:inline-block;width:1.2em;margin-right:.3em}
 #in-game-chat-preview .chat-timestamp{color:#aaa;font-size:.8em;margin-right:.55em;font-variant-numeric:tabular-nums}
+#in-game-chat-preview .chat-invite-line{display:flex;align-items:center}
+#in-game-chat-preview .chat-join-invite{display:inline-flex;flex:none;align-items:center;justify-content:center;height:auto;padding:1px 5px;line-height:1}
 @media(max-width:850px){#in-game-chat-preview{width:70%;font-size:14px;padding:4px 6px}}
 
 #chat-invite-draft{display:inline-flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;max-width:40%;padding:2px 5px;border:1px solid #806b3b;background:#211c13;color:#dbc489;font:11px Georgia}
+#chat-build-draft:not([hidden]){display:inline-flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;max-width:40%;padding:2px 5px;border:1px solid #806b3b;background:#211c13;color:#dbc489;font:11px Georgia}
+#chat-build-draft span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#chat-build-draft button{flex:none;padding:0 3px;border:0;background:none;color:#d7c39b;font:15px Arial;cursor:pointer}
 #chat-invite-draft .draft-join-label{white-space:nowrap}
-#chat-invite-draft-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #in-game-chat #chat-invite-draft-remove{padding:0 3px;border:0;background:none;color:#d7c39b;font:15px Arial;cursor:pointer}
 #in-game-invite[aria-pressed="true"]{border-color:#c7a35c;color:#f1d08a}
 @media(max-width:850px){#chat-invite-draft{font-size:9px;gap:3px;padding:2px}}
@@ -822,8 +911,9 @@ body.intro-active>.screen{visibility:hidden}
 /* Keep the routing tag visible while the message itself is being edited. */
 .chat-composer-field{display:flex;align-items:center;flex:1;min-width:0;height:100%;border:1px solid #69583b;background:#080808;font:16px Arial}
 #chat-composer-tag{flex:none;padding-left:6px;color:#c5ae77;white-space:nowrap;font:inherit}
-#chat-form .chat-composer-field input{flex:1;min-width:0;width:auto;height:100%;margin:0;border:0;background:none;padding:4px 6px;font:inherit;color:#ddd;outline-offset:-2px}
-#in-game-chat .chat-composer-field{font-size:17px}
+#chat-form .chat-composer-field textarea{flex:1;min-width:0;width:auto;height:100%;margin:0;border:0;background:none;padding:4px 6px;font:inherit;line-height:1.2;color:#ddd;outline-offset:-2px;resize:none;white-space:pre;overflow:hidden}
+#in-game-chat .chat-composer-field{height:auto;font-size:17px}
+#in-game-chat #chat-form .chat-composer-field textarea{field-sizing:content;height:auto;min-height:calc(1lh + 8px);max-height:calc(2lh + 8px);white-space:pre-wrap;overflow-wrap:anywhere;overflow-y:auto}
 @media(max-width:850px){.chat-composer-field{font-size:11px}#in-game-chat .chat-composer-field{font-size:14px}#chat-composer-tag{padding-left:4px}}
 
 /* Achievement titles sit at the bottom right of each roster entry. */
@@ -1658,8 +1748,9 @@ body.intro-active>.screen{visibility:hidden}
 .market-item[data-item-type="set"] .market-name-button { text-decoration-color: #3c7030; }
 
 /* Seller identity and shop action share the compact right side of listings. */
-.market-item { padding-top: 6px; padding-bottom: 6px; gap: 7px; }
-.market-item-copy > strong { display: block; margin-top: 3px; }
+.market-item { display:grid;grid-template-columns:auto minmax(0,1fr) auto;padding-top:6px;padding-bottom:6px;gap:7px; }
+.market-item-prices { display:block;margin-top:3px;min-width:0;white-space:nowrap;overflow-x:auto;font-size:clamp(10px,.85vw,13px); }
+.market-price-or { color:#fff; }
 .market-seller-actions { display: flex; align-items: center; gap: 7px; flex: none; }
 .market-seller { display: flex; flex-direction: column; align-items: center; width: 76px; min-width: 0; gap: 2px; text-align: center; }
 .market-seller img { display: block; width: 32px; height: 32px; object-fit: cover; border: 1px solid #796b48; }

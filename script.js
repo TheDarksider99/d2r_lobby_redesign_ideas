@@ -5,8 +5,10 @@ document.addEventListener('contextmenu', event => {
 
 let openTradingShop = null;
 let renderCampShops;
+let configureRealmTradeListings;
 let currentCampGame = null;
 let pendingGameInvite=null;
+let pendingBuildShare=null;
 let gameChatMount=null;
 let gameMessagePreviewTimer=null;
 let lobbyChatChannel='All';
@@ -137,7 +139,7 @@ function assignMockFriendHosts(pool){
   if(game)game.hostBattletag=battletag;
  }
 }
-function gamesForCharacter(){return games.filter(game=>game.characterGameMode===activeCharacterGameMode);}
+function gamesForCharacter(){return games.filter(game=>game.characterGameMode===activeCharacterGameMode&&!game.shopListing?.sold);}
 function addLegacyGames(pool){
  const samples=[
   ['lod','LOD BAAL RUN','Farming',4,210,'Baal experience runs. Portal opens after the waves.'],
@@ -157,6 +159,7 @@ assignMockFriendHosts(games);
 addLegacyGames(games);
 const friendsFilterToggle=document.getElementById('friends-filter-toggle');
 let friendsOnly=false;
+function activityLabel(activity){return activity==='Farming'?'Farm':activity==='Trading'?'Trade':activity;}
 const list=document.getElementById('game-list');const search=document.getElementById('search');const tzToggle=document.getElementById('tz-toggle');const activityFilter=document.getElementById('activity-filter');let selectedActivity='all';let selectedName=null;let sortKey=null;let sortAsc=true;let playersSortMode=0;let tzMode='all';let lastRefresh=Date.now();const ageFilterToggle=document.getElementById('age-filter-toggle');const ageFilterPanel=document.getElementById('age-filter-panel');const ageFilterValue=document.getElementById('age-filter-value');const ageFilterUnit=document.getElementById('age-filter-unit');const ageFilterEnabled=document.getElementById('age-filter-enabled');
 function formatTime(seconds){if(seconds<60)return `${seconds}s`;const h=Math.floor(seconds/3600),m=Math.floor(seconds%3600/60);return `${h}:${String(m).padStart(2,'0')}`}
 function formatDetailedTime(seconds){const h=Math.floor(seconds/3600),m=Math.floor(seconds%3600/60),sec=seconds%60;return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`}
@@ -173,7 +176,7 @@ function render(){updateJoinGameButton();const q=search.value.toLowerCase();list
   document.querySelectorAll('#friends-panel .friend-name[data-battletag]'),
   friend=>friend.dataset.battletag
  )):null;
- let visible=gamesForCharacter().filter(g=>(!friendBattletags||friendBattletags.has(g.hostBattletag))&&g.difficulty===selectedDifficulty&&g.name.toLowerCase().includes(q)&&(selectedActivity==='all'||g.activity===selectedActivity)&&(tzMode==='all'||(tzMode==='tz'&&g.tz)||(tzMode==='non-tz'&&!g.tz))&&(!ageFilterEnabled.checked||g.elapsedSeconds<Math.max(1,Number(ageFilterValue.value)||1)*(ageFilterUnit.value==='hours'?3600:60)));visibleGameCount.value=String(visible.length);if(!sortKey&&activeCharacterGameMode==='sc-ld')visible.sort((a,b)=>(a.ladderListOrder??-1)-(b.ladderListOrder??-1));if(sortKey){visible.sort((a,b)=>{if(sortKey==='players'&&playersSortMode===2){const af=a.players>=a.maxPlayers,bf=b.players>=b.maxPlayers;if(af!==bf)return af?1:-1;}let av=a[sortKey],bv=b[sortKey];if(typeof av==='string'){return (sortAsc?1:-1)*av.localeCompare(bv)}return (sortAsc?1:-1)*(av-bv)})}visible.forEach(g=>{const row=document.createElement('div');row.className='game'+(g.name===selectedName?' selected':'')+(g.players>=g.maxPlayers?' full-game':'');row.innerHTML=`<span class="activity-${g.activity.toLowerCase()}">${g.name}</span><span class="activity-${g.activity.toLowerCase()}">${g.activity}</span><span class="${g.players>=g.maxPlayers?'full-players':'gold'}">${g.players}/${g.maxPlayers}</span><span>${formatTime(g.elapsedSeconds)}</span><span title="${g.tz?'Terror Zone':'Normal game'}" class="game-tz">${g.tz?'<img src="img/tz.png" alt="Terror Zone">':''}</span><span title="Ping indicator" class="${g.ping}">●</span>`;row.onclick=()=>{selectedName=g.name;document.querySelector('.fields input').value=g.name;render()};list.appendChild(row)});
+ let visible=gamesForCharacter().filter(g=>(!friendBattletags||friendBattletags.has(g.hostBattletag))&&g.difficulty===selectedDifficulty&&g.name.toLowerCase().includes(q)&&(selectedActivity==='all'||g.activity===selectedActivity)&&(tzMode==='all'||(tzMode==='tz'&&g.tz)||(tzMode==='non-tz'&&!g.tz))&&(!ageFilterEnabled.checked||g.elapsedSeconds<Math.max(1,Number(ageFilterValue.value)||1)*(ageFilterUnit.value==='hours'?3600:60)));visibleGameCount.value=String(visible.length);if(!sortKey&&activeCharacterGameMode==='sc-ld')visible.sort((a,b)=>(a.ladderListOrder??-1)-(b.ladderListOrder??-1));if(sortKey){visible.sort((a,b)=>{if(sortKey==='players'&&playersSortMode===2){const af=a.players>=a.maxPlayers,bf=b.players>=b.maxPlayers;if(af!==bf)return af?1:-1;}let av=a[sortKey],bv=b[sortKey];if(typeof av==='string'){return (sortAsc?1:-1)*av.localeCompare(bv)}return (sortAsc?1:-1)*(av-bv)})}visible.forEach(g=>{const row=document.createElement('div');row.className='game'+(g.name===selectedName?' selected':'')+(g.players>=g.maxPlayers?' full-game':'');row.innerHTML=`<span class="activity-${g.activity.toLowerCase()}">${g.name}</span><span class="activity-${g.activity.toLowerCase()}">${activityLabel(g.activity)}</span><span class="${g.players>=g.maxPlayers?'full-players':'gold'}">${g.players}/${g.maxPlayers}</span><span>${formatTime(g.elapsedSeconds)}</span><span title="${g.tz?'Terror Zone':'Normal game'}" class="game-tz">${g.tz?'<img src="img/tz.png" alt="Terror Zone">':''}</span><span title="Ping indicator" class="${g.ping}">●</span>`;row.onclick=()=>{selectedName=g.name;document.querySelector('.fields input').value=g.name;render()};list.appendChild(row)});
  if(friendsOnly&&!visible.length){
   const empty=document.createElement('p');
   empty.className='friends-filter-empty';
@@ -309,7 +312,7 @@ const channelIcons={Communities:'C',Game:'G',Lobby:'\u25c6',Clan:'\u2663',Tradin
 let privateRecipient=null;
 let privateRecipientName=null;
 function selectPrivateRecipient(account,name){privateRecipient=account||null;privateRecipientName=privateRecipient?(name||privateRecipient.split('#')[0]):null;}
-function chatChannelLabel(channel){return channel==='Private'?'Private':channel;}
+function chatChannelLabel(channel){return activityLabel(channel);}
 function beginWhisper(battletag,name){
  selectPrivateRecipient(battletag,name);
  if(document.getElementById('market-shop').open){openInGameChat();}else{document.querySelector('[data-chat-view="lobby"]').click();}
@@ -332,7 +335,7 @@ function decorateChatMessage(message,channel){
  }
  message.style.setProperty('--channel-color',channelColors[channel]);
  const tag=document.createElement('button');tag.type='button';tag.className='channel-tag';tag.disabled=true;
- const label=channel==='Private'?'Private message':channel;
+ const label=channel==='Private'?'Private message':chatChannelLabel(channel);
  tag.textContent=channelIcons[channel]||'\u2709';tag.title=label;tag.setAttribute('aria-label','Open '+label+' channel');message.prepend(tag);
  const timestamp=document.createElement('time');timestamp.className='chat-timestamp';
  const sentAt=new Date();
@@ -419,12 +422,12 @@ function updateChannelBadges(){
   let badge=tab.querySelector('.channel-unread');
   if(!badge){badge=document.createElement('span');badge.className='channel-unread';badge.setAttribute('aria-hidden','true');tab.append(badge);}
   const count=tab.dataset.channel==='All'?Object.entries(counts).reduce((total,[channel,value])=>channel==='GameView'?total:total+value,0):tab.dataset.channel==='Game'?(counts.GameView||0):(counts[tab.dataset.channel]||0);badge.textContent=count>99?'99+':String(count);badge.hidden=count===0;
-  tab.setAttribute('aria-label',tab.dataset.channel+(count?', '+count+' unread messages':''));
+  tab.setAttribute('aria-label',chatChannelLabel(tab.dataset.channel)+(count?', '+count+' unread messages':''));
  });
 }
 function chatIsVisible(){
  const inGame=document.getElementById('market-shop').open;
- const blocked=Array.from(document.querySelectorAll('dialog[open]')).some(dialog=>!inGame||dialog.id!=='market-shop');
+ const blocked=Array.from(document.querySelectorAll('dialog[open]')).some(dialog=>!inGame||!dialog.matches('#market-shop,.docked-inspect'));
  return !chatLog.hidden&&(!inGame||!document.getElementById('in-game-chat').hidden)&&!document.body.classList.contains('intro-active')&&!document.hidden&&!blocked;
 }
 let chatScrollPosition=chatLog.scrollTop;
@@ -491,7 +494,7 @@ function updateChannelPlayerCount(channel){
   count=players.size;
  }
  if(channelPlayerCount.value!==String(count))channelPlayerCount.value=String(count);
- channelPlayerCount.setAttribute('aria-label',`${channel} players`);
+ channelPlayerCount.setAttribute('aria-label',`${chatChannelLabel(channel)} players`);
 }
 function applyChatChannel(){
  const channel=selectedChatChannel;
@@ -533,8 +536,14 @@ chatChannel.addEventListener('keydown',event=>{
  let next;if(event.key==='ArrowRight')next=(index+1)%tabs.length;else if(event.key==='ArrowLeft')next=(index+tabs.length-1)%tabs.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;else return;
  event.preventDefault();tabs[next].focus();tabs[next].click();
 });applyChatChannel();
+document.getElementById('message').addEventListener('keydown',event=>{
+ if(event.key!=='Enter'||event.isComposing)return;
+ event.preventDefault();
+ if(!event.repeat)event.target.form.requestSubmit();
+});
 document.getElementById('chat-form').onsubmit=e=>{
- e.preventDefault();if(!canSendChatMessage())return;const input=document.getElementById('message');let text=input.value.trim();if(!text&&!pendingGameInvite)return;
+ e.preventDefault();if(!canSendChatMessage())return;const input=document.getElementById('message');let text=input.value.trim();if(!text&&!pendingGameInvite&&!pendingBuildShare)return;
+ if(pendingBuildShare&&(!gameChatMount||!document.getElementById('market-shop').open)){clearBuildShareDraft();return;}
  let channel=composerChannel;
  if(pendingGameInvite){
   const game=currentCampGame;
@@ -547,29 +556,79 @@ document.getElementById('chat-form').onsubmit=e=>{
  sender.className='chat-self';sender.textContent=channel==='Private'?'To '+privateRecipientName+':':'You:';
  body.className='message-body';body.textContent=' '+text;
  if(channel==='Private'){message.classList.add('private-outgoing');message.dataset.recipient=privateRecipient;message.dataset.recipientName=privateRecipientName;}
- message.append(sender,body);decorateChatMessage(message,channel);appendChatMessage(message);input.value='';
+ message.append(sender,body);
+ if(pendingBuildShare){appendBuildLink(message,pendingBuildShare);clearBuildShareDraft();}
+ decorateChatMessage(message,channel);appendChatMessage(message);input.value='';
 };
+const sharedBuilds=new WeakMap();
+const buildDraft=document.getElementById('chat-build-draft');
+function clearBuildShareDraft(){
+ pendingBuildShare=null;
+ buildDraft.hidden=true;
+}
+function draftBuildShare(build){
+ if(!gameChatMount||!currentCampGame||!document.getElementById('market-shop').open)return;
+ const input=document.getElementById('message');
+ if(!canSendChatMessage())composerChannel='Game';
+ clearGameInviteDraft();
+ pendingBuildShare=build;
+ buildDraft.querySelector('span').textContent='Inspect';
+ buildDraft.hidden=false;
+ applyChatChannel();
+ input.focus();
+}
+function appendBuildLink(message,build){
+ const line=document.createElement('span');line.className='chat-invite-line';
+ const button=document.createElement('button');button.type='button';button.className='mini-control chat-join-invite';
+ button.dataset.viewBuild='';button.textContent='View Build';
+ const [name,level,cls]=build.character;
+ button.setAttribute('aria-label','View '+name+'’s build');
+ const label=document.createElement('span');label.className='chat-invite-game';
+ label.textContent=name+' · Level '+level+' '+cls;
+ sharedBuilds.set(button,build);
+ line.append(button,label);message.append(line);
+}
+buildDraft.querySelector('button').addEventListener('click',clearBuildShareDraft);
+chatLog.addEventListener('click',event=>{
+ const build=sharedBuilds.get(event.target.closest('[data-view-build]'));
+ if(build)showPlayerInspection(build);
+});
 // Right-click a player chat message (including its text) to show account identity and actions.
 const playerMenu=document.getElementById('player-context');
 let contextPlayer=null;
+let showPlayerInspection;
 function closePlayerMenu(){playerMenu.classList.remove('open');contextPlayer=null;}
+function positionPlayerMenu(player,label,x,y){
+ contextPlayer=player;
+ document.getElementById('context-account').textContent=label;
+ for(const button of playerMenu.querySelectorAll('[data-player-action]')){
+  const action=button.dataset.playerAction;
+  button.hidden=player.inspection?action==='Request Join':action==='Inspect';
+ }
+ playerMenu.classList.add('open');
+ const rect=playerMenu.getBoundingClientRect();
+ playerMenu.style.left=Math.max(4,Math.min(x,innerWidth-rect.width-4))+'px';
+ playerMenu.style.top=Math.max(4,Math.min(y,innerHeight-rect.height-4))+'px';
+}
 document.getElementById('chat').addEventListener('contextmenu',event=>{
  const message=event.target.closest('p');
  const name=message?.querySelector('.player-name');
  if(!name)return;
  event.preventDefault();
- contextPlayer={character:name.dataset.character,battletag:name.dataset.battletag};
- document.getElementById('context-account').textContent=contextPlayer.battletag;
- playerMenu.classList.add('open');
- const rect=playerMenu.getBoundingClientRect();
- playerMenu.style.left=Math.max(4,Math.min(event.clientX,innerWidth-rect.width-4))+'px';
- playerMenu.style.top=Math.max(4,Math.min(event.clientY,innerHeight-rect.height-4))+'px';
+ positionPlayerMenu({character:name.dataset.character,battletag:name.dataset.battletag},name.dataset.battletag,event.clientX,event.clientY);
 });
 playerMenu.addEventListener('click',event=>{
  const button=event.target.closest('[data-player-action]');if(!button||!contextPlayer)return;
  const action=button.dataset.playerAction;
- if(action==='Whisper'){
+ if(action==='Inspect'){
+  const {inspection}=contextPlayer;
+  closePlayerMenu();
+  showPlayerInspection(inspection);
+  return;
+ }else if(action==='Whisper'){
   beginWhisper(contextPlayer.battletag,contextPlayer.character);
+ }else if(action==='Add Friend'&&contextPlayer.inspection){
+  openAddFriendDialog(contextPlayer.battletag);
  }else if(action==='Block'){
   addFriendActivity('blocked',contextPlayer);
  }else{
@@ -624,25 +683,26 @@ const classArtBounds={
  Druid:[4,1497,1505], Necromancer:[10,1757,1769], Paladin:[10,1581,1591],
  Sorceress:[10,1539,1549], Warlock:[6,1365,1376]
 };
-function classArtSource(characterClass){
+function classArtSource(characterClass,variant=2){
  const imageName=characterClass==='Assassin'?'assasin':characterClass.toLowerCase();
- return `img/${imageName}-2.png`;
+ return `img/class/${imageName}-${variant}.png`;
 }
 
 const lobbyPlayers=document.getElementById('lobby-players');
 const lobbyPlayerPreviews=new WeakMap();
 const mockLobbyPlayers=[
- ['RuneSeeker','Necromancer','Patriarch',99], ['HolyHammer','Paladin','Guardian',94],
- ['FrostNova','Sorceress','Matriarch',88], ['JavQueen','Amazon','Champion',64],
- ['WolfFury','Druid','Conqueror',58], ['ShadowFang','Assassin','Matriarch',83],
- ['ChaosLord','Barbarian','Destroyer',35], ['LootFind','Warlock','Slayer',32]
+ ['RuneSeeker','Necromancer','Patriarch',99,'RuneHunter#1842'], ['HolyHammer','Paladin','Guardian',94,'HammerTime#1859'],
+ ['FrostNova','Sorceress','Matriarch',88,'SorcMain#2917'], ['ArrowQueen','Amazon','Champion',75,'D2Trader#1458'],
+ ['WolfFury','Druid','Conqueror',75,'WolfFury#2005'], ['ShadowFang','Assassin','Matriarch',83,'NightOwl#1184'],
+ ['ChaosLord','Barbarian','Destroyer',80,'ChaosRunner#2754'], ['LootFind','Warlock','Slayer',85,'LootFind#2008']
 ];
 lobbyPlayers.replaceChildren(...Array.from({length:100},(_,index)=>{
- const [name,characterClass,characterTitle,level]=mockLobbyPlayers[index%mockLobbyPlayers.length];
+ const [name,characterClass,characterTitle,level,account]=mockLobbyPlayers[index%mockLobbyPlayers.length];
  const playerName=index<mockLobbyPlayers.length?name:`${name}${Math.floor(index/mockLobbyPlayers.length)+1}`;
  const player=document.createElement('li');
  const hardcore=['Destroyer','Conqueror','Guardian'].includes(characterTitle);
- lobbyPlayerPreviews.set(player,{character:[playerName,level,characterClass],hardcore});
+ const battletag=index<mockLobbyPlayers.length?account:playerName+'#'+(3000+index);
+ lobbyPlayerPreviews.set(player,{character:[playerName,level,characterClass],hardcore,battletag});
  player.classList.toggle('level-99-art',level===99);
  const image=document.createElement('img');
  image.src=classArtSource(characterClass);
@@ -662,6 +722,13 @@ lobbyPlayers.replaceChildren(...Array.from({length:100},(_,index)=>{
  player.append(image,caption,levelLabel);
  return player;
 }));
+lobbyPlayers.addEventListener('contextmenu',event=>{
+ const player=event.target.closest('li');
+ const inspection=lobbyPlayerPreviews.get(player);
+ if(!inspection)return;
+ event.preventDefault();
+ positionPlayerMenu({inspection,character:inspection.character[0],battletag:inspection.battletag},inspection.battletag,event.clientX,event.clientY);
+});
 let lobbyDrag=null;
 let lobbyDragged=false;
 let previewedLobbyPlayer=null;
@@ -696,15 +763,38 @@ document.addEventListener('pointerup',finishLobbyDrag);
 document.addEventListener('pointercancel',finishLobbyDrag);
 document.addEventListener('click',event=>{
  if(lobbyDragged&&lobbyPlayers.contains(event.target))return;
+ if(event.target.closest('#player-inspect'))return;
+ if(event.target.id==='center-character-art')return;
  const player=event.target.closest('#lobby-players > li');
  const preview=lobbyPlayerPreviews.get(player);
  if(preview){
+  const from=previewedLobbyPlayer?null:document.getElementById('center-character-art').getBoundingClientRect();
   previewedLobbyPlayer=player;
   renderCenterCharacter(preview.character,preview.hardcore);
+  if(from)animateSelectedThumbnail(from);
  }else if(previewedLobbyPlayer){
   previewedLobbyPlayer=null;
   renderCenterCharacter();
  }
+});
+function animateSelectedThumbnail(from){
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+ const thumbnail=document.getElementById('center-selected-thumbnail');
+ if(!from.width||!from.height)return;
+ thumbnail.getAnimations().forEach(animation=>animation.cancel());
+ thumbnail.style.aspectRatio=`auto ${from.width} / ${from.height}`;
+ const to=thumbnail.getBoundingClientRect();
+ if(!to.width||!to.height)return;
+ const transform=getComputedStyle(thumbnail).transform;
+ thumbnail.animate([
+  {transform:`translate(${from.left-to.left}px, ${from.top-to.top}px) ${transform} scale(${from.width/to.width}, ${from.height/to.height})`},
+  {transform}
+ ],{duration:300,easing:'cubic-bezier(.2,.75,.3,1)'});
+}
+document.getElementById('center-character-art').addEventListener('dblclick',()=>{
+ const character=lobbyPlayerPreviews.get(previewedLobbyPlayer)?.character
+  ??characterData[characterMode].find(c=>c[0]===chosenCharacter);
+ if(character)showPlayerInspection({character});
 });
 function updateCenterCharacter(){
  syncCharacterGames();
@@ -716,8 +806,21 @@ function updateCenterCharacter(){
 function renderCenterCharacter(character=characterData[characterMode].find(c=>c[0]===chosenCharacter),hardcore=characterIcons[character?.[0]]?.includes('hc')??false){
  const display=document.querySelector('.middle .char-name');
  const artwork=document.getElementById('center-character-art');
+ const thumbnail=document.getElementById('center-selected-thumbnail');
+ const selection=previewedLobbyPlayer&&characterData[characterMode].find(c=>c[0]===chosenCharacter);
+ thumbnail.hidden=!selection;
+ if(selection){
+  const [selectedName,,selectedClass]=selection;
+  const [top,bottom,height]=classArtBounds[selectedClass];
+  const normalHeight=selectedClass==='Warlock'?95:90;
+  thumbnail.style.height=normalHeight*.3*height/(bottom-top)+'cqh';
+  thumbnail.style.setProperty('--art-bottom-padding',`${100*(height-bottom)/height}%`);
+  thumbnail.src=classArtSource(selectedClass);
+  thumbnail.alt='Selected character: '+selectedName;
+ }
  artwork.parentElement.classList.toggle('level-99-art',Number(character?.[1])===99);
  artwork.hidden=!character;
+ artwork.classList.toggle('inspectable',Boolean(character));
  if(!character){display.textContent='No Character';return;}
  const [name,level,cls]=character;
  artwork.dataset.characterClass=cls;
@@ -767,9 +870,10 @@ function renderRecentDeleted(){
 function renderCharacters(){const root=document.getElementById('character-roster');root.replaceChildren();for(const [index,[name,level,cls]] of getSortedCharacters().entries()){
  const button=document.createElement('button');button.type='button';button.className='character-entry'+(chosenCharacter===name?' selected':'');button.dataset.character=name;if(Number(level)===99)button.classList.add('level-99');
  button.draggable=true;
- const label=document.createElement('span');if(characterMode==='online'&&characterIcons[name]?.includes('hc'))label.className='hardcore-character-name';const number=document.createElement('span');number.className='character-index';number.textContent=`${index+1}. `;label.append(number,document.createTextNode(name));const sub=document.createElement('small');sub.textContent=`Level ${level} ${cls}`;const portrait=document.createElement('img');portrait.className='character-portrait';portrait.src='img/'+cls.toLowerCase()+'.png';portrait.alt='';portrait.width=44;portrait.height=44;const info=document.createElement('span');info.className='character-info';info.append(label,sub);
+ const label=document.createElement('span');if(characterMode==='online'&&characterIcons[name]?.includes('hc'))label.className='hardcore-character-name';const number=document.createElement('span');number.className='character-index';number.textContent=`${index+1}. `;label.append(number,document.createTextNode(name));const sub=document.createElement('small');sub.textContent=`Level ${level} ${cls}`;const portrait=document.createElement('img');portrait.className='character-portrait';portrait.src='img/class/'+cls.toLowerCase()+'.png';portrait.alt='';portrait.width=44;portrait.height=44;const info=document.createElement('span');info.className='character-info';info.append(label,sub);
  const gridArtwork=document.createElement('img');
  gridArtwork.className='character-grid-art';
+ gridArtwork.dataset.characterClass=cls;
  gridArtwork.src=classArtSource(cls);
  gridArtwork.alt='';
  gridArtwork.loading='lazy';
@@ -946,7 +1050,7 @@ function createRosterPortrait({online,characterClass}){
  status.title=label;
  if(online&&characterClass){
   const portrait=document.createElement('img');
-  portrait.src='img/'+characterClass.toLowerCase()+'.png';portrait.alt='';portrait.loading='lazy';
+  portrait.src='img/class/'+characterClass.toLowerCase()+'.png';portrait.alt='';portrait.loading='lazy';
   status.append(portrait);
  }else{
   status.innerHTML='<svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><circle cx="16" cy="11" r="6"/><path d="M5 29v-4a11 11 0 0 1 22 0v4z"/></svg>';
@@ -1580,12 +1684,13 @@ renderFriendActivity('recent');
 renderFriendActivity('blocked');
 const addFriendDialog=document.getElementById('add-friend-dialog');
 const addFriendRecipient=document.getElementById('add-friend-recipient');
-document.getElementById('add-friend-open').addEventListener('click',()=>{
- addFriendRecipient.value='';
+function openAddFriendDialog(recipient=''){
+ addFriendRecipient.value=recipient;
  addFriendRecipient.setCustomValidity('');
  addFriendDialog.showModal();
  addFriendRecipient.focus();
-});
+}
+document.getElementById('add-friend-open').addEventListener('click',()=>openAddFriendDialog());
 document.getElementById('add-friend-cancel').addEventListener('click',()=>addFriendDialog.close());
 addFriendRecipient.addEventListener('input',()=>addFriendRecipient.setCustomValidity(''));
 document.getElementById('add-friend-form').addEventListener('submit',event=>{
@@ -1635,86 +1740,303 @@ window.addEventListener('scroll',closeFriendMenu,true);
 // Restore the game-name focus whenever this lobby page is opened.
 window.addEventListener('load', () => { const field = document.getElementById('game-name'); if (field) field.focus({preventScroll:true}); });
 
-// v1.38: Main-menu actions are mock interactions in this UI prototype.
+const lobbyCredits=document.getElementById('lobby-credits');
+function renderReadmeCredits(readme){
+ const section=readme.split(/^#{1,2}\s+/m).find(part=>part.split(/\r?\n/,1)[0].trim()==='Put this in Credit button');
+ const bullets=section?.match(/^-[ \t]*(?![- \t])\S.*$/gm);
+ if(!bullets?.length)return;
+ const items=bullets.map(line=>{
+  const item=document.createElement('li');
+  line.replace(/^-[ \t]*/,'').split(/\*\*([^*]+)\*\*/).forEach((part,index)=>{
+   if(index%2===0){item.append(part);return;}
+   const bold=document.createElement('strong');
+   bold.textContent=part;
+   item.append(bold);
+  });
+  return item;
+ });
+ document.getElementById('lobby-credits-list').replaceChildren(...items);
+}
+lobbyCredits.addEventListener('close',()=>document.getElementById('lobby-gem').focus({preventScroll:true}));
 document.querySelectorAll('[data-main-menu]').forEach(button => {
-  button.addEventListener('click', () => alert(button.dataset.mainMenu + ' — This is a UI/UX prototype.'));
+ button.addEventListener('click',()=>{
+  if(button.dataset.mainMenu!=='Credits'){
+   alert(button.dataset.mainMenu+' — This is a UI/UX prototype.');
+   return;
+  }
+  document.getElementById('main-menu-panel').hidePopover();
+  lobbyCredits.showModal();
+  // File previews use the embedded copy because browsers restrict local fetches.
+  if(location.protocol==='file:')return;
+  fetch('README.md').then(response=>response.ok?response.text():'').then(renderReadmeCredits).catch(()=>{});
+ });
 });
 
 // v1.44: In-memory item market concept; purchases happen at the seller's stash.
 (() => {
- const wallet = {Ist: 6, Mal: 4};
- const offers = [
-  {name: 'Harlequin Crest', stats: '+2 All Skills · 135 Defense · 50% Magic Find', price: 1, rune: 'Ist', symbol: '♜', icon: 'harlequin_crest_shako.png', tooltip: 'item9.png', rect: [86,207,185,185]},
-  {name: 'Tal Rasha’s Guardianship', itemType: 'set', stats: '910 Defense · 88% Magic Find', price: 2, rune: 'Ist', symbol: '♜', icon: "tal-rasha's_guardianship_lacquered_plate.png", tooltip: 'item2.png', rect: [86,395,185,278]},
-  {name: 'Trang-Oul’s Claws', itemType: 'set', stats: '20% Faster Cast Rate · Cold Resist +30%', price: 1, rune: 'Mal', symbol: '✧', icon: 'bracers_m.png', tooltip: 'item3.png', rect: [835,675,185,185]},
-  {name: 'Magefist', stats: '+1 Fire Skills · 20% Faster Cast Rate', price: 1, rune: 'Mal', symbol: '✧', icon: 'light_gauntlets.png', tooltip: 'item4.png', rect: [86,861,185,185]},
-  {name: 'Chance Guards', stats: '40% Magic Find · 200% Extra Gold', price: 1, rune: 'Ist', symbol: '✧', icon: 'chance_guard.png', tooltip: 'item5.png', rect: [86,675,185,185]},
-  {name: 'Skullder’s Ire', stats: '+1 All Skills · 727 Defense', price: 2, rune: 'Mal', symbol: '♜', icon: 'splint_mail.png', tooltip: 'item6.png', rect: [835,395,185,278]},
-  {name: 'Guillaume’s Face', itemType: 'set', stats: '35% Crushing Blow · 15% Deadly Strike', price: 1, rune: 'Ist', symbol: '♛', icon: 'great_helm.png', tooltip: 'item1.png', rect: [835,207,185,185]},
-  {name: 'Frostburn', stats: '+40% Maximum Mana · 49 Defense', price: 1, rune: 'Mal', symbol: '✧', icon: 'gaunlets_h_special.png', tooltip: 'item8.png', rect: [835,861,185,185]}
+ const wallet = {Ist:6, Mal:4, Vex:2, Ohm:2, Sur:1, Ber:2, Jah:4};
+ const shopArtwork = {width:1101, height:1435, x:79, y:211, cell:93.5, rows:10};
+ const inventoryArtwork = {width:1106, height:1435, x:85, y:858, cell:93.5, rows:4};
+ const catalog = {};
+ // Item IDs match the feature used in Trade rooms and the seller's stock.
+ const itemData = [
+  ['shako','Harlequin Crest','Harlequin Crest Shako','Harlequin Crest Shako',2,2,'SHAKO','141 Defense ? +2 All Skills ? 50% MF','Ist',2],
+  ['tal','Tal Rasha?s Guardianship',"Tal Rasha's Guardianship Lacquered Plate","Tal Rasha's Guardianship Lacquered Plate",2,3,'TAL ARMOR','941 Defense ? 88% MF','Vex',1,'set'],
+  ['trang','Trang-Oul?s Claws',"Trang-Oul's Claws Heavy Bracers",'base-gloves-1',2,2,'TRANG GLOVES','20% FCR ? 30% Cold Resist','Mal',1,'set'],
+  ['magefist','Magefist','Magefist Light Gauntlets','base-gloves-2',2,2,'MAGEFIST','+1 Fire Skills ? 20% FCR','Mal',1],
+  ['chance','Chance Guards','Chance Guards Chain Gloves','Chance Guards Chain Gloves',2,2,'40MF CHANCES','40% MF ? 200% Extra Gold','Ist',1],
+  ['skullder','Skullder?s Ire',"Skullder's Ire Russet Armor",'base-armor-2',2,3,'SKULLDERS','732 Defense ? +1 All Skills','Ist',1],
+  ['gface','Guillaume?s Face',"Guillaume's Face Winged Helm",'base-helm-2',2,2,'GFACE','35% Crushing Blow ? 15% Deadly Strike','Mal',1,'set'],
+  ['frostburn','Frostburn','Frostburn Gauntlets','Frostburn Gauntlets',2,2,'FROSTBURN','49 Defense ? +40% Maximum Mana','Mal',1],
+  ['diadem','Shadow Brow','2-20warlock','base-helm',2,2,'2/20 LOCK DIADEM','+2 Warlock Skills ? 20% FCR ? 2 Sockets','Jah',3,'rare'],
+  ['arach','Arachnid Mesh','Arachnid Mesh Spiderweb Sash','Arachnid Mesh Spiderweb Sash',2,1,'120ED ARACH','120% ED ? +1 All Skills ? 20% FCR','Ohm',1],
+  ['fathom','Death?s Fathom',"Death's Fathom Dimensional Shard",'base-orb',1,3,'30 COLD FATHOM','Ethereal ? +30% Cold Skill Damage ? 1 Socket','Jah',2],
+  ['enigma','Enigma','enigma','base-armor',2,3,'MP ENIGMA','Mage Plate ? 1,036 Defense ? +1 Teleport','Jah',2,'runeword'],
+  ['maras','Mara?s Kaleidoscope',"Mara's Kaleidoscope Amulet",'amulet',1,1,'30 RES MARAS','+2 All Skills ? +30 All Resistances','Ohm',1],
+  ['opal','Opalvein','Opalvein Ring','base-ring',1,1,'OPALVEIN','10% FCR · +5% Magic Skill Damage · +8 All Resistances','Jah',18],
+  ['crafted','Crafted Bramble Mitts','res-mf-gloves','base-gloves-1',2,2,'RES MF GLOVES','30% Lightning and Fire Resist ? 25% MF','Ist',2,'crafted'],
+  ['spirit','Spirit','spirit','base-shield',2,3,'35FCR SPIRIT','Monarch ? 35% FCR ? +2 All Skills','Ist',1,'runeword'],
+  ['void','Void','Void','base-kris',1,3,'VOID KRIS','Kris · 40% FCR · +3 Bind Demon','Jah',15,'runeword'],
+  ['trav','War Traveler','War Traveler Battle Boots','base-boot',2,2,'50MF WAR TRAV','50% MF ? 139 Defense','Jah',1],
+  ['wraith','Wraithstep','Wraithstep Mirrored Boots','base-boot',2,2,'DEMON WRAITHSTEP','+1 Demon Skills ? 30% Faster Run/Walk','Ist',1],
+  ['viper','Skin of the Vipermagi','Skin of the Vipermagi Serpentskin Armor','Skin of the Vipermagi Serpentskin Armor',2,3,'35 RES VIPER','30% FCR ? +35 All Resistances','Ist',2],
+  ['talons','Cunning Greater Talons of Quickness','Cunning Greater Talons of Quickness','base-claws',1,3,'3LS 40IAS TALONS','+3 Traps · +3 Lightning Sentry · 40% IAS','Jah',15,'magic'],
+  ['dweb','Death’s Web',"Death's Web Unearthed Wand",'base-wand',1,2,'2/50 DWEB','+2 Poison and Bone Skills · −50% Enemy Poison Resistance','Jah',10],
+  ['eternity','Eternity','eternity','base-maul',2,3,'ETH ETERNITY','Ethereal Thunder Maul · 390% ED · 30% IAS','Jah',5,'runeword'],
+  ['grief','Grief','grief','base-sword',2,3,'40/400 GRIEF','Phase Blade · +400 Damage · 40% IAS','Jah',8,'runeword'],
+  ['hoto','Heart of the Oak','Heart of the Oak','base-flail',2,3,'40 RES HOTO','Flail · +40 All Resistances · 40% FCR','Jah',2,'runeword'],
+  ['windforce','Windforce','Windforce Hydra Bow','base-bow',2,4,'8ML WINDFORCE','Hydra Bow · 8% Mana Stolen per Hit','Ohm',1],
+  ['veil','Veil of Steel','Veil of Steel Spired Helm','base-helm-2',2,2,'VEIL OF STEEL','+2 All Skills · +50 All Resistances · 25% Physical Damage Reduction','Jah',6],
+  ['soj','The Stone of Jordan','The Stone of Jordan Ring','base-ring',1,1,'SOJ','+1 All Skills · +20 Mana · +25% Maximum Mana','Jah',1],
+  ['fortitude','Fortitude','fortitude','base-armor',2,3,'30 RES FORT','Archon Plate · 1,587 Defense · +300% Enhanced Damage · +30 All Resistances','Jah',1,'runeword'],
+  ['loh','Laying of Hands','Laying of Hands Bramble Mitts','loh',2,2,'LOH','20% IAS · +350% Damage to Demons · +50% Fire Resist','Mal',1,'set']
  ];
- const shopSellers = ['AshenWolf', 'FrostVale', 'BoneMancer', 'EmberFox', 'LuckyHork', 'DuskRaven', 'IronThorn', 'ColdSnap'];
- const tradeDescriptions = ['135 def shako', 'tal armor here', 'trang gloves ft', 'magefist for mal', '40 mf chances', 'skullders ft', 'gface here', 'frostburn for mal'];
- offers.forEach((item, index) => {
-  item.itemType=item.itemType||'unique';
-  item.sellerClass=['Druid','Sorceress','Necromancer','Assassin','Barbarian','Amazon','Paladin','Warlock'][index];
-  item.seller = shopSellers[index]; item.server = ['America', 'Europe', 'Asia'][index % 3];
+ for(const [id,name,tooltip,icon,w,h,roomLabel,stats,rune,price,itemType='unique'] of itemData){
+  catalog[id]={id,name,tooltip:'items/'+tooltip+'.png',icon:'items/base/'+icon+'.png',w,h,roomLabel,stats,rune,price,itemType};
+ }
+ catalog.arrows={name:'Arrows',icon:'items/base/arrows.png',w:1,h:3};
+ // Each value is [text rows, source width, source height].
+ const tooltipSizes={
+  shako:[12,703,433],tal:[13,697,477],trang:[11,543,401],magefist:[12,396,432],chance:[12,690,419],skullder:[11,693,398],gface:[11,511,399],frostburn:[11,486,396],
+  diadem:[19,871,690],arach:[13,483,462],fathom:[16,856,566],enigma:[17,719,652],maras:[6,348,226],opal:[9,447,327],crafted:[13,690,456],spirit:[19,485,736],
+  void:[19,703,729],trav:[14,705,501],wraith:[12,583,425],viper:[11,460,390],talons:[11,621,387],dweb:[13,569,455],eternity:[22,726,827],grief:[19,757,718],
+  hoto:[22,637,817],windforce:[15,704,533],veil:[15,673,528],soj:[7,469,258],fortitude:[20,709,703],loh:[11,598,386]
+ };
+ const baselineTooltipRows=tooltipSizes.maras[0];
+ const tooltipScalePerExtraLine=0;
+ function setItemTooltip(image,item){
+  const [rows,width,height]=tooltipSizes[item.id]??tooltipSizes.maras;
+  const panel=image.closest('.shop-inspection,#inspect-tooltip,#camp-inventory-tooltip,#market-item-preview');
+  const scale=1+(rows-baselineTooltipRows)*tooltipScalePerExtraLine;
+  panel.style.setProperty('--tooltip-width',width*scale+'px');
+  panel.style.setProperty('--tooltip-aspect',width/height);
+  image.src='img/'+item.tooltip;
+  image.alt=item.name+' statistics';
+ }
+ const inspectBuilds = {
+  Necromancer:{weapon:'dweb',offhand:'spirit',helm:'shako',armor:'enigma',gloves:'trang',belt:'arach',amulet:'maras',boots:'trav'},
+  Paladin:{weapon:'hoto',offhand:'spirit',helm:'shako',armor:'enigma',gloves:'magefist',belt:'arach',amulet:'maras',ring:'opal',secondRing:'opal',boots:'trav'},
+  Sorceress:{weapon:'fathom',offhand:'spirit',helm:'shako',armor:'tal',gloves:'magefist',belt:'arach',amulet:'maras',boots:'trav'},
+  Amazon:{weapon:'windforce',offhand:'arrows',helm:'veil',armor:'fortitude',gloves:'loh',belt:'arach',amulet:'maras',boots:'trav'},
+  Druid:{weapon:'eternity',helm:'veil',armor:'enigma',gloves:'crafted',belt:'arach',amulet:'maras',boots:'trav'},
+  Assassin:{weapon:'talons',offhand:'spirit',helm:'shako',armor:'enigma',gloves:'crafted',belt:'arach',amulet:'maras',boots:'trav'},
+  Barbarian:{weapon:'grief',offhand:'grief',helm:'veil',armor:'skullder',gloves:'chance',belt:'arach',amulet:'maras',ring:'opal',secondRing:'opal',boots:'trav'},
+  Warlock:{weapon:'void',offhand:'spirit',helm:'diadem',armor:'enigma',gloves:'frostburn',belt:'arach',amulet:'maras',ring:'opal',secondRing:'opal',boots:'wraith'}
+ };
+ // Equipment wells in the 1106 × 850 visible portion of the inventory image.
+ const inspectSlots = {
+  weapon:[101,226,187,370],offhand:[819,226,187,370],helm:[459,179,185,182],
+  armor:[459,410,185,278],amulet:[685,338,92,92],gloves:[101,640,187,184],
+  belt:[459,734,185,92],ring:[328,734,91,92],secondRing:[685,734,92,92],boots:[819,640,187,184]
+ };
+ const inspectDialog=document.getElementById('player-inspect');
+ const inspectHome=inspectDialog.parentElement;
+ inspectDialog.addEventListener('click',event=>{
+  if(event.target===inspectDialog)inspectDialog.close();
  });
- // Sample sellers share the same scene artwork.
- const tradeLabels = ['SHAKO', 'TAL ARMOR', 'TRANG GLOVES', 'MAGEFIST', 'CHANCE GUARDS', 'SKULLDERS', 'GUILLAUMES', 'FROSTBURN'];
- games.filter(game => game.activity === 'Trading' && !/-(lod|classic)$/.test(game.characterGameMode)).forEach((game, index) => {
-  const item = offers[index % offers.length];
-  game.name = `${tradeLabels[index % offers.length]} 4 ${item.price} ${item.rune.toUpperCase()}`;
-  game.description = tradeDescriptions[index % offers.length];
-  game.shopItem = item.name;
+ inspectDialog.addEventListener('close',()=>{
+  if(!inspectDialog.open&&inspectDialog.classList.contains('docked-inspect')){
+   inspectHome.append(inspectDialog);
+   inspectDialog.classList.remove('docked-inspect');
+  }
  });
+ const inspectTooltip=document.getElementById('inspect-tooltip');
+ function bindEquipmentTooltip(button,item,tooltip){
+  const preview=()=>{
+   tooltip.hidden=!item.tooltip;
+   if(item.tooltip)setItemTooltip(tooltip.querySelector('img'),item);
+  };
+  button.addEventListener('pointerenter',preview);
+  button.addEventListener('pointerleave',()=>{tooltip.hidden=true;});
+  button.addEventListener('focus',preview);
+  button.addEventListener('blur',()=>{tooltip.hidden=true;});
+  button.addEventListener('click',preview);
+ }
+ function gearForClass(cls){return {ring:'soj',secondRing:'soj',...inspectBuilds[cls]};}
+
+ function renderCharacterEquipment(equipment,gear,panelHeight,bindItem){
+  equipment.replaceChildren();
+  for(const [slot,id] of Object.entries(gear)){
+   const item=catalog[id];
+   const [x,y,w,h]=inspectSlots[slot];
+   const button=document.createElement('button');
+   button.type='button';
+   button.className='inspect-item';
+   button.setAttribute('aria-label',(slot==='secondRing'?'Second ring':slot)+': '+item.name);
+   if(!item.tooltip)button.title=item.name;
+   button.style.cssText=`left:${x/1106*100}%;top:${y/panelHeight*100}%;width:${w/1106*100}%;height:${h/panelHeight*100}%`;
+   const icon=document.createElement('img');
+   icon.src='img/'+item.icon;
+   icon.alt='';
+   icon.style.width=w>=185&&item.w===1?'50%':'100%';
+   button.append(icon);
+   bindItem(button,item);
+   equipment.append(button);
+  }
+ }
+ showPlayerInspection=({character:[name,level,cls],gear=gearForClass(cls)})=>{
+  document.getElementById('inspect-title').textContent=name;
+  document.getElementById('inspect-build').textContent='Level '+level+' '+cls;
+  inspectTooltip.hidden=true;
+  renderCharacterEquipment(document.getElementById('inspect-equipment'),gear,850,(button,item)=>bindEquipmentTooltip(button,item,inspectTooltip));
+  const inGame=document.getElementById('market-shop').open;
+  const host=inGame?document.querySelector('.shop-game-stage'):inspectHome;
+  if(inspectDialog.parentElement!==host){
+   if(inspectDialog.open)inspectDialog.close();
+   host.append(inspectDialog);
+  }
+  inspectDialog.classList.toggle('docked-inspect',inGame);
+  if(!inspectDialog.open){if(inGame)inspectDialog.show();else inspectDialog.showModal();}
+ };
+ const sellerData = [
+  ['AshenWolf','Druid',[['enigma','arach','hoto'],['gface']]],
+  ['FrostVale','Sorceress',[['fathom','tal','soj'],['viper']]],
+  ['BoneMancer','Necromancer',[['trang','dweb'],['maras']]],
+  ['EmberFox','Assassin',[['magefist','talons'],['spirit']]],
+  ['LuckyHork','Barbarian',[['trav','chance','shako','eternity'],['skullder','veil']]],
+  ['DuskRaven','Amazon',[['crafted','windforce','fortitude','loh']]],
+  ['IronThorn','Paladin',[['frostburn','grief']]],
+  ['ColdSnap','Warlock',[['diadem','void','opal'],['wraith']]]
+ ];
+ const shopCount = 5;
+ const shopDefinitions = sellerData.map(([seller,sellerClass,shops],index)=>({
+  seller,proceeds:Array.from({length:shopCount},()=>({gold:0,runes:{}})),
+  shops:Array.from({length:shopCount},(_,slot)=>(shops[slot]||[]).map(id=>({
+   ...catalog[id],seller,sellerClass,server:['America','Europe','Asia'][index%3]
+  })))
+ }));
+ const offers = shopDefinitions.flatMap(seller=>seller.shops.flat());
+ function assignTradeListings(entries){
+  const ladderTrades=entries.filter(game=>game.characterGameMode==='sc-ld'&&game.difficulty==='Hell'&&game.activity==='Trading');
+  const template=ladderTrades[0];
+  if(template){
+   for(let index=ladderTrades.length;index<offers.length;index++){
+    const elapsedSeconds=25+(index*173)%2400;
+    const game={...template,players:1,hostBattletag:undefined,elapsedSeconds,demoShortTime:elapsedSeconds<60};
+    entries.push(game);
+    ladderTrades.push(game);
+   }
+   const otherGames=entries.filter(game=>game.characterGameMode==='sc-ld'&&game.difficulty==='Hell'&&game.activity!=='Trading');
+   otherGames.sort((a,b)=>a.ladderListOrder-b.ladderListOrder);
+   otherGames.forEach((game,index)=>{game.ladderListOrder=index+1;});
+   ladderTrades.forEach((game,index)=>{game.ladderListOrder=(index+1)*(otherGames.length+1)/(ladderTrades.length+1);});
+  }
+  const tradeGroups=new Map();
+  for(const game of entries){
+   if(game.activity!=='Trading'||/-(lod|classic)$/.test(game.characterGameMode))continue;
+   const key=game.characterGameMode+'|'+game.difficulty;
+   const index=tradeGroups.get(key)||0;
+   tradeGroups.set(key,index+1);
+   const item=offers[index%offers.length];
+   const round=Math.floor(index/offers.length);
+   game.name=tradeRoomName(item)+(game.difficulty==='Hell'?'':game.difficulty==='Normal'?' N':' NM')+(round?' #'+(round+1):'');
+   game.description=item.name+' · '+item.stats;
+   game.shopItem=item.id;
+   game.shopListing=item;
+  }
+ }
+ function tradeRoomName(item){return item.roomLabel+' 4 '+item.price+' '+item.rune.toUpperCase();}
+ assignTradeListings(games);
+ configureRealmTradeListings=assignTradeListings;
  const stash = [
-  {name: 'War Traveler', stats: '40% Magic Find', symbol: '♟'},
-  {name: 'The Oculus', stats: '+3 Sorceress Skills', symbol: '✧'}
+  {...catalog.trav,stats:'40% Magic Find',tooltip:null},
+  {name:'The Oculus',stats:'+3 Sorceress Skills',icon:'items/base/base-orb.png',w:1,h:3}
  ];
  const panel = document.getElementById('market-panel');
  const search = document.getElementById('market-search');
+ const marketSort = document.getElementById('market-sort');
+ const demoRuneValues = {Mal:1,Ist:2,Vex:6,Ohm:12,Sur:24,Ber:48,Jah:54};
+ const goldPerMal=30_000_000;
+ let goldBalance=90_000_000;
+ const budgetItemsWithFivePrices=new Set(['magefist','frostburn','loh']);
+ function paymentOptions(item){
+  const primary={rune:item.rune,price:item.price};
+  const value=item.price*demoRuneValues[item.rune];
+  if(item.mine||value>demoRuneValues.Ohm)return [primary];
+  const acceptsGold=budgetItemsWithFivePrices.has(item.id);
+  const alternatives=Object.entries(demoRuneValues)
+   .filter(([rune])=>rune!==item.rune)
+   .map(([rune,rate])=>({rune,price:Math.ceil(value/rate),rate}))
+   .sort((a,b)=>a.price*a.rate-b.price*b.rate||a.price-b.price);
+  const options=[primary,...alternatives.slice(0,acceptsGold?3:1)];
+  if(acceptsGold)options.push({rune:'Gold',price:value*goldPerMal});
+  return options;
+ }
+ const paymentQuantity=({rune,price})=>rune==='Gold'?price/1_000_000+'M':String(price);
+ const paymentLabel=payment=>paymentQuantity(payment)+' '+payment.rune;
+ const paymentBalance=({rune})=>rune==='Gold'?goldBalance:wallet[rune];
+ let marketSortKey = '';
  const dialog = document.getElementById('market-shop');
  const buy = document.getElementById('market-buy');
+ const shopPayments = document.getElementById('market-offer');
+ let selectedPayment=null;
  const status = document.getElementById('market-status');
  const owned = [];
  const campChests = document.getElementById('camp-shop-chests');
+ const inGameShareBuild = document.getElementById('in-game-share-build');
+ let campBuild=null;
+ inGameShareBuild.addEventListener('click',()=>{if(campBuild)draftBuildShare(campBuild);});
  const tradeView = document.getElementById('shop-trade-view');
+ const campInventory=document.getElementById('camp-inventory');
+ const inventoryPanel=tradeView.querySelector('.shop-inventory-panel');
+ const campInventoryTooltip=document.getElementById('camp-inventory-tooltip');
  const shopImage = document.getElementById('shop-stock-image');
- const campShopsByGame = new Map();
+ const tabs = document.getElementById('shop-stock-tabs');
+ const pageLabel = document.getElementById('shop-stock-page');
+ const previousPage = document.getElementById('shop-page-prev');
+ const nextPage = document.getElementById('shop-page-next');
+ let activeShopIndex = 0;
+ let activePage = 0;
  const shopItemButtons = new WeakMap();
- const sampleShopArtwork = {src:'img/shop_full.png',width:1108,height:1430};
- const shopDefinitions = offers.map(offer=>({
-  seller:offer.seller, featuredItem:offer.name, artwork:sampleShopArtwork, stock:[...offers]
- }));
  const chestPositions = [
   [32.755,61.628], [28.741,66.309], [23.475,72.014], [17.349,81.18],
   [14.012,71.624], [9.294,67.479], [4.627,62.604], [2,70.5]
  ];
  let visiting = null;
  let lockedShopItem = null;
- let activeChest = null;
  let activeShop = null;
 
- function shopsForCamp(game) {
-  const key = currentGameChatKey();
-  if (!campShopsByGame.has(key)) {
-   const featured = shopDefinitions.find(shop=>shop.featuredItem===game.shopItem);
-   const ordered = featured ? [featured, ...shopDefinitions.filter(shop=>shop!==featured)] : shopDefinitions;
-   campShopsByGame.set(key, ordered.map(definition=>{
-    const listing = definition===featured ? offers.find(offer=>!offer.mine&&offer.name===game.shopItem) : null;
-    const items = definition.stock.map(item=>({
-     ...item, seller:definition.seller, artwork:definition.artwork, sold:item===listing&&!!listing.sold
-    }));
-    return {...definition, items, listing};
-   }));
-  }
-  return campShopsByGame.get(key);
+ function shopForItem(id){
+  return shopDefinitions.find(seller=>seller.shops.some(stock=>stock.some(item=>item.id===id)));
+ }
+
+ function openCampChest(shop){
+  closeCampInventory();
+  activeShop=shop;
+  activeShopIndex=0;
+  closeInGameChat();
+  tradeView.hidden=false;
+  selectShopPage(0);
+  tradeView.querySelector('[data-close-trade]').focus();
  }
 
  renderCampShops = game => {
-  const shops = shopsForCamp(game);
-  activeChest = null;
+  closeCampInventory();
+  const character=characterData[characterMode].find(c=>c[0]===chosenCharacter);
+  campBuild=character?{character:[...character],gear:gearForClass(character[2])}:null;
+  inGameShareBuild.disabled=!campBuild;
+  const featured = shopForItem(game.shopItem);
+  const shops = featured ? [featured,...shopDefinitions.filter(shop=>shop!==featured)] : shopDefinitions;
   activeShop = null;
   tradeView.hidden = true;
   campChests.replaceChildren(...chestPositions.slice(0, game.players).map(([left, top], index) => {
@@ -1730,41 +2052,31 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
    chest.style.top = `${top}%`;
    chest.dataset.shopName = `${shop.seller}’s Shop`;
    chest.setAttribute('aria-label', `Open ${chest.dataset.shopName}`);
-   chest.addEventListener('click', () => {
-    activeChest = chest;
-    activeShop = shop;
-    lockedShopItem = null;
-    closeInGameChat();
-    tradeView.hidden = false;
-    renderGameShop();
-    selectShopItem(shop.items.find(item=>item.name===shop.featuredItem));
-    tradeView.querySelector('[data-close-trade]').focus();
-   });
+   chest.addEventListener('click',()=>openCampChest(shop));
    return chest;
   }));
  };
 
- function enterShop(item) {
-  playJoinGameLoading(()=>showShop(item));
+ function enterShop(item,game){
+  if(!item.sold)playJoinGameLoading(()=>showShop(item,game));
  }
- function showShop(item) {
+ function showShop(item,game){
+  if(item.sold)return;
   dialog.classList.remove('regular-game');
   currentCampGame=null;
   if(!dialog.open)dialog.showModal();
-  const existing=gamesForCharacter().find(game=>game.shopItem===item.name);
-  const shopGame=existing||{name:item.seller+' Shop',characterGameMode:activeCharacterGameMode,realm:activeRealm,players:1,maxPlayers:8,difficulty:selectedDifficulty,activity:'Trading',shopItem:item.name};
-  if(!existing)games.push(shopGame);
-  mountInGameChat(shopGame);
+  const existing=game||gamesForCharacter().find(entry=>entry.shopItem===item.id&&entry.difficulty===selectedDifficulty&&!gameEntryProblem(entry));
+  const shopGame=existing||{name:tradeRoomName(item)+' SHOP',characterGameMode:activeCharacterGameMode,realm:activeRealm,players:1,maxPlayers:8,difficulty:selectedDifficulty,activity:'Trading',shopItem:item.id,shopListing:item,elapsedSeconds:0};
+  mountInGameChat(shopGame,Boolean(existing));
   campChests.querySelector('button')?.focus();
  }
- openTradingShop = itemName => {
-  const item = offers.find(offer => !offer.mine && offer.name === itemName);
-  if(item) enterShop(item);
+ openTradingShop = game => {
+  if(game.shopListing)enterShop(game.shopListing,game);
  };
 
- function bindShopItem(button, item) {
+ function bindShopItem(button,item,equipped=false) {
   shopItemButtons.set(button,item);
-  const preview = () => {if (!lockedShopItem) selectShopItem(item);};
+  const preview = () => {if (!lockedShopItem) selectShopItem(item,equipped);};
   button.addEventListener('pointerenter', preview);
   const dismissPreview = () => {
    if (!lockedShopItem) document.querySelector('.shop-inspection').hidden = true;
@@ -1774,7 +2086,7 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   button.addEventListener('focus', preview);
   button.addEventListener('click', () => {
    lockedShopItem = item;
-   selectShopItem(item);
+   selectShopItem(item,equipped);
   });
  }
  dialog.addEventListener('click', event => {
@@ -1787,89 +2099,280 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
  });
  dialog.addEventListener('close', () => {lockedShopItem = null;});
 
- function itemSprite(item) {
-  const [x, y, w, h] = item.rect;
-  const {src,width,height}=item.artwork;
-  return `background-image:url('${src}');background-size:${width / w * 100}% ${height / h * 100}%;background-position:${x / (width - w) * 100}% ${y / (height - h) * 100}%;aspect-ratio:${w}/${h}`;
+ function makeGrid(rows){
+  return Array.from({length:rows},()=>Array(10).fill(false));
  }
- function selectShopItem(item) {
-  document.querySelector('.shop-inspection').hidden = false;
+
+ function reserveSlot(grid,w,h,fromRight=false){
+  for(let index=0;index<grid.length*10;index++){
+   const x=fromRight?9-Math.floor(index/grid.length):index%10;
+   const y=fromRight?grid.length-1-index%grid.length:Math.floor(index/10);
+   if(x+w>10||y+h>grid.length)continue;
+   if(grid.slice(y,y+h).some(row=>row.slice(x,x+w).some(Boolean)))continue;
+   grid.slice(y,y+h).forEach(row=>row.fill(true,x,x+w));
+   return {x,y};
+  }
+  return null;
+ }
+
+ function placeGridIcon(el,layout,slot,w,h){
+  const {width,height,x,y,cell}=layout;
+  el.style.left=(x+slot.x*cell)/width*100+'%';
+  el.style.top=(y+slot.y*cell)/height*100+'%';
+  el.style.width=w*cell/width*100+'%';
+  el.style.height=h*cell/height*100+'%';
+ }
+
+ function itemButton(item,className,bindItem=bindShopItem){
+  const button=document.createElement('button');
+  button.type='button';
+  button.className=className;
+  button.title=item.name;
+  button.setAttribute('aria-label',item.name);
+  button.setAttribute('aria-pressed',String(item===lockedShopItem));
+  button.classList.toggle('selected',item===lockedShopItem);
+  const icon=document.createElement('img');
+  icon.src='img/'+item.icon;
+  icon.alt='';
+  button.append(icon);
+  bindItem(button,item);
+  return button;
+ }
+
+ function packShop(items){
+  const pages=[[]];
+  let grid=makeGrid(shopArtwork.rows);
+  for(const item of items){
+   let slot=reserveSlot(grid,item.w,item.h);
+   if(!slot){
+    pages.push([]);
+    grid=makeGrid(shopArtwork.rows);
+    slot=reserveSlot(grid,item.w,item.h);
+   }
+   pages.at(-1).push({item,slot});
+  }
+  return pages;
+ }
+
+ function pagesForShop(seller,index){
+  const receipts=Object.entries(seller.proceeds[index].runes).map(([rune,count])=>({rune,count,w:1,h:1}));
+  return packShop([...seller.shops[index],...receipts]);
+ }
+
+ function clearShopSelection(){
+  visiting=null;
+  selectedPayment=null;
+  lockedShopItem=null;
+  document.querySelector('.shop-inspection').hidden=true;
+ }
+
+ function selectShopPage(page){
+  activePage=page;
+  clearShopSelection();
+  renderGameShop();
+ }
+
+ function moveShopPage(direction){
+  const pageCounts=activeShop.shops.map((_,index)=>pagesForShop(activeShop,index).length);
+  const page=activePage+direction;
+  if(page>=0&&page<pageCounts[activeShopIndex]){
+   selectShopPage(page);
+   return;
+  }
+  const nextShop=activeShopIndex+direction;
+  if(nextShop<0||nextShop>=pageCounts.length)return;
+  activeShopIndex=nextShop;
+  selectShopPage(direction>0?0:pageCounts[nextShop]-1);
+ }
+
+ for(let index=0;index<shopCount;index++){
+  const tab=document.createElement('button');
+  tab.type='button';
+  const label='Shop '+(index+1);
+  tab.setAttribute('aria-label',label);
+  tab.title=label;
+  tab.addEventListener('click',()=>{
+   activeShopIndex=index;
+   selectShopPage(0);
+  });
+  tabs.append(tab);
+ }
+ previousPage.addEventListener('click',()=>moveShopPage(-1));
+ nextPage.addEventListener('click',()=>moveShopPage(1));
+
+ function updateBuyButton(){
+  buy.disabled=!selectedPayment||paymentBalance(selectedPayment)<selectedPayment.price;
+  buy.textContent=selectedPayment&&buy.disabled?'Not enough '+selectedPayment.rune:'Buy Item';
+ }
+
+ function renderShopPayments(item,selectable=false){
+  shopPayments.replaceChildren();
+  shopPayments.hidden=item.sold;
+  selectedPayment=null;
+  if(item.sold)return;
+  const options=paymentOptions(item);
+  if(selectable)selectedPayment=options[0];
+  options.forEach((option,index)=>{
+   const row=document.createElement(selectable?'label':'span');
+   row.className='shop-payment-row';
+   if(selectable){
+    const input=document.createElement('input');
+    input.type='radio';input.name='shop-payment';input.checked=index===0;
+    input.setAttribute('aria-label',paymentLabel(option));
+    input.addEventListener('change',()=>{selectedPayment=option;updateBuyButton();});
+    row.append(input);
+   }
+   for(const text of [paymentQuantity(option),'×',option.rune]){
+    const part=document.createElement('span');
+    part.textContent=text;
+    row.append(part);
+   }
+   if(index<options.length-1){
+    const separator=document.createElement('span');
+    separator.className='shop-payment-or';
+    separator.textContent='OR';
+    separator.setAttribute('aria-hidden','true');
+    row.append(separator);
+   }
+   shopPayments.append(row);
+  });
+ }
+
+ function selectShopItem(item,equipped=false) {
+  const inspection = document.querySelector('.shop-inspection');
+  inspection.classList.toggle('owned-item-inspection', equipped||Boolean(item.sold));
+  inspection.hidden = false;
   visiting = item;
   const isActive = lockedShopItem === item;
   document.getElementById('shop-selected-label').hidden = !isActive;
   document.getElementById('market-purchase-status').hidden = !isActive;
-  document.getElementById('market-offer').replaceChildren();
-  document.getElementById('market-offer').hidden = true;
-  document.getElementById('shop-tooltip-price').textContent = item.sold ? 'Purchased' : `Price: ${item.price} ${item.rune}`;
+  if(equipped){shopPayments.hidden=true;selectedPayment=null;}
+  else renderShopPayments(item,isActive);
+  document.getElementById('shop-tooltip-price').textContent = item.sold ? 'Purchased' : '';
   const tooltip = document.getElementById('shop-item-tooltip');
-  tooltip.src = 'img/' + item.tooltip; tooltip.alt = `${item.name} statistics`;
-  document.getElementById('market-purchase-status').textContent = item.sold ? 'Purchased — this item is now in your inventory.' : 'Select an item in the shop, then buy with your runes.';
-  buy.hidden = !isActive || !!item.sold;
-  buy.disabled = wallet[item.rune] < item.price;
-  buy.textContent = buy.disabled ? `Not enough ${item.rune}` : 'Buy Item';
+  setItemTooltip(tooltip,item);
+  document.getElementById('market-purchase-status').textContent = item.sold ? 'Purchased — this item is now in your inventory.' : '';
+  buy.hidden = equipped || !isActive || !!item.sold;
+  updateBuyButton();
   document.querySelectorAll('.shop-item-hotspot, .shop-owned-item').forEach(button => {
    const active = shopItemButtons.get(button) === lockedShopItem;
    button.classList.toggle('selected', active);
    button.setAttribute('aria-pressed', String(active));
   });
  }
- function renderGameShop() {
-  const {src,width,height}=activeShop.artwork;
-  shopImage.src=src;
-  shopImage.alt=`${activeShop.seller}’s stocked shop`;
-  document.getElementById('shop-owner-name').textContent=`${activeShop.seller}’s Shop`;
-  shopImage.parentElement.style.aspectRatio=`${width} / ${height}`;
-  const hotspots = document.getElementById('shop-item-hotspots'); hotspots.replaceChildren();
-  activeShop.items.forEach(item => {
-   const [x, y, w, h] = item.rect;
-   const button = document.createElement('button'); button.type = 'button';
-   button.className = 'shop-item-hotspot' + (item.sold ? ' sold' : '') + (item === lockedShopItem ? ' selected' : '');
-   button.style.cssText = `left:${x/width*100}%;top:${y/height*100}%;width:${w/width*100}%;height:${h/height*100}%`;
-   button.title = `${item.name}${item.sold ? ' · Purchased' : ''}`;
-   button.setAttribute('aria-label', button.title);
-   button.textContent = item.sold ? 'Sold' : '';
-   bindShopItem(button, item); hotspots.append(button);
-  });
-  const inventory = document.getElementById('shop-inventory-items'); inventory.replaceChildren();
-  const occupied = Array.from({length: 4}, () => Array(10).fill(false));
-  let runeSlot = 39;
-  Object.entries(wallet).forEach(([rune, count]) => {
-   for (let index = 0; index < count; index++) {
-    const x = runeSlot % 10, y = Math.floor(runeSlot / 10); runeSlot--;
-    occupied[y][x] = true;
-    const icon = document.createElement('img'); icon.className = 'shop-inventory-rune';
-    icon.src = `img/${rune.toLowerCase()}_rune.png`; icon.alt = `${rune} Rune`; icon.title = `${rune} Rune`;
-    icon.style.cssText = `left:${(80 + x * 93)/1096*100}%;top:${(857 + y * 93)/1468*100}%;width:${93/1096*100}%;height:${93/1468*100}%`;
-    inventory.append(icon);
-   }
-  });
-  [...owned].sort((a, b) => b.rect[3] - a.rect[3]).forEach(item => {
-   const height = item.rect[3] > 200 ? 3 : 2;
-   let slot = null;
-   for (let y = 0; y <= 4 - height && !slot; y++) {
-    for (let x = 0; x <= 8; x += 2) {
-     if (Array.from({length: height}, (_, row) => !occupied[y + row][x] && !occupied[y + row][x + 1]).every(Boolean)) {slot = {x, y}; break;}
-    }
-   }
-   if (!slot) return;
-   for (let y = slot.y; y < slot.y + height; y++) {occupied[y][slot.x] = occupied[y][slot.x + 1] = true;}
-   const icon = document.createElement('button'); icon.type = 'button'; icon.className = 'shop-owned-item';
-   icon.style.cssText = itemSprite(item) + `;left:${(80 + slot.x * 93)/1096*100}%;top:${(857 + slot.y * 93)/1468*100}%;width:${186/1096*100}%`;
-   icon.title = item.name; icon.setAttribute('aria-label', item.name + ' — purchased');
-   bindShopItem(icon, item);
-   icon.classList.toggle('selected', item === lockedShopItem);
-   inventory.append(icon);
-  });
+ function renderGameShop(){
+  shopImage.alt=activeShop.seller+'’s shop';
+  document.getElementById('shop-owner-name').textContent=activeShop.seller+'’s Shop';
+  const shopPages=activeShop.shops.map((_,index)=>pagesForShop(activeShop,index));
+  const pages=shopPages[activeShopIndex];
+  activePage=Math.max(0,Math.min(activePage,pages.length-1));
+  Array.from(tabs.children).forEach((tab,index)=>tab.setAttribute('aria-pressed',String(index===activeShopIndex)));
+  const pageNumber=shopPages.slice(0,activeShopIndex).reduce((sum,stock)=>sum+stock.length,activePage+1);
+  const totalPages=shopPages.reduce((sum,stock)=>sum+stock.length,0);
+  pageLabel.textContent='Page '+pageNumber+' / '+totalPages;
+  previousPage.disabled=pageNumber===1;
+  nextPage.disabled=pageNumber===totalPages;
+  const hotspots=document.getElementById('shop-item-hotspots');
+  document.getElementById('shop-stock-gold').value=activeShop.proceeds[activeShopIndex].gold.toLocaleString();
+  hotspots.replaceChildren();
+  for(const {item,slot} of pages[activePage]){
+   if(item.sold)continue;
+   const icon=item.count?runeStack(item.rune,item.count):itemButton(item,'shop-item-hotspot');
+   placeGridIcon(icon,shopArtwork,slot,item.w,item.h);
+   hotspots.append(icon);
+  }
+  renderInventory();
  }
- document.querySelectorAll('[data-close-trade]').forEach(button => button.addEventListener('click', () => {
-  lockedShopItem = null;
+
+ function renderInventory(standalone=false){
+  const bindInventoryTooltip=(button,item)=>bindEquipmentTooltip(button,item,campInventoryTooltip);
+  const inventory=document.getElementById('shop-inventory-items');
+  renderCharacterEquipment(document.getElementById('shop-equipped-items'),campBuild?.gear??{},inventoryArtwork.height,(button,item)=>{
+   button.classList.add('shop-owned-item');
+   if(standalone)bindInventoryTooltip(button,item);
+   else if(item.tooltip)bindShopItem(button,{...item},true);
+  });
+  document.getElementById('shop-inventory-gold').value=goldBalance.toLocaleString();
+  inventory.replaceChildren();
+  const grid=makeGrid(inventoryArtwork.rows);
+  for(const item of owned){
+   const slot=reserveSlot(grid,item.w,item.h);
+   const button=itemButton(item,'shop-owned-item',standalone?bindInventoryTooltip:bindShopItem);
+   placeGridIcon(button,inventoryArtwork,slot,item.w,item.h);
+   inventory.append(button);
+  }
+  for(const [rune,count] of Object.entries(wallet)){
+   if(count===0)continue;
+   const stack=runeStack(rune,count);
+   placeGridIcon(stack,inventoryArtwork,reserveSlot(grid,1,1,true),1,1);
+   inventory.append(stack);
+  }
+ }
+
+ function runeStack(rune,count){
+  const stack=document.createElement('div');
+  stack.className='shop-inventory-rune';
+  stack.title=count+' × '+rune+' Rune';
+  const icon=document.createElement('img');
+  icon.src='img/items/runes/'+rune.toLowerCase()+'_rune.png';
+  icon.alt=stack.title;
+  const badge=document.createElement('span');
+  badge.className='shop-rune-quantity';
+  badge.textContent=count;
+  badge.setAttribute('aria-hidden','true');
+  stack.append(icon,badge);
+  return stack;
+ }
+
+ function purchaseFits(item,payment){
+  const grid=makeGrid(inventoryArtwork.rows);
+  const remainingStacks=Object.entries(wallet).filter(([rune,count])=>count>(rune===payment.rune?payment.price:0)).length;
+  for(const held of owned)if(!reserveSlot(grid,held.w,held.h))return false;
+  if(!reserveSlot(grid,item.w,item.h))return false;
+  return grid.flat().filter(cell=>!cell).length>=remainingStacks;
+ }
+ function closeTradeView(){
+  clearShopSelection();
   tradeView.hidden = true;
-  activeChest?.focus();
+  dialog.focus({preventScroll:true});
+ }
+ function closeCampInventory(){
+  if(campInventory.hidden)return;
+  campInventoryTooltip.hidden=true;
+  campInventory.hidden=true;
+  tradeView.append(inventoryPanel);
+ }
+ function toggleCampInventory(){
+  if(!campInventory.hidden){closeCampInventory();dialog.focus({preventScroll:true});return;}
+  if(!tradeView.hidden)closeTradeView();
+  campInventory.prepend(inventoryPanel);
+  renderInventory(true);
+  campInventory.hidden=false;
+ }
+ document.querySelectorAll('[data-close-trade]').forEach(button=>button.addEventListener('click',()=>{
+  if(!campInventory.hidden){closeCampInventory();dialog.focus({preventScroll:true});}
+  else closeTradeView();
  }));
+ dialog.addEventListener('close',()=>{
+  closeCampInventory();
+  if(inspectDialog.open&&inspectDialog.classList.contains('docked-inspect'))inspectDialog.close();
+ });
+ dialog.addEventListener('keydown',event=>{
+  if(event.key.toLowerCase()!=='i'||event.repeat||event.isComposing||event.ctrlKey||event.altKey||event.metaKey)return;
+  if(event.target.closest('input,textarea,select,[contenteditable]')||document.querySelector('dialog[open]:not(#market-shop,.docked-inspect)'))return;
+  event.preventDefault();
+  toggleCampInventory();
+ });
+ dialog.addEventListener('click',event=>{
+  if(tradeView.hidden||event.target.closest('#shop-trade-view :is(.shop-image-panel,.shop-inspection),#player-inspect.docked-inspect'))return;
+  event.preventDefault();
+  event.stopPropagation();
+  closeTradeView();
+ },{capture:true});
  dialog.addEventListener('cancel', event => {
   event.preventDefault();
-  if (!document.getElementById('shop-trade-view').hidden) {
-   document.querySelector('[data-close-trade]').click();
+  if (!tradeView.hidden) {
+   closeTradeView();
   }else{openGameMenu();}
  });
 
@@ -1906,7 +2409,7 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   }
   previewAnchor=anchor;anchor.setAttribute('aria-expanded','true');
   const picture=preview.querySelector('img');picture.onload=positionMarketPreview;
-  picture.src='img/'+item.tooltip;picture.alt=item.name+' statistics';
+  setItemTooltip(picture,item);
   preview.setAttribute('aria-label',item.name+' tooltip');preview.show();positionMarketPreview();
  }
  function renderMarket() {
@@ -1914,11 +2417,14 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
   const list = document.getElementById('market-list');
   list.replaceChildren();
   const query = search.value.trim().toLowerCase();
-  offers.filter(item => !item.sold && `${item.name} ${item.seller} ${item.server}`.toLowerCase().includes(query)).forEach(item => {
+  const results = offers.filter(item => !item.sold && `${item.name} ${item.seller} ${item.server}`.toLowerCase().includes(query));
+  if(marketSortKey==='price')results.sort((a,b)=>a.price*demoRuneValues[a.rune]-b.price*demoRuneValues[b.rune]);
+  else if(marketSortKey)results.sort((a,b)=>a[marketSortKey].localeCompare(b[marketSortKey]));
+  results.forEach(item => {
    const row = document.createElement('article');
    row.className = 'market-item';
    row.dataset.itemType=item.itemType||'unique';
-   row.innerHTML = `<div class="market-item-icon" aria-hidden="true">${item.icon ? `<img src="img/${escapeHtml(item.icon)}" alt="" loading="lazy">` : item.symbol}</div><div class="market-item-copy"><h3>${escapeHtml(item.name)}</h3><small>${escapeHtml(item.stats)}</small><strong>${item.price} ${item.rune}</strong></div>`;
+   row.innerHTML = `<div class="market-item-icon" aria-hidden="true">${item.icon ? `<img src="img/${escapeHtml(item.icon)}" alt="" loading="lazy">` : item.symbol}</div><div class="market-item-copy"><h3>${escapeHtml(item.name)}</h3><small>${escapeHtml(item.stats)}</small></div>`;
    if(item.tooltip){
     const heading=row.querySelector('h3'),nameButton=document.createElement('button');
     nameButton.type='button';nameButton.className='market-name-button';nameButton.textContent=item.name;
@@ -1942,11 +2448,22 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
    const seller=document.createElement('div');seller.className='market-seller';
    const portrait=document.createElement('img');
    const sellerClass=item.sellerClass||'Barbarian';
-   portrait.src='img/'+sellerClass.toLowerCase()+'.png';portrait.alt=sellerClass;portrait.title=sellerClass;portrait.loading='lazy';
+   portrait.src='img/class/'+sellerClass.toLowerCase()+'.png';portrait.alt=sellerClass;portrait.title=sellerClass;portrait.loading='lazy';
    const sellerName=document.createElement('span');sellerName.className='market-seller-name';sellerName.textContent=item.mine?'You':item.seller;
    const server=document.createElement('span');server.className='market-seller-server';server.textContent=item.server;
    seller.append(portrait,sellerName,server);
    const sellerActions=document.createElement('div');sellerActions.className='market-seller-actions';sellerActions.append(seller,action);
+   const prices=document.createElement('strong');prices.className='market-item-prices';
+   paymentOptions(item).forEach((option,index)=>{
+    if(index){
+     const separator=document.createElement('span');
+     separator.className='market-price-or';
+     separator.textContent=' OR ';
+     prices.append(separator);
+    }
+    prices.append(paymentLabel(option));
+   });
+   row.querySelector('.market-item-copy').append(prices);
    row.append(sellerActions); list.append(row);
   });
   if (!list.children.length) list.textContent = 'No items found.';
@@ -1956,14 +2473,40 @@ document.querySelectorAll('[data-main-menu]').forEach(button => {
  }
  document.querySelectorAll('[data-chat-view]').forEach(tab => tab.addEventListener('click', () => {panel.hidden = tab.dataset.chatView !== 'market';if(panel.hidden)closeMarketPreview();}));
  search.addEventListener('input', renderMarket);
+ marketSort.addEventListener('click', event=>{
+  const option=event.target.closest('[data-market-sort]');
+  if(!option)return;
+  marketSortKey=option.dataset.marketSort;
+  marketSort.querySelectorAll('[data-market-sort]').forEach(button=>button.setAttribute('aria-pressed',String(button===option)));
+  marketSort.open=false;
+  marketSort.querySelector('summary').focus();
+  renderMarket();
+ });
 
  buy.addEventListener('click', () => {
-  if (!visiting || lockedShopItem !== visiting || !activeShop?.items.includes(visiting) || visiting.sold || wallet[visiting.rune] < visiting.price) return;
-  wallet[visiting.rune] -= visiting.price; visiting.sold = true; owned.push(visiting);
-  if (activeShop.listing?.name === visiting.name) activeShop.listing.sold = true;
-  document.getElementById('market-purchase-status').textContent = `${visiting.name} added to your inventory. ${visiting.price} ${visiting.rune} transferred to ${visiting.seller}.`;
+  if (!visiting || lockedShopItem !== visiting || !activeShop?.shops[activeShopIndex].includes(visiting) || visiting.sold || !selectedPayment) return;
+  const {rune,price}=selectedPayment;
+  if(paymentBalance(selectedPayment)<price)return;
+  if(!purchaseFits(visiting,selectedPayment)){
+   document.getElementById('market-purchase-status').textContent='There is no room in your inventory for this item.';
+   return;
+  }
+  const proceeds=activeShop.proceeds[activeShopIndex];
+  if(rune==='Gold'){
+   goldBalance-=price;
+   proceeds.gold+=price;
+  }else{
+   wallet[rune]-=price;
+   proceeds.runes[rune]=(proceeds.runes[rune]||0)+price;
+  }
+  const paid=paymentLabel(selectedPayment);
+  visiting.sold = true; owned.push(visiting);
+
+  document.getElementById('market-purchase-status').textContent = `${visiting.name} added to your inventory. ${paid} transferred to ${visiting.seller}.`;
+  renderShopPayments(visiting,false);
+  document.getElementById('shop-tooltip-price').textContent='Purchased';
   status.textContent = `Purchased ${visiting.name}. Find it in Your purchased items.`;
-  buy.hidden = true; renderMarket(); renderGameShop();
+  lockedShopItem=null; buy.hidden = true; renderMarket(); renderGameShop(); render();
  });
  document.getElementById('market-list-form').addEventListener('submit', event => {
   event.preventDefault();
@@ -2018,6 +2561,31 @@ const realmChatSamples={
  ]
 };
 const realmDefaultGames={America:games.map(game=>({...game}))};
+const demoBuildSamples={
+ Lobby:[['Paladin','I’m running hammers in Hell. What would you upgrade first?'],['Amazon','Finally got Windforce on my bowazon. How does the rest of my gear look?']],
+ Farming:[['Sorceress','Trying to balance clear speed and magic find on my Blizzard sorc. What would you swap?'],['Necromancer','I just switched to Death’s Web for Poison Nova. Any gear changes for faster Chaos clears?']],
+ PvP:[['Assassin','How does this Lightning Sentry setup look for duels?']],
+ Game:[['Warlock','I’m testing this Bind Demon setup on our next run. What would you change?'],['Barbarian','Here’s my Find Item setup. Let me know if you’d swap anything before we start.']]
+};
+function getDemoBuildSamples(channel){
+ return (demoBuildSamples[channel]||[]).map(([cls,text])=>{
+  const [character,, ,level,battletag]=mockLobbyPlayers.find(([,playerClass])=>playerClass===cls);
+  return {character,battletag,text,build:{character:[character,level,cls]}};
+ });
+}
+function createDemoChatPost({character,battletag,text,build},channel){
+ const message=document.createElement('p'),sender=document.createElement('span'),body=document.createElement('span');
+ sender.className='player-name';sender.dataset.character=character;sender.dataset.battletag=battletag;sender.textContent=character+':';
+ body.className='message-body';body.textContent=' '+text;
+ message.append(sender,body);
+ if(build){message.classList.add('chat-build-share');appendBuildLink(message,build);}
+ decorateChatMessage(message,channel);
+ return message;
+}
+function demoBuildHistory(){
+ return ['Lobby','Farming'].flatMap(channel=>getDemoBuildSamples(channel).slice(0,1).map(sample=>createDemoChatPost(sample,channel)));
+}
+chatLog.append(...demoBuildHistory());
 const realmStates={America:{games, messages:Array.from(chatLog.children)}};
 function buildRealm(server){
  const realmNames=realmGameNames[server];
@@ -2035,8 +2603,9 @@ function buildRealm(server){
  assignGameModes(realmGames);
  assignMockFriendHosts(realmGames);
  addLegacyGames(realmGames);
+ configureRealmTradeListings(realmGames);
  realmDefaultGames[server]=realmGames.map(game=>({...game}));
- return {games:realmGames,messages:[...messages,...createCommunitySamples()]};
+ return {games:realmGames,messages:[...messages,...createCommunitySamples(),...demoBuildHistory()]};
 }
 let activeRealm='America';
 let playServerConnection=null;
@@ -2156,16 +2725,67 @@ function postGameSystemNotice(kind,{character='',zone=campTerrorZoneName,unread=
  appendChatMessage(message);
  return message;
 }
-function nextGameSystemNotice(){
- const key=currentGameChatKey();if(!key)return;
+function nextGameTerrorZoneNotice(){
+ const key=currentGameChatKey();if(!key||!currentCampGame.tz)return false;
  let state=gameSystemStates.get(key);
- if(!state){state={step:0,playerIndex:0,joined:false,tzPhase:1};gameSystemStates.set(key,state);}
- if(currentCampGame.tz&&++state.step%3===0){
-  const kinds=['tz-start','tz-fading','tz-end'];postGameSystemNotice(kinds[state.tzPhase]);state.tzPhase=(state.tzPhase+1)%kinds.length;return;
- }
- const names=['AshenBlade','MoonWarden','RuneHunter','IronWolf'];const character=names[state.playerIndex%names.length];
- postGameSystemNotice(state.joined?'left':'joined',{character});
- state.joined=!state.joined;if(!state.joined)state.playerIndex++;
+ if(!state){state={step:0,tzPhase:1};gameSystemStates.set(key,state);}
+ if(++state.step%3!==0)return false;
+ const kinds=['tz-start','tz-fading','tz-end'];
+ postGameSystemNotice(kinds[state.tzPhase]);
+ state.tzPhase=(state.tzPhase+1)%kinds.length;
+ return true;
+}
+
+const campVisitors=document.getElementById('camp-visitors');
+const campVisitorTimers=[];
+const campVisitorSpawns=[[40,53],[68,61],[86,50],[55,38]];
+const campVisitorSprites=[
+ ['Assassin',200,458],['Paladin',200,387],['Amazon',200,485],['Druid',200,387],
+ ['Sorceress',200,349],['Necromancer',276,528],['Barbarian',200,461],['Warlock',300,492]
+];
+function stopCampVisitors(){
+ campVisitorTimers.splice(0).forEach(clearTimeout);
+ campVisitors.replaceChildren();
+ closePlayerMenu();
+}
+function scheduleCampVisitors(){
+ stopCampVisitors();
+ const game=currentCampGame;
+ const openSlots=game.maxPlayers-game.players;
+ if(openSlots<=0)return;
+ campVisitorSprites.forEach(([cls,width,height],index)=>{
+  const [name,,,level,battletag]=mockLobbyPlayers.find(([,playerClass])=>playerClass===cls);
+  const [x,y]=campVisitorSpawns[index%campVisitorSpawns.length];
+  campVisitorTimers.push(setTimeout(()=>{
+   if(currentCampGame!==game||!document.getElementById('market-shop').open)return;
+   if(campVisitors.childElementCount>=openSlots)return;
+   const inspection={character:[name,level,cls]};
+   const avatar=document.createElement('button');
+   avatar.type='button';avatar.className='camp-visitor';avatar.dataset.visitorName=name;
+   avatar.style.left=x+'%';avatar.style.top=y+'%';
+   avatar.style.aspectRatio=width+' / '+height;
+   avatar.setAttribute('aria-label',name+', level '+level+' '+cls);
+   const image=document.createElement('img');
+   const sprite=classArtSource(cls,3);
+   image.src=sprite;image.alt='';image.draggable=false;
+   const shadow=image.cloneNode();
+   shadow.className='camp-visitor-shadow';
+   shadow.setAttribute('aria-hidden','true');
+   avatar.append(shadow,image);
+   avatar.addEventListener('contextmenu',event=>{
+    event.preventDefault();
+    const rect=avatar.getBoundingClientRect();
+    positionPlayerMenu({inspection,character:name,battletag},battletag,event.clientX||rect.right,event.clientY||rect.top);
+   });
+   campVisitors.append(avatar);
+   postGameSystemNotice('joined',{character:name});
+   campVisitorTimers.push(setTimeout(()=>{
+    avatar.remove();
+    if(contextPlayer?.inspection===inspection)closePlayerMenu();
+    if(currentCampGame===game)postGameSystemNotice('left',{character:name});
+   },60_000));
+  },15_000+index*15_000));
+ });
 }
 
 // Reparent the same chat controls so both surfaces use one message history and unread state.
@@ -2178,23 +2798,33 @@ function updateCampClock(){
  campClock.dateTime=now.toISOString();
  campClock.textContent=campClockFormat.format(now);
 }
-function mountInGameChat(game){
+const inGameActions=document.getElementById('in-game-actions');
+inGameActions.addEventListener('click',event=>{
+ if(event.target.closest('.in-game-action-options button'))inGameActions.open=false;
+});
+document.addEventListener('click',event=>{
+ if(inGameActions.open&&!inGameActions.contains(event.target))inGameActions.open=false;
+});
+
+function mountInGameChat(game,joiningExistingGame=false){
  document.getElementById('market-shop-title').textContent=`Game: ${game.name}`;
  campTerrorZone.hidden=!game.tz;
  campTerrorZone.textContent=game.tz?campTerrorZoneName:'';
  updateCampClock();
  clearInterval(campClockTimer);
  campClockTimer=setInterval(updateCampClock,1000);
- clearGameInviteDraft();hideInGameMessagePreview();
+ clearGameInviteDraft();clearBuildShareDraft();hideInGameMessagePreview();
  const nodes=[document.querySelector('.chat-actions'),document.getElementById('chat-filter-panel'),chatLog,document.getElementById('chat-form'),playerMenu,document.getElementById('system-toggle'),document.getElementById('chat-filter-toggle')];
  if(!gameChatMount){
   lobbyChatChannel=selectedChatChannel;lobbyComposerChannel=composerChannel;
   gameChatMount=nodes.map(node=>{const anchor=document.createComment('lobby-chat-position');node.before(anchor);return {node,anchor,hidden:node.hidden};});
  }
- currentCampGame={players:1,maxPlayers:8,...game,realm:game.realm||activeRealm};
- renderCampShops(currentCampGame);
+ const listedPlayers=game.players??1;
+ currentCampGame={maxPlayers:8,...game,players:listedPlayers+Number(joiningExistingGame),realm:game.realm||activeRealm};
+ renderCampShops({...currentCampGame,players:listedPlayers});
  if(characterMode==='online'&&!currentCampGame.isPrivate&&!games.some(entry=>entry.name===game.name&&entry.characterGameMode===game.characterGameMode))games.push(currentCampGame);
  const host=document.getElementById('in-game-chat-content');nodes.forEach(node=>{host.append(node);node.hidden=false;});
+ document.getElementById('market-shop').append(playerMenu);
  const settingsButton=document.getElementById('in-game-chat-settings');
  settingsButton.before(document.getElementById('system-toggle'));
  chatFilterButton.hidden=true;
@@ -2202,7 +2832,7 @@ function mountInGameChat(game){
  chatFilterPanel.hidden=!chatFilterPanel.classList.contains('open');
  document.getElementById('game-chat-channel').hidden=false;
  chatChannel.querySelector('[data-channel="Lobby"]').hidden=true;
- document.getElementById('in-game-invite').hidden=false;
+ inGameActions.hidden=false;
  document.getElementById('in-game-invite').disabled=!!gameEntryProblem(currentCampGame);
  document.getElementById('in-game-invite').title=gameEntryProblem(currentCampGame)||'Post this game to a chat channel';
  document.getElementById('in-game-chat-status').textContent='';
@@ -2214,19 +2844,24 @@ function mountInGameChat(game){
   gameChatSeen.add(key);
   postGameSystemNotice('joined',{character:chosenCharacter,unread:false});
   if(game.tz)postGameSystemNotice('tz-start',{unread:false});
+  chatLog.append(createDemoChatPost(getDemoBuildSamples('Game')[0],'Game'));
  }
  applyChatChannel();
+ scheduleCampVisitors();
 }
 function unmountInGameChat(){
  clearInterval(campClockTimer);
+ stopCampVisitors();
  if(!gameChatMount)return;
  clearGameInviteDraft();
+ clearBuildShareDraft();
  closeInGameChat(false);
  gameChatMount.forEach(({node,anchor,hidden})=>{anchor.replaceWith(node);node.hidden=hidden;});
  gameChatMount=null;
  document.getElementById('game-chat-channel').hidden=true;
  chatChannel.querySelector('[data-channel="Lobby"]').hidden=false;
- document.getElementById('in-game-invite').hidden=true;
+ inGameActions.open=false;
+ inGameActions.hidden=true;
  if(selectedChatChannel==='Game')selectedChatChannel=lobbyChatChannel;
  if(composerChannel==='Game')composerChannel=lobbyComposerChannel;
  applyChatChannel();
@@ -2298,10 +2933,10 @@ document.getElementById('market-shop').addEventListener('click',event=>{
 });
 function handleInGameChatEnter(event){
  if(event.key!=='Enter'||event.repeat||event.isComposing||!document.getElementById('market-shop').open)return;
- if(document.querySelector('dialog[open]:not(#market-shop)'))return;
+ if(document.querySelector('dialog[open]:not(#market-shop,.docked-inspect)'))return;
  const panel=document.getElementById('in-game-chat'),input=document.getElementById('message');
- const control=event.target.closest?.('button,input,textarea,select,[contenteditable="true"]');
- if(!panel.hidden&&(!control||control===input)&&!input.value.trim()&&!pendingGameInvite){
+ const control=event.target.closest?.('button,summary,input,textarea,select,[contenteditable="true"]');
+ if(!panel.hidden&&(!control||control===input)&&!input.value.trim()&&!pendingGameInvite&&!pendingBuildShare){
   event.preventDefault();event.stopPropagation();closeInGameChat();return;
  }
  if(control)return;
@@ -2326,10 +2961,19 @@ function closeGameMenu(){
 // Handle Escape directly so it never closes the camp dialog itself.
 function handleGameEscape(event){
  if(event.key!=='Escape'||!document.getElementById('market-shop').open||document.getElementById('join-loading')?.open)return;
+ const inspect=document.getElementById('player-inspect');
+ if(inspect.open){
+  if(inspect.classList.contains('docked-inspect')&&!document.getElementById('game-escape-menu').open){
+   event.preventDefault();event.stopPropagation();if(!event.repeat)inspect.close();
+  }
+  if(!document.getElementById('game-escape-menu').open)return;
+ }
  event.preventDefault();event.stopPropagation();if(event.repeat)return;
+ if(inGameActions.open){inGameActions.open=false;inGameActions.querySelector('summary').focus();return;}
  if(document.getElementById('game-escape-menu').open){closeGameMenu();return;}
  if(!document.getElementById('in-game-chat').hidden||!document.getElementById('in-game-chat-preview').hidden){closeInGameChat();return;}
  if(!document.getElementById('shop-trade-view').hidden){document.querySelector('[data-close-trade]').click();return;}
+ if(!document.getElementById('camp-inventory').hidden){document.querySelector('#camp-inventory [data-close-trade]').click();return;}
  openGameMenu();
 }
 document.addEventListener('keydown',handleGameEscape,true);
@@ -2346,27 +2990,28 @@ document.getElementById('market-shop').addEventListener('close',()=>{
 });
 
 // Regular games and chat invitations share the existing camp scene.
-function showRegularCamp(game){
+function showRegularCamp(game,joiningExistingGame=false){
  recordRecentlyPlayed(game);
  currentCampGame={...game,realm:game.realm||activeRealm};
  const dialog=document.getElementById('market-shop');
  dialog.classList.add('regular-game');
  if(!dialog.open)dialog.showModal();
- mountInGameChat(game);
+ mountInGameChat(game,joiningExistingGame);
  dialog.focus();
 }
 function gameEntryProblem(game,realm=activeRealm){
  if(realm!==activeRealm)return 'This invitation is for a different server.';
  if(characterMode!=='online')return 'Select an Online character to join.';
  if(game.characterGameMode!==activeCharacterGameMode)return 'Select a character with matching expansion, Hardcore, and Ladder settings.';
+ if(game.shopListing?.sold)return 'This listing has sold.';
  if(game.isPrivate)return 'Open invitations are available for public games only.';
  if(game.players>=game.maxPlayers)return 'This game is full.';
  return '';
 }
 function joinLobbyGame(game){
  const problem=gameEntryProblem(game);if(problem){alert(problem);return;}
- if(game.shopItem&&openTradingShop){openTradingShop(game.shopItem);return;}
- playJoinGameLoading(()=>showRegularCamp(game));
+ if(game.shopItem&&openTradingShop){openTradingShop(game);return;}
+ playJoinGameLoading(()=>showRegularCamp(game,true));
 }
 function resolveChatInvite(invite){
  if(invite.realm!==activeRealm)return null;
@@ -2411,8 +3056,8 @@ function attachCurrentGameInvite(){
  const game=currentCampGame,status=document.getElementById('in-game-chat-status');
  const problem=game?gameEntryProblem(game):'Join a game first.';
  if(problem){status.textContent=problem;return;}
+ clearBuildShareDraft();
  pendingGameInvite={key:currentGameChatKey()};
- document.getElementById('chat-invite-draft-name').textContent=game.name;
  document.getElementById('chat-invite-draft').hidden=false;
  document.getElementById('in-game-invite').setAttribute('aria-pressed','true');
  status.textContent='';document.getElementById('message').focus();
@@ -2460,7 +3105,7 @@ function playJoinGameLoading(onReady){
  function nextDemoMessage(channel){
   const key=activeRealm+':'+channel+(channel==='Game'?':'+currentGameChatKey():'');
   if(!messagePools[key]){
-   const existing=Array.from(chatLog.querySelectorAll('p')).filter(message=>message.dataset.channel===channel&&!message.classList.contains('private-outgoing')&&!message.classList.contains('chat-game-invite'));
+   const existing=Array.from(chatLog.querySelectorAll('p')).filter(message=>message.dataset.channel===channel&&!message.matches('.private-outgoing,.chat-game-invite,.chat-build-share'));
    const pool=existing.map(message=>{
     const sender=message.querySelector('.player-name');if(!sender)return null;
     const copy=message.cloneNode(true);copy.querySelectorAll('.player-name,.channel-tag,.community-tag,time').forEach(node=>node.remove());
@@ -2468,6 +3113,7 @@ function playJoinGameLoading(onReady){
    }).filter(Boolean);
    const people=pool.length?[...pool]:[{character:activeRealm==='Europe'?'OakKnight':activeRealm==='Asia'?'PacificRunner':'NeonRaven',battletag:'DemoPlayer#2400'}];
    extraMessages[channel].forEach((text,index)=>pool.push({...people[index%people.length],text}));
+   pool.push(...getDemoBuildSamples(channel));
    messagePools[key]=pool;
   }
   if(!messageQueues[key]?.length){
@@ -2485,8 +3131,8 @@ function playJoinGameLoading(onReady){
  let demoMessageCount=0;
  let gameNoticeTicks=0;
  setInterval(()=>{
-  if(document.hidden||document.body.classList.contains('intro-active')||document.body.classList.contains('offline-character')||joinLoadingActive||document.querySelector('dialog[open]:not(#market-shop)'))return;
-  if(document.getElementById('market-shop').open&&++gameNoticeTicks%3===0){nextGameSystemNotice();return;}
+  if(document.hidden||document.body.classList.contains('intro-active')||document.body.classList.contains('offline-character')||joinLoadingActive||document.querySelector('dialog[open]:not(#market-shop,.docked-inspect)'))return;
+  if(document.getElementById('market-shop').open&&++gameNoticeTicks%3===0&&nextGameTerrorZoneNotice())return;
   if(++demoMessageCount%4===0){
    const openGames=gamesForCharacter().filter(game=>!game.shopItem&&!gameEntryProblem(game));
    if(openGames.length){
@@ -2497,11 +3143,9 @@ function playJoinGameLoading(onReady){
   }
   const availableChannels=document.getElementById('market-shop').open?[...channels,'Game']:channels;
   const channel=availableChannels[Math.floor(Math.random()*availableChannels.length)];
-  const {character,battletag,text}=nextDemoMessage(channel);
-  const message=document.createElement('p'),sender=document.createElement('span'),body=document.createElement('span');
-  sender.className='player-name';sender.dataset.character=character;sender.dataset.battletag=battletag;sender.textContent=character+':';
-  body.className='message-body';body.textContent=' '+text;message.append(sender,body);
-  decorateChatMessage(message,channel);if(channel==='Private'){message.dataset.recipient=battletag;privateMessageSound.currentTime=0;privateMessageSound.play().catch(()=>{});}
+  const sample=nextDemoMessage(channel);
+  const message=createDemoChatPost(sample,channel);
+  if(channel==='Private'){message.dataset.recipient=sample.battletag;privateMessageSound.currentTime=0;privateMessageSound.play().catch(()=>{});}
   message.dataset.unread='true';
   appendChatMessage(message);
  },10000);
