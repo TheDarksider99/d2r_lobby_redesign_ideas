@@ -1560,7 +1560,6 @@ function recordRecentlyPlayed(game){
 }
 const friendRequestsSection=document.querySelector('.friend-requests');
 const friendRequestsList=document.getElementById('friend-requests');
-const socialRequestLifetime=5*60*1000;
 const sampleFriendRequestSenders=[
  {character:'EmberWatch',battletag:'EmberWatch#1946'},
  {character:'RuneKeeper',battletag:'RuneKeeper#2840'},
@@ -1570,17 +1569,15 @@ const incomingFriendRequests=[];
 const sampleClanApplicants=['Ashforge#3182','SilverPike#2716'];
 const incomingClanRequests=[];
 let socialRequestSimulationStarted=false;
-let friendRequestTimer;
-let clanRequestTimer;
 function scheduleSocialRequestSimulation(){
  if(socialRequestSimulationStarted)return;
  socialRequestSimulationStarted=true;
  sampleFriendRequestSenders.forEach((player,index)=>setTimeout(()=>{
-  incomingFriendRequests.push({...player,expiresAt:Date.now()+socialRequestLifetime});
+  incomingFriendRequests.push({...player});
   renderFriendRequests();
  },10000*(2*index+1)));
  sampleClanApplicants.forEach((battleTag,index)=>setTimeout(()=>{
-  incomingClanRequests.push({battleTag,expiresAt:Date.now()+socialRequestLifetime});
+  incomingClanRequests.push({battleTag});
   renderClanRequests();
  },10000*(2*index+2)));
 }
@@ -1609,9 +1606,7 @@ function acceptClanRequest(request){
  document.getElementById('clan-panel').dispatchEvent(new Event('clan-roster-updated'));
 }
 function renderClanRequests(){
- clearTimeout(clanRequestTimer);
- const now=Date.now();
- const pending=incomingClanRequests.filter(request=>!request.resolved&&request.expiresAt>now);
+ const pending=incomingClanRequests.filter(request=>!request.resolved);
  const section=document.getElementById('clan-requests-section');
  section.hidden=!pending.length;
  updateRequestBadges('clan',pending.length);
@@ -1624,7 +1619,7 @@ function renderClanRequests(){
    const button=document.createElement('button');button.type='button';button.className='btn';button.textContent=action;
    button.setAttribute('aria-label',`${action} clan request from ${request.battleTag}`);
    button.addEventListener('click',()=>{
-    if(!request.resolved&&request.expiresAt>Date.now()){
+    if(!request.resolved){
      request.resolved=true;
      if(action==='Accept')acceptClanRequest(request);
     }
@@ -1636,7 +1631,6 @@ function renderClanRequests(){
   row.append(name,actions);
   return row;
  }));
- if(pending.length)clanRequestTimer=setTimeout(renderClanRequests,Math.min(...pending.map(request=>request.expiresAt))-now);
 }
 function acceptFriendRequest(player){
  const existing=[...document.querySelectorAll('#friend-list .friend-name[data-battletag]')];
@@ -1652,9 +1646,7 @@ function acceptFriendRequest(player){
  if(friendsOnly)render();
 }
 function renderFriendRequests(){
- clearTimeout(friendRequestTimer);
- const now=Date.now();
- const pending=incomingFriendRequests.filter(player=>!player.accepted&&player.expiresAt>now);
+ const pending=incomingFriendRequests.filter(player=>!player.accepted);
  document.getElementById('friend-requests-count').textContent=String(pending.length);
  updateRequestBadges('friend',pending.length);
  friendRequestsSection.hidden=!pending.length;
@@ -1668,7 +1660,7 @@ function renderFriendRequests(){
   const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='Accept';
   button.setAttribute('aria-label',`Accept friend request from ${player.character}`);
   button.addEventListener('click',()=>{
-   if(!player.accepted&&player.expiresAt>Date.now()){
+   if(!player.accepted){
     player.accepted=true;
     acceptFriendRequest(player);
    }
@@ -1678,7 +1670,6 @@ function renderFriendRequests(){
   identity.append(name,detail);row.append(identity,button);list.append(row);
  }
  friendRequestsList.replaceChildren(list);
- friendRequestTimer=setTimeout(renderFriendRequests,Math.min(...pending.map(player=>player.expiresAt))-now);
 }
 renderFriendActivity('recent');
 renderFriendActivity('blocked');
