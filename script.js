@@ -2650,19 +2650,29 @@ document.getElementById('chat-server').addEventListener('change',event=>{
 (()=>{
  const screen=document.getElementById('intro-screen'),welcome=document.getElementById('intro-welcome'),connecting=document.getElementById('intro-connecting'),enter=document.getElementById('intro-enter'),status=document.getElementById('intro-status');
  const lobby=document.querySelector('main.screen');
- let completedPlays=0,connectingStarted=false,holdStart=null,holdFrame=null,onConnected=null;
- function cancelHold(){holdStart=null;cancelAnimationFrame(holdFrame);enter.style.setProperty('--hold-progress','0%');}
+ const pointerHold=Symbol('pointer hold');
+ let completedPlays=0,connectingStarted=false,holdInput=null,holdStart=null,holdFrame=null,onConnected=null;
+ function cancelHold(){holdInput=null;holdStart=null;cancelAnimationFrame(holdFrame);enter.style.setProperty('--hold-progress','0%');}
  function showLobby(){cancelHold();welcome.pause();connecting.pause();const complete=onConnected;onConnected=null;if(complete)complete();connectingStarted=false;screen.hidden=true;lobby.inert=false;document.body.classList.remove('intro-active');scheduleSocialRequestSimulation();document.getElementById('game-name').focus();}
  function startConnection(){
   if(connectingStarted)return;connectingStarted=true;cancelHold();screen.hidden=false;lobby.inert=true;document.body.classList.add('intro-active');welcome.pause();welcome.hidden=true;connecting.hidden=false;connecting.currentTime=0;enter.hidden=true;status.textContent='';
   connecting.play().catch(()=>{enter.hidden=false;enter.textContent='Play connecting video';});
  }
  function updateHold(now){if(holdStart===null)return;const progress=Math.min(1,(now-holdStart)/600);enter.style.setProperty('--hold-progress',progress*100+'%');if(progress===1){startConnection();return;}holdFrame=requestAnimationFrame(updateHold);}
- function beginHold(){if(connectingStarted)return;if(holdStart!==null)return;holdStart=performance.now();holdFrame=requestAnimationFrame(updateHold);}
- screen.addEventListener('pointerdown',event=>{if(event.button!==0)return;event.preventDefault();beginHold();});
- window.addEventListener('pointerup',cancelHold);window.addEventListener('pointercancel',cancelHold);window.addEventListener('blur',cancelHold);
- enter.addEventListener('keydown',event=>{if(event.key===' '||event.key==='Enter'){event.preventDefault();beginHold();}});
- enter.addEventListener('keyup',cancelHold);
+ function beginHold(input){if(connectingStarted||holdInput!==null)return;holdInput=input;holdStart=performance.now();holdFrame=requestAnimationFrame(updateHold);}
+ function releasePointer(){if(holdInput===pointerHold)cancelHold();}
+ screen.addEventListener('pointerdown',event=>{if(event.button!==0)return;event.preventDefault();beginHold(pointerHold);});
+ window.addEventListener('pointerup',releasePointer);
+ window.addEventListener('pointercancel',releasePointer);
+ window.addEventListener('blur',cancelHold);
+ window.addEventListener('keydown',event=>{
+  if(screen.hidden||connectingStarted)return;
+  event.preventDefault();
+  if(!event.repeat)beginHold(event.code||event.key);
+ });
+ window.addEventListener('keyup',event=>{
+  if(holdInput===(event.code||event.key))cancelHold();
+ });
  enter.addEventListener('click',()=>{if(connectingStarted)connecting.play().then(()=>{enter.hidden=true;}).catch(()=>{});});
  welcome.addEventListener('ended',()=>{completedPlays++;if(completedPlays<20&&!connectingStarted){welcome.currentTime=0;welcome.play().catch(()=>{});}});
  connecting.addEventListener('ended',showLobby);
