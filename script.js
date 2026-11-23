@@ -176,7 +176,26 @@ function render(){updateJoinGameButton();const q=search.value.toLowerCase();list
   document.querySelectorAll('#friends-panel .friend-name[data-battletag]'),
   friend=>friend.dataset.battletag
  )):null;
- let visible=gamesForCharacter().filter(g=>(!friendBattletags||friendBattletags.has(g.hostBattletag))&&g.difficulty===selectedDifficulty&&g.name.toLowerCase().includes(q)&&(selectedActivity==='all'||g.activity===selectedActivity)&&(tzMode==='all'||(tzMode==='tz'&&g.tz)||(tzMode==='non-tz'&&!g.tz))&&(!ageFilterEnabled.checked||g.elapsedSeconds<Math.max(1,Number(ageFilterValue.value)||1)*(ageFilterUnit.value==='hours'?3600:60)));visibleGameCount.value=String(visible.length);if(!sortKey&&activeCharacterGameMode==='sc-ld')visible.sort((a,b)=>(a.ladderListOrder??-1)-(b.ladderListOrder??-1));if(sortKey){visible.sort((a,b)=>{if(sortKey==='players'&&playersSortMode===2){const af=a.players>=a.maxPlayers,bf=b.players>=b.maxPlayers;if(af!==bf)return af?1:-1;}let av=a[sortKey],bv=b[sortKey];if(typeof av==='string'){return (sortAsc?1:-1)*av.localeCompare(bv)}return (sortAsc?1:-1)*(av-bv)})}visible.forEach(g=>{const row=document.createElement('div');row.className='game'+(g.name===selectedName?' selected':'')+(g.players>=g.maxPlayers?' full-game':'');row.innerHTML=`<span class="activity-${g.activity.toLowerCase()}">${g.name}</span><span class="activity-${g.activity.toLowerCase()}">${activityLabel(g.activity)}</span><span class="${g.players>=g.maxPlayers?'full-players':'gold'}">${g.players}/${g.maxPlayers}</span><span>${formatTime(g.elapsedSeconds)}</span><span title="${g.tz?'Terror Zone':'Normal game'}" class="game-tz">${g.tz?'<img src="img/tz.png" alt="Terror Zone">':''}</span><span title="Ping indicator" class="${g.ping}">●</span>`;row.onclick=()=>{selectedName=g.name;document.querySelector('.fields input').value=g.name;render()};list.appendChild(row)});
+ let visible=gamesForCharacter().filter(g=>(!friendBattletags||friendBattletags.has(g.hostBattletag))&&g.difficulty===selectedDifficulty&&g.name.toLowerCase().includes(q)&&(selectedActivity==='all'||g.activity===selectedActivity)&&(tzMode==='all'||(tzMode==='tz'&&g.tz)||(tzMode==='non-tz'&&!g.tz))&&(!ageFilterEnabled.checked||g.elapsedSeconds<Math.max(1,Number(ageFilterValue.value)||1)*(ageFilterUnit.value==='hours'?3600:60)));visibleGameCount.value=String(visible.length);if(!sortKey&&activeCharacterGameMode==='sc-ld')visible.sort((a,b)=>(a.ladderListOrder??-1)-(b.ladderListOrder??-1));if(sortKey){visible.sort((a,b)=>{if(sortKey==='players'&&playersSortMode===2){const af=a.players>=a.maxPlayers,bf=b.players>=b.maxPlayers;if(af!==bf)return af?1:-1;}let av=a[sortKey],bv=b[sortKey];if(typeof av==='string'){return (sortAsc?1:-1)*av.localeCompare(bv)}return (sortAsc?1:-1)*(av-bv)})}visible.forEach(g=>{const row=document.createElement('div');row.className='game'+(g.name===selectedName?' selected':'')+(g.players>=g.maxPlayers?' full-game':'');row.innerHTML=`<span class="game-name activity-${g.activity.toLowerCase()}"><span class="game-name-text">${escapeHtml(g.name)}</span></span><span class="activity-${g.activity.toLowerCase()}">${activityLabel(g.activity)}</span><span class="${g.players>=g.maxPlayers?'full-players':'gold'}">${g.players}/${g.maxPlayers}</span><span>${formatTime(g.elapsedSeconds)}</span><span title="${g.tz?'Terror Zone':'Normal game'}" class="game-tz">${g.tz?'<img src="img/tz.png" alt="Terror Zone">':''}</span><span title="Ping indicator" class="${g.ping}">●</span>`;
+  const nameCell=row.querySelector('.game-name');
+  const nameText=nameCell.firstElementChild;
+  nameCell.addEventListener('pointerenter',()=>{
+   const overflow=nameText.scrollWidth-nameCell.clientWidth;
+   nameCell.classList.toggle('name-overflows',overflow>0);
+   if(overflow<=0)return;
+   nameCell.style.setProperty('--name-offset',-overflow+'px');
+   nameCell.style.setProperty('--name-scroll-time',Math.max(1,overflow/36)+'s');
+  });
+  row.onclick=()=>{
+   list.querySelector('.game.selected')?.classList.remove('selected');
+   selectedName=g.name;
+   gameNameInput.value=g.name;
+   row.classList.add('selected');
+   renderDetails(g);
+   updateJoinGameButton();
+  };
+  list.appendChild(row);
+ });
  if(friendsOnly&&!visible.length){
   const empty=document.createElement('p');
   empty.className='friends-filter-empty';
@@ -257,6 +276,13 @@ const joinGameButton=document.getElementById('join-game');
 function getJoinGameName(){return gameNameInput.value.trim()||selectedName;}
 function updateJoinGameButton(){joinGameButton.disabled=!getJoinGameName();}
 gameNameInput.addEventListener('input',updateJoinGameButton);
+document.addEventListener('click',event=>{
+ if(selectedName===null||(event.composedPath().includes(list)&&event.target.closest('.game')))return;
+ selectedName=null;
+ list.querySelector('.game.selected')?.classList.remove('selected');
+ if(!document.body.classList.contains('offline-character'))renderDetails();
+ updateJoinGameButton();
+});
 joinGameButton.addEventListener('click',()=>{
  const name=getJoinGameName();
  if(!name)return;

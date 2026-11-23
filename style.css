@@ -809,6 +809,19 @@ body.intro-active>.screen{visibility:hidden}
 /* Incoming chat must not move the reader's position. */
 #chat{overflow-anchor:none}
 
+.game-name-text {
+ display:block;
+}
+@media (hover:hover) and (prefers-reduced-motion:no-preference) {
+ .game-name.name-overflows:hover .game-name-text {
+  width:max-content;
+  animation:scroll-game-name var(--name-scroll-time) linear .35s both;
+ }
+}
+@keyframes scroll-game-name {
+ to { transform:translateX(var(--name-offset)); }
+}
+
 /* Activity tabs use the full game-list width beneath Search. */
 .game-search-filters{grid-template-columns:minmax(0,1fr);gap:5px}
 .activity-filter-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;min-width:0}
