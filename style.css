@@ -926,7 +926,8 @@ body.intro-active>.screen{visibility:hidden}
 #chat-composer-tag{flex:none;padding-left:6px;color:#c5ae77;white-space:nowrap;font:inherit}
 #chat-form .chat-composer-field textarea{flex:1;min-width:0;width:auto;height:100%;margin:0;border:0;background:none;padding:4px 6px;font:inherit;line-height:1.2;color:#ddd;outline-offset:-2px;resize:none;white-space:pre;overflow:hidden}
 #in-game-chat .chat-composer-field{height:auto;font-size:17px}
-#in-game-chat #chat-form .chat-composer-field textarea{field-sizing:content;height:auto;min-height:calc(1lh + 8px);max-height:calc(2lh + 8px);white-space:pre-wrap;overflow-wrap:anywhere;overflow-y:auto}
+#in-game-chat #chat-composer-tag{max-width:30%;overflow:hidden;text-overflow:ellipsis}
+#in-game-chat #chat-form .chat-composer-field textarea{height:calc(2lh + 8px);white-space:pre-wrap;overflow-wrap:anywhere;overflow-y:auto}
 @media(max-width:850px){.chat-composer-field{font-size:11px}#in-game-chat .chat-composer-field{font-size:14px}#chat-composer-tag{padding-left:4px}}
 
 /* Achievement titles sit at the bottom right of each roster entry. */
@@ -1057,8 +1058,26 @@ body.intro-active>.screen{visibility:hidden}
 
 /* Shared player communities keep a second destination tag in the composer. */
 .community-tag{color:#64d6c6;white-space:nowrap}
-#chat-community{flex:0 1 auto;max-width:145px;min-width:70px;width:auto;height:auto;margin:0;padding:2px;border:0;background:#111;color:#64d6c6;font:inherit}
+#chat-community{flex:0 1 auto;max-width:min(100px,35%);min-width:0;width:auto;height:auto;margin:0;padding:2px;border:0;background:#111;color:#64d6c6;font:inherit;text-overflow:ellipsis}
 #chat-community[hidden]{display:none}
+#in-game-chat .chat-composer-field:has(#chat-community:not([hidden])){
+ display:grid;
+ grid-template-columns:min(100px,35%) minmax(0,1fr);
+ grid-template-rows:repeat(2,minmax(0,1fr));
+}
+#in-game-chat .chat-composer-field:has(#chat-community:not([hidden])) #chat-composer-tag{
+ grid-area:1 / 1;
+ max-width:100%;
+}
+#in-game-chat #chat-community{
+ grid-area:2 / 1;
+ width:100%;
+ max-width:100%;
+ padding-block:0;
+}
+#in-game-chat #chat-form .chat-composer-field:has(#chat-community:not([hidden])) textarea{
+ grid-area:1 / 2 / span 2;
+}
 .screen .panel:not(.right) .chat-channel-tabs,#in-game-chat .chat-channel-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;min-width:0}
 .screen .panel:not(.right) .chat-channel-tab,#in-game-chat .chat-channel-tab{flex:1 1 0;min-width:0;padding-left:5px;padding-right:5px}
 .screen .panel:not(.right) .chat-channel-tab{min-width:max-content}

@@ -492,8 +492,12 @@ function jumpToLatestChat(){
 function updateComposerChannel(){
  const input=document.getElementById('message');
  const destination=composerChannel==='Private'&&privateRecipient?privateRecipientName:chatChannelLabel(composerChannel);
- document.getElementById('chat-composer-tag').textContent='['+destination+']';
+ const tag=document.getElementById('chat-composer-tag');
+ const shortDestination=composerChannel==='Communities'?'Comm.':destination;
+ tag.textContent='['+shortDestination+']';
+ tag.title=destination;
  communityPicker.hidden=composerChannel!=='Communities';communityPicker.value=selectedCommunity;
+ communityPicker.title=selectedCommunity;
  communityPicker.style.color=communityColors[selectedCommunity]||'#64d6c6';
  input.placeholder='';
  input.setAttribute('aria-label','Chat message to '+destination);
@@ -507,7 +511,7 @@ function canSendChatMessage(){
 const channelPlayerCount=document.getElementById('channel-player-count');
 const publicChannelPlayerCounts={Lobby:1842,Communities:1268,Trading:1576,PvP:742,Farming:1154,Quest:638};
 function updateChannelPlayerCount(channel){
- channelPlayerCount.hidden=channel==='All'||channel==='Private';
+ channelPlayerCount.hidden=!!channelPlayerCount.closest('#in-game-chat')||channel==='All'||channel==='Private';
  if(channelPlayerCount.hidden)return;
  let count=publicChannelPlayerCounts[channel]??(channel==='Game'?currentCampGame?.players:undefined);
  if(count===undefined){
@@ -1342,9 +1346,10 @@ function filterClanMembers({group='all',query='',online=false}){
 }
 function renderClanBossQuest(panel){
  const resources=[
-  {name:'High runes',amount:320,target:600,batch:20},
-  {name:'Perfect gems',amount:970,target:2400,batch:100},
-  {name:'Essences',amount:180,target:480,batch:20}
+  {name:'Perfect gems',amount:970,target:3000,batch:100},
+  {name:'Tokens of Absolution',amount:180,target:500,batch:20},
+  {name:'High runes',amount:320,target:500,batch:20},
+  {name:'Standard of Heroes',amount:0,target:100,batch:10}
  ];
  const list=panel.querySelector('.clan-quest-materials');
  const status=panel.querySelector('.clan-quest-status');
@@ -1377,7 +1382,7 @@ function renderClanBossQuest(panel){
    contribute.setAttribute('aria-label',batch?'Contribute '+batch+' '+resource.name.toLowerCase():resource.name+' contribution complete');
   });
   spawn.disabled=!ready||spawned;
-  status.textContent=spawned?'The Cinder Warden has spawned.':ready?'The ritual is ready.':'Fill all three contribution pools to unlock the ritual.';
+  status.textContent=spawned?'The Cinder Warden has spawned.':ready?'The ritual is ready.':'Fill all contribution pools to unlock the ritual.';
  }
  spawn.addEventListener('click',()=>{
   if(spawn.disabled)return;
